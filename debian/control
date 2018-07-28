@@ -1,0 +1,22 @@
+Source: arm-trusted-firmware
+Section: admin
+Priority: optional
+Maintainer: Vagrant Cascadian <vagrant@debian.org>
+Standards-Version: 4.1.3
+Build-Depends: debhelper (>= 11~)
+Rules-Requires-Root: no
+Homepage: https://github.com/ARM-software/arm-trusted-firmware
+Vcs-Git: https://github.com/ARM-software/arm-trusted-firmware
+Vcs-Browser: https://github.com/ARM-software/arm-trusted-firmware
+
+Package: arm-trusted-firmware-sun50i
+Architecture: arm64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: u-boot-sunxi
+Description: "secure world" software for Allwinner SoCs
+ The "secure world" on arm64 machines is a special level of CPU
+ privilege that is hidden from the normal OS, and has complete
+ control over the system.  It provides both initialization during
+ early boot stages (before u-boot or EFI) and system monitor
+ functionality once the machine is booted up.  This is an equivalent
+ of Intel ME on x86.

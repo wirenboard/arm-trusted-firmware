@@ -1,0 +1,110 @@
+This package was debianized by Adam Borowski <kilobyte@angband.pl> on
+Sun, 07 Jan 2018 05:48:51 +0100.
+
+It can be downloaded from https://github.com/anarsoul/arm-trusted-firmware
+and is overall distributable as "GPL-2 or later".
+
+This software is based on ARM Trusted Foundation, BSD-3 licensed:
+Copyright (c) 2013-2014, ARM Limited and Contributors. All rights reserved.
+(certain files come from {Net,Free}BSD or Berkeley, see below)
+
+The code has been then forked by Allwinner Technology Co., Ltd., and
+providen as "Lichee BSP", part of "Allwinner Software Release" (the tarball
+seems to be no longer publicly available), labelled as GPL with no detailed
+licensing or file history.  The diff from vanilla ATF:
+https://github.com/apritzel/arm-trusted-firmware/commit/90fc243e9256775c85f8763e8fa1b2b59e67d0ce
+shows it's a mix of BSD-3 code by ARM Ltd (with license headers; presumably
+cherry-picked from other versions of the ATF) and GPL2+ code by Allwinner,
+the latter with spotty licensing data but obviously written in-house by
+Allwinner's employees, of which only Jerry Wang <wangflord@allwinnertech.com>
+and superm (superm@allwinnertech.com) are named in person.
+
+It has then been maintained by:
+ * Andre Przywara <andre.przywara@arm.com>
+ * Philipp Tomsich <philipp.tomsich@theobroma-systems.com>
+ * Icenowy Zheng <icenowy@aosc.xyz>
+ * Vasily Khoruzhick <anarsoul@gmail.com>
+
+
+
+
+Copyright (c) 2013-2014, ARM Limited and Contributors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice, this
+  list of conditions and the following disclaimer in the documentation and/or
+  other materials provided with the distribution.
+
+* Neither the name of ARM nor the names of its contributors may be used to
+  endorse or promote products derived from this software without specific prior
+  written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+
+(C) Copyright 2007-2013
+Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of
+the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+    On Debian systems, the complete text of the GNU Library
+    General Public License (version 2) can be found in
+    `/usr/share/common-licenses/GPL-2'.
+
+
+
+Certain files in {lib,include}/stdlib/ come copyrighted by:
+1986-1993 The Regents of the University of California
+<1993 Chris Torek
+UNIX System Laboratories, Inc.
+2001, 2002 Mike Barcroft <mike@FreeBSD.org>
+2001 The NetBSD Foundation, Inc.
+2002-2003 Marcel Moolenaar
+2002, 2011 David E. O'Brien <obrien@FreeBSD.org>
+
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.

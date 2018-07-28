@@ -1,0 +1,28 @@
+arm-trusted-firmware (1.5+0.60e062fb0e33f7d9825267cbfb397d7c7aca1169-1) UNRELEASED; urgency=medium
+
+  * test build
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Sat, 28 Jul 2018 09:55:36 +0800
+
+atf-allwinner (1.0.aw-6-1) unstable; urgency=medium
+
+  * Use upstream's tag.
+  * Pick TERES-1 support from upstream.
+  * Drop install-sunxi64 (moved to u-boot-sunxi).
+  * Fix FTBFS on Ubuntu. (Closes: 895394, Steve Langasek)
+  * Add a watch file.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Wed, 11 Apr 2018 14:32:39 +0200
+
+atf-allwinner (1.0.apritzel.81-1) unstable; urgency=medium
+
+  * Switch upstream to Andre Przywara (apritzel).
+  * Let install-sunxi64 work when mksunxi_fit_atf.sh has no -x.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Mon, 26 Feb 2018 02:22:34 +0100
+
+atf-allwinner (1.0.anarsoul.81-1) unstable; urgency=medium
+
+  * Initial release (Closes: #885669)
+
+ -- Adam Borowski <kilobyte@angband.pl>  Sun, 07 Jan 2018 05:48:51 +0100
