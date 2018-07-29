@@ -3,13 +3,15 @@ Section: admin
 Priority: optional
 Maintainer: Vagrant Cascadian <vagrant@debian.org>
 Standards-Version: 4.1.5
-Build-Depends: debhelper (>= 11~)
+Build-Depends: debhelper (>= 11~),
+ binutils-arm-none-eabi:native,
+ gcc-arm-none-eabi:native,
 Rules-Requires-Root: no
 Homepage: https://github.com/ARM-software/arm-trusted-firmware
 Vcs-Git: https://github.com/ARM-software/arm-trusted-firmware
 Vcs-Browser: https://github.com/ARM-software/arm-trusted-firmware
 
-Package: arm-trusted-firmware-sun50i
+Package: arm-trusted-firmware
 Architecture: arm64
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: u-boot-sunxi

@@ -7,6 +7,7 @@ export DEB_LDFLAGS_MAINT_SET =
 
 override_dh_auto_build:
 	# also fine when non-cross
-	CROSS_COMPILE=aarch64-linux-gnu- \
-	make PLAT=sun50i_a64 DEBUG=1 V=y bl31
-	chmod a-x build/sun50i_a64/debug/bl31.bin
+	for plat in rk3328 rk3399 sun50i_a64 sun50i_h6 ; \
+		do CROSS_COMPILE=aarch64-linux-gnu- make --debug=v DEBUG=1 PLAT=$$plat bl31 ; \
+		chmod a-x build/$$plat/debug/bl31.* ; \
+	done
