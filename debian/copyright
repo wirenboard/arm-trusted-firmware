@@ -9,7 +9,7 @@ License: BSD-3-clause
 Files: debian/*
 Copyright: 2018 Adam Borowski <kilobyte@angband.pl>
  2018 Vagrant Cascadian <vagrant@debian.org>
-License: ??
+License: BSD-3-clause
 
 Files:
  lib/libfdt/* 
