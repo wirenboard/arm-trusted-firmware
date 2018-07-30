@@ -9,7 +9,6 @@ export TF_CFLAGS += -fno-pie
 
 override_dh_auto_build:
 	# also fine when non-cross
-	for plat in rk3328 rk3399 sun50i_a64 sun50i_h6 ; \
+	grep -v '^#' debian/targets | while read plat targets ; \
 		do CROSS_COMPILE=aarch64-linux-gnu- make --debug=v DEBUG=1 PLAT=$$plat bl31 ; \
-		chmod a-x build/$$plat/debug/bl31.* ; \
 	done
