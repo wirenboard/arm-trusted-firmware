@@ -1,5 +1,5 @@
-arm-trusted-firmware (1.5+0.574.g60e062fb-1) UNRELEASED; urgency=medium
+arm-trusted-firmware (2.0-1~20181011~1) UNRELEASED; urgency=medium
 
   * Initial upload to Debian (Closes: #881620).
 
- -- Vagrant Cascadian <vagrant@debian.org>  Sun, 29 Jul 2018 14:05:42 +0800
+ -- Vagrant Cascadian <vagrant@debian.org>  Thu, 11 Oct 2018 12:05:13 -0700
