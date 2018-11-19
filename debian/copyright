@@ -12,6 +12,17 @@ Copyright: 2018 Adam Borowski <kilobyte@angband.pl>
  2018 Vagrant Cascadian <vagrant@debian.org>
 License: BSD-3-clause
 
+Files: drivers/imx/uart/*
+Copyright:
+  Linaro 2018 Limited and Contributors. All rights reserved.
+License: BSD-3-clause
+
+Files: drivers/marvell/*
+Copyright:
+ 2016 Marvell International Ltd.
+ 2018 Marvell International Ltd.
+License: BSD-3-clause
+
 Files:
  lib/libc/strcmp.c
  lib/libc/strchr.c
