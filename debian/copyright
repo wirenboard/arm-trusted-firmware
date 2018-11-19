@@ -207,6 +207,10 @@ Copyright: 2006, 2012 David Gibson, IBM Corporation.
  2016-2017, ARM Limited and Contributors.
 License: BSD-2-clause or GPL-2+
 
+Files: include/lib/libc/endian.h
+Copyright: 2002 Thomas Moestl <tmm@FreeBSD.org>
+License: BSD-2-clause
+
 Files:
  include/tools_share/uuid.h
 Copyright:
