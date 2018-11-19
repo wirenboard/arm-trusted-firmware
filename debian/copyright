@@ -201,11 +201,18 @@ License: BSD-3-clause
 Files:
  lib/libfdt/* 
  include/lib/libfdt/*
-Copyright: 2006, 2012 David Gibson, IBM Corporation.
- 2014 David Gibson <david@gibson.dropbear.id.au>
+Copyright:
+ 2006 David Gibson, IBM Corporation.
+ 2012 David Gibson, IBM Corporation.
  2012 Kim Phillips, Freescale Semiconductor.
- 2016-2017, ARM Limited and Contributors.
+ 2014 David Gibson <david@gibson.dropbear.id.au>
+ 2016 Free Electrons
+ 2016 NextThing Co.
 License: BSD-2-clause or GPL-2+
+
+Files: lib/libfdt/libfdt.mk
+Copyright: 2016, ARM Limited and Contributors. All rights reserved.
+License: BSD-3-clause
 
 Files: include/lib/libc/endian.h
 Copyright: 2002 Thomas Moestl <tmm@FreeBSD.org>
