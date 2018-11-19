@@ -57,6 +57,11 @@ Copyright:
  2017-2018, STMicroelectronics
 License: GPL-2+ or BSD-3-clause
 
+Files: include/drivers/marvell/*
+Copyright:
+  2017-2018 Marvell International Ltd.
+License: BSD-3-clause
+
 Files: include/drivers/mentor/mi2cv.h
 Copyright:
  2018 Marvell International Ltd.
