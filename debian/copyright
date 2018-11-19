@@ -47,6 +47,12 @@ Files:
 Copyright: 2018, STMicroelectronics - All Rights Reserved
 License: GPL2+ or BSD-3-clause
 
+Files: fdts/stm32*
+Copyright:
+ 2018, STMicroelectronics - All Rights Reserved
+ STMicroelectronics 2017 - All Rights Reserved
+License: GPL-2+ or BSD-3-clause
+
 Files:
  lib/libc/strcmp.c
  lib/libc/strchr.c
