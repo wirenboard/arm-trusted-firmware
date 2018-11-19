@@ -32,6 +32,22 @@ Files: drivers/renesas/*
 License: BSD-3-clause
 
 Files:
+ drivers/st/*
+Copyright:
+ 2016-2018, STMicroelectronics - All Rights Reserved
+ 2017-2018, STMicroelectronics - All Rights Reserved
+ 2018, ARM Limited and Contributors. All rights reserved.
+ 2018, STMicroelectronics - All Rights Reserved
+License: BSD-3-clause
+
+Files:
+ drivers/st/clk/stm32mp1_clk.c
+ drivers/st/ddr/stm32mp1_ddr.c
+ drivers/st/ddr/stm32mp1_ram.c
+Copyright: 2018, STMicroelectronics - All Rights Reserved
+License: GPL2+ or BSD-3-clause
+
+Files:
  lib/libc/strcmp.c
  lib/libc/strchr.c
  lib/libc/strncmp.c
