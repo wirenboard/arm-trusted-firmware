@@ -210,16 +210,7 @@ License: BSD-2-clause or GPL-2+
 Files:
  include/tools_share/uuid.h
 Copyright:
- 2000 Jeroen Ruigrok van der Werven <asmodai@FreeBSD.org>
- 2001-2002 Mike Barcroft <mike@FreeBSD.org>
- 2001 The NetBSD Foundation, Inc.
- 2001-2002 Mike Barcroft <mike@FreeBSD.org>
- 2002-2003 Marcel Moolenaar
- 2002 Thomas Moestl <tmm@FreeBSD.org>
- 2009 David Schultz <das@FreeBSD.org>
- 2011 David E. O'Brien <obrien@FreeBSD.org>
- 2011-2012 The FreeBSD Foundation
- 2014-2017 ARM Limited and Contributors.
+ 2002 Marcel Moolenaar
 License: BSD-2-clause
 
 License: BSD-3-clause
