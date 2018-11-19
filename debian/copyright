@@ -24,6 +24,7 @@ Copyright:
 License: BSD-3-clause
 
 Files: drivers/renesas/*
+Copyright: 
  2015-2017, Renesas Electronics Corporation. All rights
  2015-2017, Renesas Electronics Corporation. All rights reserved.
  2015-2018, Renesas Electronics Corporation. All rights
@@ -45,7 +46,7 @@ Files:
  drivers/st/ddr/stm32mp1_ddr.c
  drivers/st/ddr/stm32mp1_ram.c
 Copyright: 2018, STMicroelectronics - All Rights Reserved
-License: GPL2+ or BSD-3-clause
+License: GPL-2+ or BSD-3-clause
 
 Files: fdts/stm32*
 Copyright:
@@ -103,7 +104,7 @@ License: ISC
 Files: lib/libc/strnlen.c
 Copyright:
  2009 David Schultz <das@FreeBSD.org> All rights reserved.
-License: BSD-2-Clause-FreeBSD
+License: BSD-2-clause
 
 Files: lib/zlib/*
 Copyright:
