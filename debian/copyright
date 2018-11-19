@@ -209,19 +209,6 @@ License: BSD-2-clause or GPL-2+
 
 Files:
  include/tools_share/uuid.h
- lib/stdlib/strnlen.c
- include/lib/stdlib/inttypes.h
- include/lib/stdlib/stdbool.h
- include/lib/stdlib/strings.h
- include/lib/stdlib/machine/_limits.h
- include/lib/stdlib/machine/_stdint.h
- include/lib/stdlib/sys/_null.h
- include/lib/stdlib/sys/_stdint.h
- include/lib/stdlib/sys/_types.h
- include/lib/stdlib/sys/endian.h
- include/lib/stdlib/sys/stdint.h
- include/lib/stdlib/xlocale/_strings.h
- include/lib/stdlib/xlocale/_time.h
 Copyright:
  2000 Jeroen Ruigrok van der Werven <asmodai@FreeBSD.org>
  2001-2002 Mike Barcroft <mike@FreeBSD.org>
