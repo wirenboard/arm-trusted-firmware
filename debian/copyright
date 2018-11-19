@@ -54,6 +54,14 @@ Copyright:
 License: GPL-2+ or BSD-3-clause
 
 Files:
+ include/drivers/st/stm32mp1_ddr.h
+ include/drivers/st/stm32mp1_ddr_regs.h
+Copyright:
+ 2018, STMicroelectronics - All Rights Reserved
+ 2017-2018, STMicroelectronics - All Rights Reserved
+License: GPL-2+ or BSD-3-clause
+
+Files:
  lib/libc/strcmp.c
  lib/libc/strchr.c
  lib/libc/strncmp.c
