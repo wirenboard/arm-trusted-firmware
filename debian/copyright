@@ -23,6 +23,14 @@ Copyright:
  2018 Marvell International Ltd.
 License: BSD-3-clause
 
+Files: drivers/renesas/*
+ 2015-2017, Renesas Electronics Corporation. All rights
+ 2015-2017, Renesas Electronics Corporation. All rights reserved.
+ 2015-2018, Renesas Electronics Corporation. All rights
+ 2015-2018, Renesas Electronics Corporation. All rights reserved.
+ 2018, Renesas Electronics Corporation. All rights reserved.
+License: BSD-3-clause
+
 Files:
  lib/libc/strcmp.c
  lib/libc/strchr.c
