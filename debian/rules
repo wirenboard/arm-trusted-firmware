@@ -12,3 +12,9 @@ override_dh_auto_build:
 	grep -v '^#' debian/targets | while read plat targets ; do \
 		CROSS_COMPILE=aarch64-linux-gnu- make --debug=v DEBUG=1 PLAT=$$plat bl31 ; \
 	done
+
+override_dh_installdocs:
+	# Rename changelog to comply with debian policy.
+	cp docs/change-log.rst docs/changelog
+	dh_installdocs
+	rm docs/changelog
