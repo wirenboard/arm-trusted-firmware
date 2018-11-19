@@ -41,6 +41,12 @@ Files:
 Copyright: 2018, STMicroelectronics
 License: GPL-2+ or BSD-3-clause
 
+Files:
+ drivers/staging/renesas/*
+Copyright:
+ 2015-2018, Renesas Electronics Corporation. All rights reserved.
+License: BSD-3-Clause
+
 Files: fdts/stm32*
 Copyright:
  2017-2018, STMicroelectronics
