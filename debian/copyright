@@ -103,6 +103,7 @@ Copyright:
 License: BSD-3-clause
 
 Files: plat/marvell/*
+ include/plat/marvell/*
 Copyright:
  2016 Marvell International Ltd.
  2018 Marvell International Ltd.
