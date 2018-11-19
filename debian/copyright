@@ -53,6 +53,13 @@ Copyright:
  STMicroelectronics 2017 - All Rights Reserved
 License: GPL-2+ or BSD-3-clause
 
+Files: include/dt-bindings/*
+Copyright:
+ 2017, STMicroelectronics - All Rights Reserved
+ STMicroelectronics 2017 - All Rights Reserved
+ STMicroelectronics 2018 - All Rights Reserved
+License: GPL-2+ or BSD-3-clause
+
 Files: include/drivers/mentor/mi2cv.h
 Copyright:
  2018 Marvell International Ltd.
