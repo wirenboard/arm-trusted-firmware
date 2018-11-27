@@ -1,4 +1,4 @@
-arm-trusted-firmware (2.0+290.98aab974-1~20181125~1) UNRELEASED; urgency=medium
+arm-trusted-firmware (2.0+290.98aab974-1) UNRELEASED; urgency=medium
 
   * Upstream git snapshot from commit 98aab97484b27e40aa74a93e5d1c1ac037a7e0b8.
   * Enable gxbb (tested on Odroid-C2).
