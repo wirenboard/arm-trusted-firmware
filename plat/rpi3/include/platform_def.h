@@ -8,9 +8,9 @@
 #define PLATFORM_DEF_H
 
 #include <arch.h>
-#include <common_def.h>
-#include <tbbr_img_def.h>
-#include <utils_def.h>
+#include <common/tbbr/tbbr_img_def.h>
+#include <lib/utils_def.h>
+#include <plat/common/common_def.h>
 
 #include "../rpi3_hw.h"
 
@@ -243,6 +243,8 @@
 
 #define MAX_IO_DEVICES			U(3)
 #define MAX_IO_HANDLES			U(4)
+
+#define MAX_IO_BLOCK_DEVICES		U(1)
 
 /*
  * Serial-related constants.

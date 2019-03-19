@@ -8,7 +8,8 @@
 #define PLATFORM_DEF_H
 
 #include <arch.h>
-#include <utils_def.h>
+#include <lib/utils_def.h>
+
 #include "../hikey960_def.h"
 
 /* Special value used to verify platform parameters from BL2 to BL3-1 */
@@ -38,7 +39,7 @@
 #define MAX_IO_DEVICES			3
 #define MAX_IO_HANDLES			4
 /* UFS RPMB and UFS User Data */
-#define MAX_IO_BLOCK_DEVICES		2
+#define MAX_IO_BLOCK_DEVICES		U(2)
 
 
 /*
@@ -121,11 +122,7 @@
 #endif
 
 #ifdef IMAGE_BL2
-#ifdef SPD_opteed
 #define MAX_XLAT_TABLES			4
-#else
-#define MAX_XLAT_TABLES			3
-#endif
 #endif
 
 #define MAX_MMAP_REGIONS		16

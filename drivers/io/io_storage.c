@@ -5,11 +5,12 @@
  */
 
 #include <assert.h>
-#include <io_driver.h>
-#include <io_storage.h>
-#include <platform_def.h>
 #include <stddef.h>
 
+#include <platform_def.h>
+
+#include <drivers/io/io_driver.h>
+#include <drivers/io/io_storage.h>
 
 /* Storage for a fixed maximum number of IO entities, definable by platform */
 static io_entity_t entity_pool[MAX_IO_HANDLES];
@@ -187,9 +188,6 @@ int io_dev_init(uintptr_t dev_handle, const uintptr_t init_params)
 
 	return result;
 }
-
-
-/* TODO: Consider whether an explicit "shutdown" API should be included */
 
 /* Close a connection to a device */
 int io_dev_close(uintptr_t dev_handle)

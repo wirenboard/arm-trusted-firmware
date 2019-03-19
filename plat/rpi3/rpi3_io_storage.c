@@ -5,14 +5,16 @@
  */
 
 #include <assert.h>
-#include <bl_common.h>
-#include <debug.h>
-#include <firmware_image_package.h>
-#include <io_driver.h>
-#include <io_fip.h>
-#include <io_memmap.h>
-#include <platform_def.h>
 #include <string.h>
+
+#include <platform_def.h>
+
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <drivers/io/io_driver.h>
+#include <drivers/io/io_fip.h>
+#include <drivers/io/io_memmap.h>
+#include <tools_share/firmware_image_package.h>
 
 /* Semihosting filenames */
 #define BL2_IMAGE_NAME			"bl2.bin"
@@ -124,11 +126,6 @@ static const struct plat_io_policy policies[] = {
 	[BL31_IMAGE_ID] = {
 		&fip_dev_handle,
 		(uintptr_t)&bl31_uuid_spec,
-		open_fip
-	},
-	[BL32_IMAGE_ID] = {
-		&fip_dev_handle,
-		(uintptr_t)&bl32_uuid_spec,
 		open_fip
 	},
 	[BL32_IMAGE_ID] = {

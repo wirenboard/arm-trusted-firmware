@@ -5,9 +5,12 @@
  */
 
 #include <assert.h>
-#include <debug.h>
-#include <platform.h>
+
 #include <platform_def.h>
+
+#include <common/debug.h>
+#include <plat/common/platform.h>
+
 #include "psci_private.h"
 
 #ifndef PLAT_MAX_PWR_LVL_STATES
@@ -206,9 +209,9 @@ static int psci_get_stat(u_register_t target_cpu, unsigned int power_state,
 
 	if (pwrlvl > PSCI_CPU_PWR_LVL) {
 		/* Get the power domain index */
-		parent_idx = psci_cpu_pd_nodes[target_idx].parent_node;
+		parent_idx = SPECULATION_SAFE_VALUE(psci_cpu_pd_nodes[target_idx].parent_node);
 		for (lvl = PSCI_CPU_PWR_LVL + 1U; lvl < pwrlvl; lvl++)
-			parent_idx = psci_non_cpu_pd_nodes[parent_idx].parent_node;
+			parent_idx = SPECULATION_SAFE_VALUE(psci_non_cpu_pd_nodes[parent_idx].parent_node);
 
 		/* Get the non cpu power domain stats */
 		*psci_stat = psci_non_cpu_stat[parent_idx][stat_idx];

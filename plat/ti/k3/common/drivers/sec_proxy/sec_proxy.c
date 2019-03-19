@@ -7,14 +7,16 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
-#include <debug.h>
 #include <errno.h>
-#include <mmio.h>
-#include <platform_def.h>
 #include <stdlib.h>
-#include <utils.h>
-#include <utils_def.h>
+
+#include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <lib/mmio.h>
+#include <lib/utils.h>
+#include <lib/utils_def.h>
 
 #include "sec_proxy.h"
 
@@ -137,10 +139,10 @@ static inline int k3_sec_proxy_verify_thread(struct k3_sec_proxy_thread *spt,
 	if ((mmio_read_32(spt->scfg + SCFG_THREAD_CTRL) & SCFG_THREAD_CTRL_DIR_MASK)
 	    != (dir << SCFG_THREAD_CTRL_DIR_SHIFT)) {
 		if (dir)
-			ERROR("Trying to receive data on tx Thread %d\n",
+			ERROR("Trying to send data on RX Thread %d\n",
 			      spt->id);
 		else
-			ERROR("Trying to send data on rx Thread %d\n",
+			ERROR("Trying to receive data on TX Thread %d\n",
 			      spt->id);
 		return -EINVAL;
 	}
@@ -155,6 +157,44 @@ static inline int k3_sec_proxy_verify_thread(struct k3_sec_proxy_thread *spt,
 			ERROR("Timeout waiting for thread %d to clear\n", spt->id);
 			return -ETIMEDOUT;
 		}
+	}
+
+	return 0;
+}
+
+/**
+ * k3_sec_proxy_clear_rx_thread() - Clear Secure Proxy thread
+ *
+ * @id: Channel Identifier
+ *
+ * Return: 0 if all goes well, else appropriate error message
+ */
+int k3_sec_proxy_clear_rx_thread(enum k3_sec_proxy_chan_id id)
+{
+	struct k3_sec_proxy_thread *spt = &spm.threads[id];
+
+	/* Check for any errors already available */
+	if (mmio_read_32(spt->rt + RT_THREAD_STATUS) &
+	    RT_THREAD_STATUS_ERROR_MASK) {
+		ERROR("Thread %d is corrupted, cannot send data\n", spt->id);
+		return -EINVAL;
+	}
+
+	/* Make sure thread is configured for right direction */
+	if (!(mmio_read_32(spt->scfg + SCFG_THREAD_CTRL) & SCFG_THREAD_CTRL_DIR_MASK)) {
+		ERROR("Cannot clear a transmit thread %d\n", spt->id);
+		return -EINVAL;
+	}
+
+	/* Read off messages from thread until empty */
+	uint32_t try_count = 10;
+	while (mmio_read_32(spt->rt + RT_THREAD_STATUS) & RT_THREAD_STATUS_CUR_CNT_MASK) {
+		if (!(try_count--)) {
+			ERROR("Could not clear all messages from thread %d\n", spt->id);
+			return -ETIMEDOUT;
+		}
+		WARN("Clearing message from thread %d\n", spt->id);
+		mmio_read_32(spt->data + spm.desc.data_end_offset);
 	}
 
 	return 0;

@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch.h>
-#include <arm_config.h>
-#include <cassert.h>
-#include <plat_arm.h>
-#include <platform.h>
 #include <platform_def.h>
-#include "drivers/pwrc/fvp_pwrc.h"
+
+#include <arch.h>
+#include <drivers/arm/fvp/fvp_pwrc.h>
+#include <lib/cassert.h>
+#include <plat/arm/common/arm_config.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/common/platform.h>
 
 /* The FVP power domain tree descriptor */
 static unsigned char fvp_power_domain_tree_desc[FVP_CLUSTER_COUNT + 2];

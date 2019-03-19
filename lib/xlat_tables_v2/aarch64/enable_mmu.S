@@ -6,7 +6,7 @@
 
 #include <asm_macros.S>
 #include <assert_macros.S>
-#include <xlat_tables_v2.h>
+#include <lib/xlat_tables/xlat_tables_v2.h>
 
 	.global	enable_mmu_direct_el1
 	.global	enable_mmu_direct_el2
@@ -86,9 +86,10 @@
 	.endm
 
 	/*
-	 * Define MMU-enabling functions for EL1 and EL3:
+	 * Define MMU-enabling functions for EL1, EL2 and EL3:
 	 *
 	 *  enable_mmu_direct_el1
+	 *  enable_mmu_direct_el2
 	 *  enable_mmu_direct_el3
 	 */
 	define_mmu_enable_func 1

@@ -4,48 +4,31 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <debug.h>
-#include <delay_timer.h>
-#include <desc_image_load.h>
-#include <dw_ufs.h>
 #include <errno.h>
-#include <generic_delay_timer.h>
-#include <hi3660.h>
-#include <mmio.h>
-#ifdef SPD_opteed
-#include <optee_utils.h>
-#endif
-#include <pl011.h>
-#include <platform_def.h>
 #include <string.h>
-#include <ufs.h>
 
+#include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <common/desc_image_load.h>
+#include <drivers/arm/pl011.h>
+#include <drivers/delay_timer.h>
+#include <drivers/dw_ufs.h>
+#include <drivers/generic_delay_timer.h>
+#include <drivers/ufs.h>
+#include <lib/mmio.h>
+#ifdef SPD_opteed
+#include <lib/optee_utils.h>
+#endif
+
+#include <hi3660.h>
 #include "hikey960_def.h"
 #include "hikey960_private.h"
 
-/*
- * The next 2 constants identify the extents of the code & RO data region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __RO_START__ and __RO_END__ linker symbols refer to page-aligned addresses.
- */
-#define BL2_RO_BASE (unsigned long)(&__RO_START__)
-#define BL2_RO_LIMIT (unsigned long)(&__RO_END__)
-
-#define BL2_RW_BASE		(BL2_RO_LIMIT)
-
-/*
- * The next 2 constants identify the extents of the coherent memory region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __COHERENT_RAM_START__ and __COHERENT_RAM_END__ linker symbols refer to
- * page-aligned addresses.
- */
-#define BL2_COHERENT_RAM_BASE (unsigned long)(&__COHERENT_RAM_START__)
-#define BL2_COHERENT_RAM_LIMIT (unsigned long)(&__COHERENT_RAM_END__)
+#define BL2_RW_BASE		(BL_CODE_END)
 
 static meminfo_t bl2_el3_tzram_layout;
 static console_pl011_t console;
@@ -310,10 +293,10 @@ void bl2_el3_plat_arch_setup(void)
 {
 	hikey960_init_mmu_el3(bl2_el3_tzram_layout.total_base,
 			      bl2_el3_tzram_layout.total_size,
-			      BL2_RO_BASE,
-			      BL2_RO_LIMIT,
-			      BL2_COHERENT_RAM_BASE,
-			      BL2_COHERENT_RAM_LIMIT);
+			      BL_CODE_BASE,
+			      BL_CODE_END,
+			      BL_COHERENT_RAM_BASE,
+			      BL_COHERENT_RAM_END);
 }
 
 void bl2_platform_setup(void)

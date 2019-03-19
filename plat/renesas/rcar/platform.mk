@@ -11,6 +11,10 @@ TRUSTED_BOARD_BOOT		:= 1
 RESET_TO_BL31			:= 1
 GENERATE_COT			:= 1
 BL2_AT_EL3			:= 1
+ENABLE_SVE_FOR_NS		:= 0
+
+CRASH_REPORTING			:= 1
+HANDLE_EA_EL3_FIRST		:= 1
 
 $(eval $(call add_define,PLAT_EXTRA_LD_SCRIPT))
 
@@ -34,10 +38,12 @@ $(eval $(call add_define,RCAR_H3N))
 $(eval $(call add_define,RCAR_AUTO))
 RCAR_CUT_10:=0
 RCAR_CUT_11:=1
+RCAR_CUT_13:=3
 RCAR_CUT_20:=10
 RCAR_CUT_30:=20
 $(eval $(call add_define,RCAR_CUT_10))
 $(eval $(call add_define,RCAR_CUT_11))
+$(eval $(call add_define,RCAR_CUT_13))
 $(eval $(call add_define,RCAR_CUT_20))
 $(eval $(call add_define,RCAR_CUT_30))
 
@@ -94,6 +100,10 @@ else
         RCAR_LSI_CUT:=0
       else ifeq (${LSI_CUT},11)
         RCAR_LSI_CUT:=1
+      else ifeq (${LSI_CUT},13)
+        RCAR_LSI_CUT:=3
+      else ifeq (${LSI_CUT},30)
+        RCAR_LSI_CUT:=20
       else
         $(error "Error: ${LSI_CUT} is not supported.")
       endif
@@ -126,6 +136,8 @@ else
       # disable compatible function.
       ifeq (${LSI_CUT},10)
         RCAR_LSI_CUT:=0
+      else ifeq (${LSI_CUT},11)
+        RCAR_LSI_CUT:=1
       else
         $(error "Error: ${LSI_CUT} is not supported.")
       endif
@@ -303,12 +315,13 @@ ERRATA_A57_813419  := 1
 include drivers/staging/renesas/rcar/ddr/ddr.mk
 include drivers/staging/renesas/rcar/qos/qos.mk
 include drivers/staging/renesas/rcar/pfc/pfc.mk
+include lib/libfdt/libfdt.mk
 
-PLAT_INCLUDES	:=	-Iinclude/common/tbbr			\
-			-Idrivers/staging/renesas/rcar/ddr	\
+PLAT_INCLUDES	:=	-Idrivers/staging/renesas/rcar/ddr	\
 			-Idrivers/staging/renesas/rcar/qos	\
 			-Idrivers/renesas/rcar/iic_dvfs		\
 			-Idrivers/renesas/rcar/board		\
+			-Idrivers/renesas/rcar/cpld/		\
 			-Idrivers/renesas/rcar/avs		\
 			-Idrivers/renesas/rcar/delay		\
 			-Idrivers/renesas/rcar/rom		\
@@ -320,8 +333,8 @@ PLAT_INCLUDES	:=	-Iinclude/common/tbbr			\
 			-Iplat/renesas/rcar/include		\
 			-Iplat/renesas/rcar
 
-PLAT_BL_COMMON_SOURCES	:=	drivers/renesas/rcar/iic_dvfs/iic_dvfs.c
-
+PLAT_BL_COMMON_SOURCES	:=	drivers/renesas/rcar/iic_dvfs/iic_dvfs.c \
+				plat/renesas/rcar/rcar_common.c
 
 RCAR_GIC_SOURCES	:=	drivers/arm/gic/common/gic_common.c	\
 				drivers/arm/gic/v2/gicv2_main.c		\
@@ -331,6 +344,7 @@ RCAR_GIC_SOURCES	:=	drivers/arm/gic/common/gic_common.c	\
 BL2_SOURCES	+=	${RCAR_GIC_SOURCES}				\
 			lib/cpus/aarch64/cortex_a53.S			\
 			lib/cpus/aarch64/cortex_a57.S			\
+			${LIBFDT_SRCS}					\
 			common/desc_image_load.c			\
 			plat/renesas/rcar/aarch64/platform_common.c	\
 			plat/renesas/rcar/aarch64/plat_helpers.S	\
@@ -351,7 +365,7 @@ BL2_SOURCES	+=	${RCAR_GIC_SOURCES}				\
 			drivers/renesas/rcar/rpc/rpc_driver.c		\
 			drivers/renesas/rcar/dma/dma_driver.c		\
 			drivers/renesas/rcar/avs/avs_driver.c		\
-			drivers/renesas/rcar/delay/micro_delay.S	\
+			drivers/renesas/rcar/delay/micro_delay.c	\
 			drivers/renesas/rcar/emmc/emmc_interrupt.c	\
 			drivers/renesas/rcar/emmc/emmc_utility.c	\
 			drivers/renesas/rcar/emmc/emmc_mount.c		\
@@ -374,6 +388,7 @@ BL31_SOURCES	+=	${RCAR_GIC_SOURCES}				\
 			plat/renesas/rcar/plat_pm.c			\
 			drivers/renesas/rcar/console/rcar_console.S	\
 			drivers/renesas/rcar/console/rcar_printf.c	\
+			drivers/renesas/rcar/delay/micro_delay.c	\
 			drivers/renesas/rcar/pwrc/call_sram.S		\
 			drivers/renesas/rcar/pwrc/pwrc.c		\
 			drivers/renesas/rcar/common.c			\
@@ -413,7 +428,7 @@ clean_srecord:
 	rm -f ${SREC_PATH}/bl2.srec ${SREC_PATH}/bl31.srec
 
 .PHONY: rcar_srecord
-rcar_srecord:
+rcar_srecord: $(BL2_ELF_SRC) $(BL31_ELF_SRC)
 	@echo "generating srec: ${SREC_PATH}/bl2.srec"
 	$(Q)$(OC) -O srec --srec-forceS3 ${BL2_ELF_SRC}  ${SREC_PATH}/bl2.srec
 	@echo "generating srec: ${SREC_PATH}/bl31.srec"

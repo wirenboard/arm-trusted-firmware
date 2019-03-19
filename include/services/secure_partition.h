@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2017-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -7,8 +7,11 @@
 #ifndef SECURE_PARTITION_H
 #define SECURE_PARTITION_H
 
+#if SPM_MM
+
 #include <stdint.h>
-#include <utils_def.h>
+
+#include <lib/utils_def.h>
 
 /*
  * Flags used by the secure_partition_mp_info structure to describe the
@@ -45,5 +48,7 @@ typedef struct secure_partition_boot_info {
 	uint32_t		num_cpus;
 	secure_partition_mp_info_t	*mp_info;
 } secure_partition_boot_info_t;
+
+#endif /* SPM_MM */
 
 #endif /* SECURE_PARTITION_H */

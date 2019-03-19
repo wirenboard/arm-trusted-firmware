@@ -4,15 +4,16 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <assert.h>
+#include <stdbool.h>
+
 #include <arch.h>
 #include <arch_helpers.h>
-#include <assert.h>
-#include <debug.h>
-#include <gic_common.h>
-#include <gicv2.h>
-#include <interrupt_props.h>
-#include <spinlock.h>
-#include <stdbool.h>
+#include <common/debug.h>
+#include <common/interrupt_props.h>
+#include <drivers/arm/gic_common.h>
+#include <drivers/arm/gicv2.h>
+#include <lib/spinlock.h>
 
 #include "../common/gic_common_private.h"
 #include "gicv2_private.h"
@@ -278,8 +279,8 @@ unsigned int gicv2_get_running_priority(void)
 /*******************************************************************************
  * This function sets the GICv2 target mask pattern for the current PE. The PE
  * target mask is used to translate linear PE index (returned by platform core
- * position) to a bit mask used when targeting interrupts to a PE, viz. when
- * raising SGIs and routing SPIs.
+ * position) to a bit mask used when targeting interrupts to a PE (for example
+ * when raising SGIs and routing SPIs).
  ******************************************************************************/
 void gicv2_set_pe_target_mask(unsigned int proc_num)
 {

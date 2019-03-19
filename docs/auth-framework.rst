@@ -160,7 +160,7 @@ These components are responsible for initiating the authentication process for a
 particular image in BL1 or BL2. For each BL image that requires authentication,
 the Generic code asks recursively the Authentication module what is the parent
 image until either an authenticated image or the ROT is reached. Then the
-Generic code calls the IO framewotk to load the image and calls the
+Generic code calls the IO framework to load the image and calls the
 Authentication module to authenticate it, following the CoT from ROT to Image.
 
 TF-A Platform Port (PP)
@@ -209,7 +209,7 @@ It is responsible for:
 #. Tracking which images have been verified. In case an image is a part of
    multiple CoTs then it should be verified only once e.g. the Trusted World
    Key Certificate in the TBBR-Client spec. contains information to verify
-   SCP\_BL2, BL31, BL32 each of which have a separate CoT. (This
+   SCP_BL2, BL31, BL32 each of which have a separate CoT. (This
    responsibility has not been described in this document but should be
    trivial to implement).
 
@@ -422,7 +422,7 @@ An IPL for each type must be registered using the following macro:
 -  ``_name``: a string containing the IPL name for debugging purposes.
 -  ``_init``: initialization function pointer.
 -  ``_check_int``: check image integrity function pointer.
--  ``_get_param``: extract authentication parameter funcion pointer.
+-  ``_get_param``: extract authentication parameter function pointer.
 
 The ``init()`` function will be used to initialize the IPL.
 
@@ -627,7 +627,7 @@ The TBBR CoT
 
 The CoT can be found in ``drivers/auth/tbbr/tbbr_cot.c``. This CoT consists of an
 array of image descriptors and it is registered in the framework using the macro
-``REGISTER_COT(cot_desc)``, where 'cot\_desc' must be the name of the array
+``REGISTER_COT(cot_desc)``, where 'cot_desc' must be the name of the array
 (passing a pointer or any other type of indirection will cause the registration
 process to fail).
 
@@ -720,7 +720,7 @@ Example: the BL31 Chain of Trust
 
 Four image descriptors form the BL31 Chain of Trust:
 
-.. code:: asm
+.. code:: c
 
     [TRUSTED_KEY_CERT_ID] = {
         .img_id = TRUSTED_KEY_CERT_ID,
@@ -925,7 +925,7 @@ three functions:
 The mbedTLS library algorithm support is configured by the
 ``TF_MBEDTLS_KEY_ALG`` variable which can take in 3 values: `rsa`, `ecdsa` or
 `rsa+ecdsa`. This variable allows the Makefile to include the corresponding
-sources in the build for the various algorthms. Setting the variable to
+sources in the build for the various algorithms. Setting the variable to
 `rsa+ecdsa` enables support for both rsa and ecdsa algorithms in the mbedTLS
 library.
 

@@ -1,25 +1,23 @@
 /*
- * Copyright (c) 2013-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arm_config.h>
-#include <arm_def.h>
-#include <arm_spm_def.h>
 #include <assert.h>
-#include <cci.h>
-#include <ccn.h>
-#include <debug.h>
-#include <gicv2.h>
-#include <mmio.h>
-#include <plat_arm.h>
-#include <platform.h>
-#include <secure_partition.h>
-#include <v2m_def.h>
-#include <xlat_tables_compat.h>
 
-#include "../fvp_def.h"
+#include <common/debug.h>
+#include <drivers/arm/cci.h>
+#include <drivers/arm/ccn.h>
+#include <drivers/arm/gicv2.h>
+#include <lib/mmio.h>
+#include <lib/xlat_tables/xlat_tables_compat.h>
+#include <plat/arm/common/arm_config.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/common/platform.h>
+#include <platform_def.h>
+#include <services/secure_partition.h>
+
 #include "fvp_private.h"
 
 /* Defines for GIC Driver build time selection */
@@ -96,8 +94,11 @@ const mmap_region_t plat_arm_mmap[] = {
 	ARM_MAP_BL1_RW,
 #endif
 #endif /* TRUSTED_BOARD_BOOT */
-#if ENABLE_SPM
+#if ENABLE_SPM && SPM_MM
 	ARM_SP_IMAGE_MMAP,
+#endif
+#if ENABLE_SPM && !SPM_MM
+	PLAT_MAP_SP_PACKAGE_MEM_RW,
 #endif
 #if ARM_BL31_IN_DRAM
 	ARM_MAP_BL31_SEC_DRAM,
@@ -124,13 +125,16 @@ const mmap_region_t plat_arm_mmap[] = {
 	MAP_DEVICE0,
 	MAP_DEVICE1,
 	ARM_V2M_MAP_MEM_PROTECT,
-#if ENABLE_SPM
+#if ENABLE_SPM && SPM_MM
 	ARM_SPM_BUF_EL3_MMAP,
+#endif
+#if ENABLE_SPM && !SPM_MM
+	PLAT_MAP_SP_PACKAGE_MEM_RO,
 #endif
 	{0}
 };
 
-#if ENABLE_SPM && defined(IMAGE_BL31)
+#if ENABLE_SPM && defined(IMAGE_BL31) && SPM_MM
 const mmap_region_t plat_arm_secure_partition_mmap[] = {
 	V2M_MAP_IOFPGA_EL0, /* for the UART */
 	MAP_REGION_FLAT(DEVICE0_BASE,				\
@@ -184,7 +188,7 @@ static unsigned int get_interconnect_master(void)
 }
 #endif
 
-#if ENABLE_SPM && defined(IMAGE_BL31)
+#if ENABLE_SPM && defined(IMAGE_BL31) && SPM_MM
 /*
  * Boot information passed to a secure partition during initialisation. Linear
  * indices in MP information will be filled at runtime.
@@ -210,12 +214,12 @@ const secure_partition_boot_info_t plat_arm_secure_partition_boot_info = {
 	.sp_image_base       = ARM_SP_IMAGE_BASE,
 	.sp_stack_base       = PLAT_SP_IMAGE_STACK_BASE,
 	.sp_heap_base        = ARM_SP_IMAGE_HEAP_BASE,
-	.sp_ns_comm_buf_base = ARM_SP_IMAGE_NS_BUF_BASE,
+	.sp_ns_comm_buf_base = PLAT_SP_IMAGE_NS_BUF_BASE,
 	.sp_shared_buf_base  = PLAT_SPM_BUF_BASE,
 	.sp_image_size       = ARM_SP_IMAGE_SIZE,
 	.sp_pcpu_stack_size  = PLAT_SP_IMAGE_STACK_PCPU_SIZE,
 	.sp_heap_size        = ARM_SP_IMAGE_HEAP_SIZE,
-	.sp_ns_comm_buf_size = ARM_SP_IMAGE_NS_BUF_SIZE,
+	.sp_ns_comm_buf_size = PLAT_SP_IMAGE_NS_BUF_SIZE,
 	.sp_shared_buf_size  = PLAT_SPM_BUF_SIZE,
 	.num_sp_mem_regions  = ARM_SP_IMAGE_NUM_MEM_REGIONS,
 	.num_cpus            = PLATFORM_CORE_COUNT,
@@ -232,7 +236,6 @@ const struct secure_partition_boot_info *plat_get_secure_partition_boot_info(
 {
 	return &plat_arm_secure_partition_boot_info;
 }
-
 #endif
 
 /*******************************************************************************

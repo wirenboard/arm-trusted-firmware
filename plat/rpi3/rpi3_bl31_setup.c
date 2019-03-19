@@ -5,16 +5,17 @@
  */
 
 #include <assert.h>
-#include <bl_common.h>
+
 #include <libfdt.h>
-#include <platform.h>
+
 #include <platform_def.h>
-#include <xlat_mmu_helpers.h>
-#include <xlat_tables_defs.h>
+
+#include <common/bl_common.h>
+#include <lib/xlat_tables/xlat_mmu_helpers.h>
+#include <lib/xlat_tables/xlat_tables_defs.h>
+#include <plat/common/platform.h>
 
 #include "rpi3_private.h"
-
-#define BL31_END	(uintptr_t)(&__BL31_END__)
 
 /*
  * Placeholder variables for copying the arguments that have been passed to
@@ -138,6 +139,7 @@ void bl31_plat_arch_setup(void)
 	enable_mmu_el3(0);
 }
 
+#ifdef RPI3_PRELOADED_DTB_BASE
 /*
  * Add information to the device tree (if any) about the reserved DRAM used by
  * the Trusted Firmware.
@@ -201,6 +203,7 @@ static void rpi3_dtb_add_mem_rsv(void)
 	INFO("rpi3: Reserved 0x%llx - 0x%llx in DTB\n", SEC_SRAM_BASE,
 	     SEC_SRAM_BASE + SEC_SRAM_SIZE);
 }
+#endif
 
 void bl31_platform_setup(void)
 {

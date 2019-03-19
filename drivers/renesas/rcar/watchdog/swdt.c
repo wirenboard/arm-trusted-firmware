@@ -5,9 +5,10 @@
  */
 
 #include <arch_helpers.h>
-#include <debug.h>
-#include <gicv2.h>
-#include <mmio.h>
+#include <common/debug.h>
+#include <drivers/arm/gicv2.h>
+#include <lib/mmio.h>
+
 #include "rcar_def.h"
 
 extern void gicd_set_icenabler(uintptr_t base, unsigned int id);
@@ -132,7 +133,11 @@ void rcar_swdt_release(void)
 	    (ARM_IRQ_SEC_WDT & ~ITARGET_MASK);
 	uint32_t i;
 
+	/* Disable FIQ interrupt */
 	write_daifset(DAIF_FIQ_BIT);
+	/* FIQ interrupts are not taken to EL3 */
+	write_scr_el3(read_scr_el3() & ~SCR_FIQ_BIT);
+
 	swdt_disable();
 	gicv2_cpuif_disable();
 

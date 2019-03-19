@@ -8,8 +8,8 @@
 #define XLAT_TABLES_AARCH32_H
 
 #include <arch.h>
-#include <utils_def.h>
-#include <xlat_tables_defs.h>
+#include <lib/utils_def.h>
+#include <lib/xlat_tables/xlat_tables_defs.h>
 
 #if !defined(PAGE_SIZE)
 #error "PAGE_SIZE is not defined."
@@ -63,8 +63,7 @@
  * is 1.
  *
  * Note that this macro assumes that the given virtual address space size is
- * valid. Therefore, the caller is expected to check it is the case using the
- * CHECK_VIRT_ADDR_SPACE_SIZE() macro first.
+ * valid.
  */
 #define GET_XLAT_TABLE_LEVEL_BASE(_virt_addr_space_sz)			\
 	(((_virt_addr_space_sz) > (ULL(1) << L1_XLAT_ADDRESS_SHIFT)) ?	\

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, ARM Limited and Contributors. All rights reserved.
+# Copyright (c) 2015-2018, ARM Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -19,7 +19,8 @@ $(eval $(call add_define,MAX_XLAT_TABLES))
 MAX_MMAP_REGIONS		:= 8
 $(eval $(call add_define,MAX_MMAP_REGIONS))
 
-BL31_SOURCES		+=	lib/cpus/aarch64/denver.S		\
+BL31_SOURCES		+=	drivers/ti/uart/aarch64/16550_console.S		\
+				lib/cpus/aarch64/denver.S		\
 				${COMMON_DIR}/drivers/flowctrl/flowctrl.c	\
 				${COMMON_DIR}/drivers/memctrl/memctrl_v1.c	\
 				${SOC_DIR}/plat_psci_handlers.c		\

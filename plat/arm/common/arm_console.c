@@ -3,12 +3,15 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+
 #include <assert.h>
-#include <console.h>
-#include <debug.h>
-#include <pl011.h>
-#include <plat_arm.h>
+
 #include <platform_def.h>
+
+#include <common/debug.h>
+#include <drivers/arm/pl011.h>
+#include <drivers/console.h>
+#include <plat/arm/common/plat_arm.h>
 
 /*******************************************************************************
  * Functions that set up the console
@@ -58,8 +61,8 @@ void arm_console_boot_end(void)
 void arm_console_runtime_init(void)
 {
 #if MULTI_CONSOLE_API
-	int rc = console_pl011_register(PLAT_ARM_BL31_RUN_UART_BASE,
-					PLAT_ARM_BL31_RUN_UART_CLK_IN_HZ,
+	int rc = console_pl011_register(PLAT_ARM_RUN_UART_BASE,
+					PLAT_ARM_RUN_UART_CLK_IN_HZ,
 					ARM_CONSOLE_BAUDRATE,
 					&arm_runtime_console);
 	if (rc == 0)
@@ -67,8 +70,8 @@ void arm_console_runtime_init(void)
 
 	console_set_scope(&arm_runtime_console.console, CONSOLE_FLAG_RUNTIME);
 #else
-	(void)console_init(PLAT_ARM_BL31_RUN_UART_BASE,
-			   PLAT_ARM_BL31_RUN_UART_CLK_IN_HZ,
+	(void)console_init(PLAT_ARM_RUN_UART_BASE,
+			   PLAT_ARM_RUN_UART_CLK_IN_HZ,
 			   ARM_CONSOLE_BAUDRATE);
 #endif /* MULTI_CONSOLE_API */
 }

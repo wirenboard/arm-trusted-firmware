@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2015-2018, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -8,9 +8,15 @@
 #define PLATFORM_DEF_H
 
 #include <arch.h>
-#include <common_def.h>
+#include <lib/utils_def.h>
+
 #include <tegra_def.h>
-#include <utils_def.h>
+
+/*
+ * Platform binary types for linking
+ */
+#define PLATFORM_LINKER_FORMAT		"elf64-littleaarch64"
+#define PLATFORM_LINKER_ARCH		aarch64
 
 /*******************************************************************************
  * Generic platform constants
@@ -33,7 +39,8 @@
  * Platform console related constants
  ******************************************************************************/
 #define TEGRA_CONSOLE_BAUDRATE		U(115200)
-#define TEGRA_BOOT_UART_CLK_IN_HZ	U(408000000)
+#define TEGRA_BOOT_UART_CLK_13_MHZ	U(13000000)
+#define TEGRA_BOOT_UART_CLK_408_MHZ	U(408000000)
 
 /*******************************************************************************
  * Platform memory map related constants
@@ -52,17 +59,17 @@
 #define BL32_LIMIT			TZDRAM_END
 
 /*******************************************************************************
- * Platform specific page table and MMU setup constants
- ******************************************************************************/
-#define PLAT_PHY_ADDR_SPACE_SIZE	(ULL(1) << 35)
-#define PLAT_VIRT_ADDR_SPACE_SIZE	(ULL(1) << 35)
-
-/*******************************************************************************
  * Some data must be aligned on the biggest cache line size in the platform.
  * This is known only to the platform as it might have a combination of
  * integrated and external caches.
  ******************************************************************************/
 #define CACHE_WRITEBACK_SHIFT		6
-#define CACHE_WRITEBACK_GRANULE		(U(1) << CACHE_WRITEBACK_SHIFT)
+#define CACHE_WRITEBACK_GRANULE		(0x40) /* (U(1) << CACHE_WRITEBACK_SHIFT) */
+
+/*******************************************************************************
+ * Dummy macros to compile io_storage support
+ ******************************************************************************/
+#define MAX_IO_DEVICES			U(0)
+#define MAX_IO_HANDLES			U(0)
 
 #endif /* PLATFORM_DEF_H */

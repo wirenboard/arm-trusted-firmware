@@ -1,20 +1,21 @@
 /*
- * Copyright (c) 2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2018-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 /* Define a simple and generic interface to access eMMC and SD-card devices. */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <debug.h>
-#include <delay_timer.h>
 #include <errno.h>
-#include <mmc.h>
 #include <stdbool.h>
 #include <string.h>
-#include <utils.h>
+
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <drivers/delay_timer.h>
+#include <drivers/mmc.h>
+#include <lib/utils.h>
 
 #define MMC_DEFAULT_MAX_RETRIES		5
 #define SEND_OP_COND_MAX_RETRIES	100
@@ -28,6 +29,7 @@ static unsigned char mmc_ext_csd[512] __aligned(16);
 static unsigned int mmc_flags;
 static struct mmc_device_info *mmc_dev_info;
 static unsigned int rca;
+static unsigned int scr[2]__aligned(16) = { 0 };
 
 static const unsigned char tran_speed_base[16] = {
 	0, 10, 12, 13, 15, 20, 26, 30, 35, 40, 45, 52, 55, 60, 70, 80
@@ -89,7 +91,8 @@ static int mmc_device_state(void)
 		ret = mmc_send_cmd(MMC_CMD(13), rca << RCA_SHIFT_OFFSET,
 				   MMC_RESPONSE_R1, &resp_data[0]);
 		if (ret != 0) {
-			return ret;
+			retries--;
+			continue;
 		}
 
 		if ((resp_data[0] & STATUS_SWITCH_ERROR) != 0U) {
@@ -128,7 +131,6 @@ static int mmc_sd_switch(unsigned int bus_width)
 {
 	int ret;
 	int retries = MMC_DEFAULT_MAX_RETRIES;
-	unsigned int scr[2] = { 0 };
 	unsigned int bus_width_arg = 0;
 
 	ret = ops->prepare(0, (uintptr_t)&scr, sizeof(scr));
@@ -246,6 +248,13 @@ static int mmc_fill_device_info(void)
 			return ret;
 		}
 
+		do {
+			ret = mmc_device_state();
+			if (ret < 0) {
+				return ret;
+			}
+		} while (ret != MMC_STATE_TRAN);
+
 		nb_blocks = (mmc_ext_csd[CMD_EXTCSD_SEC_CNT] << 0) |
 			    (mmc_ext_csd[CMD_EXTCSD_SEC_CNT + 1] << 8) |
 			    (mmc_ext_csd[CMD_EXTCSD_SEC_CNT + 2] << 16) |
@@ -292,7 +301,7 @@ static int mmc_fill_device_info(void)
 		break;
 	}
 
-	if (ret != 0) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -333,8 +342,9 @@ static int sd_send_op_cond(void)
 		}
 
 		/* ACMD41: SD_SEND_OP_COND */
-		ret = mmc_send_cmd(MMC_ACMD(41), OCR_HCS, MMC_RESPONSE_R3,
-				   &resp_data[0]);
+		ret = mmc_send_cmd(MMC_ACMD(41), OCR_HCS |
+			mmc_dev_info->ocr_voltage, MMC_RESPONSE_R3,
+			&resp_data[0]);
 		if (ret != 0) {
 			return ret;
 		}
@@ -379,7 +389,10 @@ static int mmc_send_op_cond(void)
 	int ret, n;
 	unsigned int resp_data[4];
 
-	mmc_reset_to_idle();
+	ret = mmc_reset_to_idle();
+	if (ret != 0) {
+		return ret;
+	};
 
 	for (n = 0; n < SEND_OP_COND_MAX_RETRIES; n++) {
 		ret = mmc_send_cmd(MMC_CMD(1), OCR_SECTOR_MODE |
@@ -394,7 +407,7 @@ static int mmc_send_op_cond(void)
 			return 0;
 		}
 
-		mdelay(1);
+		mdelay(10);
 	}
 
 	ERROR("CMD1 failed after %d retries\n", SEND_OP_COND_MAX_RETRIES);
@@ -409,7 +422,10 @@ static int mmc_enumerate(unsigned int clk, unsigned int bus_width)
 
 	ops->init();
 
-	mmc_reset_to_idle();
+	ret = mmc_reset_to_idle();
+	if (ret != 0) {
+		return ret;
+	};
 
 	if (mmc_dev_info->mmc_dev_type == MMC_IS_EMMC) {
 		ret = mmc_send_op_cond();

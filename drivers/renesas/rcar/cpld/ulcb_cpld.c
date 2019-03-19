@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <mmio.h>
+#include <lib/mmio.h>
+#include "ulcb_cpld.h"
 
 #define SCLK			8	/* GP_6_8 */
 #define SSTBZ			3	/* GP_2_3 */
@@ -22,6 +23,9 @@
 /* General input/output switching registers */
 #define GPIO_INOUTSEL2		0xE6052004
 #define GPIO_INOUTSEL6		0xE6055404
+
+/* General IO/Interrupt Switching Register */
+#define GPIO_IOINTSEL6		0xE6055400
 
 /* GPIO/perihperal function select */
 #define PFC_GPSR2		0xE6060108
@@ -92,6 +96,7 @@ static void cpld_init(void)
 	gpio_pfc(PFC_GPSR2, SSTBZ);
 	gpio_pfc(PFC_GPSR6, MOSI);
 
+	gpio_set_value(GPIO_IOINTSEL6, SCLK, 0);
 	gpio_set_value(GPIO_OUTDT6, SCLK, 0);
 	gpio_set_value(GPIO_OUTDT2, SSTBZ, 1);
 	gpio_set_value(GPIO_OUTDT6, MOSI, 0);

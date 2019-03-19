@@ -4,18 +4,21 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <cpu_data.h>
-#include <debug.h>
-#include <k3_gicv3.h>
-#include <psci.h>
-/* Need to flush psci internal locks before shutdown or their values are lost */
-#include <../../lib/psci/psci_private.h>
-#include <platform.h>
 #include <stdbool.h>
 
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <lib/el3_runtime/cpu_data.h>
+#include <lib/psci/psci.h>
+#include <plat/common/platform.h>
+
+#include <ti_sci_protocol.h>
+#include <k3_gicv3.h>
 #include <ti_sci.h>
+
+/* Need to flush psci internal locks before shutdown or their values are lost */
+#include "../../../../lib/psci/psci_private.h"
 
 #define STUB() ERROR("stub %s called\n", __func__)
 
@@ -68,28 +71,38 @@ static int k3_pwr_domain_on(u_register_t mpidr)
 		return PSCI_E_INTERN_FAIL;
 	}
 
-	ret = ti_sci_proc_release(proc);
-	if (ret) {
-		/* this is not fatal */
-		WARN("Could not release processor control: %d\n", ret);
-	}
-
 	return PSCI_E_SUCCESS;
 }
 
 void k3_pwr_domain_off(const psci_power_state_t *target_state)
 {
-	int core_id, device, ret;
+	int core_id, proc, device, ret;
 
 	/* Prevent interrupts from spuriously waking up this cpu */
 	k3_gic_cpuif_disable();
 
 	core_id = plat_my_core_pos();
+	proc = PLAT_PROC_START_ID + core_id;
 	device = PLAT_PROC_DEVICE_START_ID + core_id;
 
-	ret = ti_sci_device_put(device);
+	/* Start by sending wait for WFI command */
+	ret = ti_sci_proc_wait_boot_status_no_wait(proc,
+			/*
+			 * Wait maximum time to give us the best chance to get
+			 * to WFI before this command timeouts
+			 */
+			UINT8_MAX, 100, UINT8_MAX, UINT8_MAX,
+			/* Wait for WFI */
+			PROC_BOOT_STATUS_FLAG_ARMV8_WFI, 0, 0, 0);
 	if (ret) {
-		ERROR("Request to stop core failed: %d\n", ret);
+		ERROR("Sending wait for WFI failed (%d)\n", ret);
+		return;
+	}
+
+	/* Now queue up the core shutdown request */
+	ret = ti_sci_device_put_no_wait(device);
+	if (ret) {
+		ERROR("Sending core shutdown message failed (%d)\n", ret);
 		return;
 	}
 }

@@ -4,17 +4,20 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <assert.h>
+#include <string.h>
+
 #include <arch.h>
 #include <arch_helpers.h>
-#include <assert.h>
-#include <bakery_lock.h>
-#include <debug.h>
-#include <mmio.h>
-#include <string.h>
-#include <xlat_tables_v2.h>
+#include <common/debug.h>
+#include <lib/bakery_lock.h>
+#include <lib/mmio.h>
+#include <lib/xlat_tables/xlat_tables_v2.h>
+
 #include "iic_dvfs.h"
 #include "rcar_def.h"
 #include "rcar_private.h"
+#include "micro_delay.h"
 #include "pwrc.h"
 
 /*
@@ -120,7 +123,6 @@ RCAR_INSTANTIATE_LOCK
 #define	RST_BASE				(0xE6160000U)
 #define	RST_MODEMR				(RST_BASE + 0x0060U)
 #define	RST_MODEMR_BIT0				(0x00000001U)
-#define RCAR_CONV_MICROSEC			(1000000U)
 
 #if PMIC_ROHM_BD9571
 #define	BIT_BKUP_CTRL_OUT			((uint8_t)(1U << 4))
@@ -139,23 +141,6 @@ RCAR_INSTANTIATE_LOCK
 IMPORT_SYM(unsigned long, __system_ram_start__, SYSTEM_RAM_START);
 IMPORT_SYM(unsigned long, __system_ram_end__, SYSTEM_RAM_END);
 IMPORT_SYM(unsigned long, __SRAM_COPY_START__, SRAM_COPY_START);
-#endif
-
-#if RCAR_SYSTEM_SUSPEND
-static void __attribute__ ((section (".system_ram")))
-	rcar_pwrc_micro_delay(uint64_t micro_sec)
-{
-	uint64_t freq, base, val;
-	uint64_t wait_time = 0;
-
-	freq = read_cntfrq_el0();
-	base = read_cntpct_el0();
-
-	while (micro_sec > wait_time) {
-		val = read_cntpct_el0() - base;
-		wait_time = val * RCAR_CONV_MICROSEC / freq;
-	}
-}
 #endif
 
 uint32_t rcar_pwrc_status(uint64_t mpidr)
@@ -324,7 +309,7 @@ void rcar_pwrc_clusteroff(uint64_t mpidr)
 	c = rcar_pwrc_get_mpidr_cluster(mpidr);
 	dst = IS_CA53(c) ? RCAR_CA53CPUCMCR : RCAR_CA57CPUCMCR;
 
-	if (RCAR_PRODUCT_M3 == product && cut <= RCAR_M3_CUT_VER11)
+	if (RCAR_PRODUCT_M3 == product && cut < RCAR_CUT_VER30)
 		goto done;
 
 	if (RCAR_PRODUCT_H3 == product && cut <= RCAR_CUT_VER20)
@@ -398,7 +383,7 @@ static void __attribute__ ((section(".system_ram")))
 	product = reg & RCAR_PRODUCT_MASK;
 	cut = reg & RCAR_CUT_MASK;
 
-	if (product == RCAR_PRODUCT_M3)
+	if (product == RCAR_PRODUCT_M3 && cut < RCAR_CUT_VER30)
 		goto self_refresh;
 
 	if (product == RCAR_PRODUCT_H3 && cut < RCAR_CUT_VER20)
@@ -412,7 +397,7 @@ self_refresh:
 	mmio_write_32(DBSC4_REG_DBACEN, 0);
 
 	if (product == RCAR_PRODUCT_H3 && cut < RCAR_CUT_VER20)
-		rcar_pwrc_micro_delay(100);
+		rcar_micro_delay(100);
 	else if (product == RCAR_PRODUCT_H3) {
 		mmio_write_32(DBSC4_REG_DBCAM0CTRL0, 1);
 		DBCAM_FLUSH(0);
@@ -463,9 +448,9 @@ self_refresh:
 
 	/* Set the auto-refresh enable register */
 	mmio_write_32(DBSC4_REG_DBRFEN, 0U);
-	rcar_pwrc_micro_delay(1U);
+	rcar_micro_delay(1U);
 
-	if (product == RCAR_PRODUCT_M3)
+	if (product == RCAR_PRODUCT_M3 && cut < RCAR_CUT_VER30)
 		return;
 
 	if (product == RCAR_PRODUCT_H3 && cut < RCAR_CUT_VER20)
@@ -648,7 +633,6 @@ void rcar_pwrc_set_suspend_to_ram(void)
 				       DEVICE_SRAM_STACK_SIZE);
 	uint32_t sctlr;
 
-	rcar_pwrc_code_copy_to_system_ram();
 	rcar_pwrc_save_generic_timer(rcar_stack_generic_timer);
 
 	/* disable MMU */
@@ -663,10 +647,7 @@ void rcar_pwrc_init_suspend_to_ram(void)
 {
 #if PMIC_ROHM_BD9571
 	uint8_t mode;
-#endif
-	rcar_pwrc_code_copy_to_system_ram();
 
-#if PMIC_ROHM_BD9571
 	if (rcar_iic_dvfs_receive(PMIC, PMIC_BKUP_MODE_CNT, &mode))
 		panic();
 
@@ -681,7 +662,6 @@ void rcar_pwrc_suspend_to_ram(void)
 #if RCAR_SYSTEM_RESET_KEEPON_DDR
 	int32_t error;
 
-	rcar_pwrc_code_copy_to_system_ram();
 	error = rcar_iic_dvfs_send(PMIC, REG_KEEP10, 0);
 	if (error) {
 		ERROR("Failed send KEEP10 init ret=%d \n", error);
@@ -787,4 +767,44 @@ count_ca57:
 
 done:
 	return count;
+}
+
+int32_t rcar_pwrc_cpu_on_check(uint64_t mpidr)
+{
+	uint64_t i;
+	uint64_t j;
+	uint64_t cpu_count;
+	uintptr_t reg_PSTR;
+	uint32_t status;
+	uint64_t my_cpu;
+	int32_t rtn;
+	uint32_t my_cluster_type;
+
+	const uint32_t cluster_type[PLATFORM_CLUSTER_COUNT] = {
+			RCAR_CLUSTER_CA53,
+			RCAR_CLUSTER_CA57
+	};
+	const uintptr_t registerPSTR[PLATFORM_CLUSTER_COUNT] = {
+			RCAR_CA53PSTR,
+			RCAR_CA57PSTR
+	};
+
+	my_cluster_type = rcar_pwrc_get_cluster();
+
+	rtn = 0;
+	my_cpu = mpidr & ((uint64_t)(MPIDR_CPU_MASK));
+	for (i = 0U; i < ((uint64_t)(PLATFORM_CLUSTER_COUNT)); i++) {
+		cpu_count = rcar_pwrc_get_cpu_num(cluster_type[i]);
+		reg_PSTR = registerPSTR[i];
+		for (j = 0U; j < cpu_count; j++) {
+			if ((my_cluster_type != cluster_type[i]) || (my_cpu != j)) {
+				status = mmio_read_32(reg_PSTR) >> (j * 4U);
+				if ((status & 0x00000003U) == 0U) {
+					rtn--;
+				}
+			}
+		}
+	}
+	return (rtn);
+
 }

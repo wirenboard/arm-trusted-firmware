@@ -4,25 +4,28 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <cci.h>
-#include <console.h>
+#include <stdbool.h>
+
+#include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
 #include <context.h>
-#include <context_mgmt.h>
-#include <debug.h>
+#include <drivers/arm/cci.h>
+#include <drivers/console.h>
+#include <lib/el3_runtime/context_mgmt.h>
+#include <lib/mmio.h>
+#include <lib/xlat_tables/xlat_tables.h>
+#include <plat/common/platform.h>
+
 #include <imx8qx_pads.h>
 #include <imx8_iomux.h>
 #include <imx8_lpuart.h>
-#include <mmio.h>
-#include <platform.h>
-#include <platform_def.h>
 #include <plat_imx8.h>
 #include <sci/sci.h>
 #include <sec_rsrc.h>
-#include <stdbool.h>
-#include <xlat_tables.h>
 
 IMPORT_SYM(unsigned long, __COHERENT_RAM_START__, BL31_COHERENT_RAM_START);
 IMPORT_SYM(unsigned long, __COHERENT_RAM_END__, BL31_COHERENT_RAM_END);
@@ -41,10 +44,7 @@ static entry_point_info_t bl33_image_ep_info;
 			(SC_PAD_28FDSOI_PS_PD << PADRING_PULL_SHIFT))
 
 static const mmap_region_t imx_mmap[] = {
-	MAP_REGION_FLAT(IMX_BOOT_UART_BASE, IMX_BOOT_UART_SIZE, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(SC_IPC_BASE, SC_IPC_SIZE, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(PLAT_GICD_BASE, PLAT_GICD_SIZE, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(PLAT_GICR_BASE, PLAT_GICR_SIZE, MT_DEVICE | MT_RW),
+	MAP_REGION_FLAT(IMX_REG_BASE, IMX_REG_SIZE, MT_DEVICE | MT_RW),
 	{0}
 };
 
@@ -277,6 +277,11 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 #endif
 	/* Turn on MU1 for non-secure OS/Hypervisor */
 	sc_pm_set_resource_power_mode(ipc_handle, SC_R_MU_1A, SC_PM_PW_MODE_ON);
+
+	/* Turn on GPT_0's power & clock for non-secure OS/Hypervisor */
+	sc_pm_set_resource_power_mode(ipc_handle, SC_R_GPT_0, SC_PM_PW_MODE_ON);
+	sc_pm_clock_enable(ipc_handle, SC_R_GPT_0, SC_PM_CLK_PER, true, 0);
+	mmio_write_32(IMX_GPT0_LPCG_BASE, mmio_read_32(IMX_GPT0_LPCG_BASE) | (1 << 25));
 
 	/*
 	 * create new partition for non-secure OS/Hypervisor

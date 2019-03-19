@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2017-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -7,19 +7,20 @@
 #ifndef SDEI_PRIVATE_H
 #define SDEI_PRIVATE_H
 
-#include <arch_helpers.h>
-#include <context.h>
-#include <context_mgmt.h>
-#include <debug.h>
 #include <errno.h>
-#include <interrupt_mgmt.h>
-#include <platform.h>
-#include <sdei.h>
-#include <setjmp.h>
-#include <spinlock.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <utils_def.h>
+
+#include <arch_helpers.h>
+#include <bl31/interrupt_mgmt.h>
+#include <common/debug.h>
+#include <context.h>
+#include <lib/el3_runtime/context_mgmt.h>
+#include <lib/spinlock.h>
+#include <lib/utils_def.h>
+#include <plat/common/platform.h>
+#include <services/sdei.h>
+#include <setjmp.h>
 
 #ifdef AARCH32
 # error SDEI is implemented only for AArch64 systems
@@ -53,7 +54,7 @@
 /*
  * 'info' parameter to SDEI_EVENT_GET_INFO SMC.
  *
- * Note that the SDEI v1.0 speification mistakenly enumerates the
+ * Note that the SDEI v1.0 specification mistakenly enumerates the
  * SDEI_INFO_EV_SIGNALED as SDEI_INFO_SIGNALED. This will be corrected in a
  * future version.
  */
@@ -242,6 +243,6 @@ int64_t sdei_pe_mask(void);
 int sdei_intr_handler(uint32_t intr_raw, uint32_t flags, void *handle,
 		void *cookie);
 bool can_sdei_state_trans(sdei_entry_t *se, sdei_action_t act);
-void begin_sdei_synchronous_dispatch(struct jmpbuf *buffer);
+void begin_sdei_synchronous_dispatch(jmp_buf *buffer);
 
 #endif /* SDEI_PRIVATE_H */

@@ -5,13 +5,15 @@
  * https://spdx.org/licenses
  */
 
-#include <ap_setup.h>
-#include <cache_llc.h>
-#include <debug.h>
+#include <common/debug.h>
+#include <common/runtime_svc.h>
+#include <drivers/marvell/cache_llc.h>
+#include <drivers/marvell/mochi/ap_setup.h>
+#include <lib/smccc.h>
+
 #include <marvell_plat_priv.h>
 #include <plat_marvell.h>
-#include <runtime_svc.h>
-#include <smccc.h>
+
 #include "comphy/phy-comphy-cp110.h"
 
 /* #define DEBUG_COMPHY */
@@ -87,7 +89,7 @@ uintptr_t mrvl_sip_smc_handler(uint32_t smc_fid,
 		SMC_RET1(handle, ret);
 	case MV_SIP_COMPHY_POWER_OFF:
 		/* x1:  comphy_base, x2: comphy_index */
-		ret = mvebu_cp110_comphy_power_off(x1, x2);
+		ret = mvebu_cp110_comphy_power_off(x1, x2, x3);
 		SMC_RET1(handle, ret);
 	case MV_SIP_COMPHY_PLL_LOCK:
 		/* x1:  comphy_base, x2: comphy_index */

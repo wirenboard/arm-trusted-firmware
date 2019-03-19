@@ -7,10 +7,9 @@
 #ifndef CSS_DEF_H
 #define CSS_DEF_H
 
-#include <arm_def.h>
-#include <gic_common.h>
-#include <interrupt_props.h>
-#include <tzc400.h>
+#include <common/interrupt_props.h>
+#include <drivers/arm/gic_common.h>
+#include <drivers/arm/tzc400.h>
 
 /*************************************************************************
  * Definitions common to all ARM Compute SubSystems (CSS)
@@ -184,7 +183,7 @@
 #endif /* CSS_LOAD_SCP_IMAGES */
 
 /* Load address of Non-Secure Image for CSS platform ports */
-#define PLAT_ARM_NS_IMAGE_OFFSET	U(0xE0000000)
+#define PLAT_ARM_NS_IMAGE_BASE		U(0xE0000000)
 
 /* TZC related constants */
 #define PLAT_ARM_TZC_FILTERS		TZC_400_REGION_ATTR_FILTER_BIT_ALL

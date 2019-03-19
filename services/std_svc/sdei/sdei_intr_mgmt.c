@@ -1,19 +1,21 @@
 /*
- * Copyright (c) 2017-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2017-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <cassert.h>
-#include <debug.h>
-#include <ehf.h>
-#include <interrupt_mgmt.h>
-#include <runtime_svc.h>
-#include <sdei.h>
 #include <string.h>
+
+#include <arch_helpers.h>
+#include <bl31/ehf.h>
+#include <bl31/interrupt_mgmt.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <common/runtime_svc.h>
+#include <lib/cassert.h>
+#include <services/sdei.h>
+
 #include "sdei_private.h"
 
 /* x0-x17 GPREGS context */
@@ -29,7 +31,7 @@
 typedef struct sdei_dispatch_context {
 	sdei_ev_map_t *map;
 	uint64_t x[SDEI_SAVED_GPREGS];
-	struct jmpbuf *dispatch_jmp;
+	jmp_buf *dispatch_jmp;
 
 	/* Exception state registers */
 	uint64_t elr_el3;
@@ -234,7 +236,7 @@ static cpu_context_t *restore_and_resume_ns_context(void)
  * SDEI client.
  */
 static void setup_ns_dispatch(sdei_ev_map_t *map, sdei_entry_t *se,
-		cpu_context_t *ctx, struct jmpbuf *dispatch_jmp)
+		cpu_context_t *ctx, jmp_buf *dispatch_jmp)
 {
 	sdei_dispatch_context_t *disp_ctx;
 
@@ -345,7 +347,7 @@ int sdei_intr_handler(uint32_t intr_raw, uint32_t flags, void *handle,
 	unsigned int sec_state;
 	sdei_cpu_state_t *state;
 	uint32_t intr;
-	struct jmpbuf dispatch_jmp;
+	jmp_buf dispatch_jmp;
 	const uint64_t mpidr = read_mpidr_el1();
 
 	/*
@@ -485,15 +487,14 @@ int sdei_intr_handler(uint32_t intr_raw, uint32_t flags, void *handle,
 	/*
 	 * We reach here when client completes the event.
 	 *
-	 * If the cause of dispatch originally interrupted the Secure world, and
-	 * if Non-secure world wasn't allowed to preempt Secure execution,
+	 * If the cause of dispatch originally interrupted the Secure world,
 	 * resume Secure.
 	 *
 	 * No need to save the Non-secure context ahead of a world switch: the
 	 * Non-secure context was fully saved before dispatch, and has been
 	 * returned to its pre-dispatch state.
 	 */
-	if ((sec_state == SECURE) && (ehf_is_ns_preemption_allowed() == 0U))
+	if (sec_state == SECURE)
 		restore_and_resume_secure_context();
 
 	/*
@@ -528,7 +529,7 @@ int sdei_dispatch_event(int ev_num)
 	cpu_context_t *ns_ctx;
 	sdei_dispatch_context_t *disp_ctx;
 	sdei_cpu_state_t *state;
-	struct jmpbuf dispatch_jmp;
+	jmp_buf dispatch_jmp;
 
 	/* Can't dispatch if events are masked on this PE */
 	state = sdei_get_this_pe_state();
@@ -594,9 +595,9 @@ int sdei_dispatch_event(int ev_num)
 	return 0;
 }
 
-static void end_sdei_synchronous_dispatch(struct jmpbuf *buffer)
+static void end_sdei_synchronous_dispatch(jmp_buf *buffer)
 {
-	longjmp(buffer);
+	longjmp(*buffer, 1);
 }
 
 int sdei_event_complete(bool resume, uint64_t pc)

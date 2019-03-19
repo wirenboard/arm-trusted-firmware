@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2016-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2016-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include <platform_def.h>
-#include <xlat_tables_defs.h>
+
+#include <lib/xlat_tables/xlat_tables_defs.h>
 
 OUTPUT_FORMAT(elf32-littlearm)
 OUTPUT_ARCH(arm)
@@ -62,7 +63,7 @@ SECTIONS
 
         /* Place pubsub sections for events */
         . = ALIGN(8);
-#include <pubsub_events.h>
+#include <lib/el3_runtime/pubsub_events.h>
 
         . = ALIGN(PAGE_SIZE);
         __RODATA_END__ = .;
@@ -91,7 +92,7 @@ SECTIONS
 
         /* Place pubsub sections for events */
         . = ALIGN(8);
-#include <pubsub_events.h>
+#include <lib/el3_runtime/pubsub_events.h>
 
         *(.vectors)
         __RO_END_UNALIGNED__ = .;
@@ -150,9 +151,11 @@ SECTIONS
          */
         . = ALIGN(CACHE_WRITEBACK_GRANULE);
         __BAKERY_LOCK_START__ = .;
+        __PERCPU_BAKERY_LOCK_START__ = .;
         *(bakery_lock)
         . = ALIGN(CACHE_WRITEBACK_GRANULE);
-        __PERCPU_BAKERY_LOCK_SIZE__ = ABSOLUTE(. - __BAKERY_LOCK_START__);
+        __PERCPU_BAKERY_LOCK_END__ = .;
+        __PERCPU_BAKERY_LOCK_SIZE__ = ABSOLUTE(__PERCPU_BAKERY_LOCK_END__ - __PERCPU_BAKERY_LOCK_START__);
         . = . + (__PERCPU_BAKERY_LOCK_SIZE__ * (PLATFORM_CORE_COUNT - 1));
         __BAKERY_LOCK_END__ = .;
 #ifdef PLAT_PERCPU_BAKERY_LOCK_SIZE
@@ -166,7 +169,7 @@ SECTIONS
          * Time-stamps are stored in normal .bss memory
          *
          * The compiler will allocate enough memory for one CPU's time-stamps,
-         * the remaining memory for other CPU's is allocated by the
+         * the remaining memory for other CPUs is allocated by the
          * linker script
          */
         . = ALIGN(CACHE_WRITEBACK_GRANULE);

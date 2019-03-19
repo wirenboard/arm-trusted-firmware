@@ -9,6 +9,15 @@
 
 #define RCAR_REF_DEFAULT		(0U)
 
+/* define used for get_refperiod. */
+/* REFPERIOD_CYCLE need smaller than QOSWT_WTSET0_CYCLEs */
+/* refere to plat/renesas/rcar/ddr/ddr_a/ddr_init_e3.h for E3. */
+#if (RCAR_REF_INT == RCAR_REF_DEFAULT)	/* REF default */
+#define REFPERIOD_CYCLE		((126 * BASE_SUB_SLOT_NUM * 1000U)/400)	/* unit:ns */
+#else					/* REF option */
+#define REFPERIOD_CYCLE		((252 * BASE_SUB_SLOT_NUM * 1000U)/400)	/* unit:ns */
+#endif
+
 #if (RCAR_LSI == RCAR_E3)
 /* define used for E3 */
 #if (RCAR_REF_INT == RCAR_REF_DEFAULT)	/* REF 3.9usec */
@@ -19,7 +28,7 @@
 
 #define OPERATING_FREQ_E3		(266U)	/* MHz */
 #define SL_INIT_SSLOTCLK_E3		(SUB_SLOT_CYCLE_E3 -1U)
-#define QOSWT_WTSET0_CYCLE_E3		((SUB_SLOT_CYCLE_E3 * BASE_SUB_SLOT_NUM * 1000U)/OPERATING_FREQ_E3)	/* unit:ns */
+/* #define QOSWT_WTSET0_CYCLE_E3		((SUB_SLOT_CYCLE_E3 * BASE_SUB_SLOT_NUM * 1000U)/OPERATING_FREQ_E3) */	/* unit:ns */
 #endif
 
 #if (RCAR_LSI == RCAR_AUTO) || (RCAR_LSI == RCAR_M3N)
@@ -69,12 +78,16 @@
 /* define used for M3 */
 #if (RCAR_REF_INT == RCAR_REF_DEFAULT)	/* REF 1.95usec */
 #define SUB_SLOT_CYCLE_M3_11		(0x84U)	/* 132 */
+#define SUB_SLOT_CYCLE_M3_30		(0x84U)	/* 132 */
 #else /* REF 3.9usec */
 #define SUB_SLOT_CYCLE_M3_11		(0x108U)	/* 264 */
+#define SUB_SLOT_CYCLE_M3_30		(0x108U)	/* 264 */
 #endif /* (RCAR_REF_INT == RCAR_REF_DEFAULT) */
 
 #define SL_INIT_SSLOTCLK_M3_11		(SUB_SLOT_CYCLE_M3_11 -1U)
+#define SL_INIT_SSLOTCLK_M3_30		(SUB_SLOT_CYCLE_M3_30 -1U)
 #define QOSWT_WTSET0_CYCLE_M3_11	((SUB_SLOT_CYCLE_M3_11 * BASE_SUB_SLOT_NUM * 1000U)/OPERATING_FREQ)	/* unit:ns */
+#define QOSWT_WTSET0_CYCLE_M3_30	((SUB_SLOT_CYCLE_M3_30 * BASE_SUB_SLOT_NUM * 1000U)/OPERATING_FREQ)	/* unit:ns */
 #endif
 
 #define OPERATING_FREQ			(400U)	/* MHz */

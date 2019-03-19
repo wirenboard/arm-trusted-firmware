@@ -5,22 +5,23 @@
  * https://spdx.org/licenses
  */
 
+#include <common/debug.h>
+#ifdef USE_CCI
+#include <drivers/arm/cci.h>
+#endif
+#include <lib/psci/psci.h>
+#include <lib/mmio.h>
+#include <plat/common/platform.h>
+
 #include <a3700_pm.h>
 #include <arch_helpers.h>
 #include <armada_common.h>
-#include <debug.h>
 #include <dram_win.h>
 #include <io_addr_dec.h>
-#include <mmio.h>
 #include <mvebu.h>
 #include <mvebu_def.h>
 #include <marvell_plat_priv.h>
-#include <platform.h>
 #include <plat_marvell.h>
-#include <psci.h>
-#ifdef USE_CCI
-#include <cci.h>
-#endif
 
 /* Warm reset register */
 #define MVEBU_WARM_RESET_REG		(MVEBU_NB_REGS_BASE + 0x840)
@@ -288,17 +289,8 @@ int a3700_validate_ns_entrypoint(uintptr_t entrypoint)
  */
 void a3700_pwr_domain_off(const psci_power_state_t *target_state)
 {
-	uint32_t cpu_idx = plat_my_core_pos();
-
 	/* Prevent interrupts from spuriously waking up this cpu */
 	plat_marvell_gic_cpuif_disable();
-
-	/*
-	 * Enable Core VDD OFF, core is supposed to be powered
-	 * off by PMU when WFI command is issued.
-	 */
-	mmio_setbits_32(MVEBU_PM_CPU_0_PWR_CTRL_REG + 4 * cpu_idx,
-			MVEBU_PM_CORE_PD);
 
 	/* Core can not be powered down with pending IRQ,
 	 * acknowledge all the pending IRQ

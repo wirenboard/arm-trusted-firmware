@@ -160,5 +160,13 @@
  */
 #define ASSERT_SYM_PTR_ALIGN(sym) assert(((size_t)(sym) % __alignof__(*(sym))) == 0)
 
+#define COMPILER_BARRIER() __asm__ volatile ("" ::: "memory")
+
+/* Compiler builtin of GCC >= 9 and planned in llvm */
+#ifdef __HAVE_SPECULATION_SAFE_VALUE
+# define SPECULATION_SAFE_VALUE(var) __builtin_speculation_safe_value(var)
+#else
+# define SPECULATION_SAFE_VALUE(var) var
+#endif
 
 #endif /* UTILS_DEF_H */

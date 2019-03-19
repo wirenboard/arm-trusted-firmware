@@ -4,34 +4,16 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arm_def.h>
-#include <arm_spm_def.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <ccn.h>
-#include <debug.h>
-#include <plat_arm.h>
+
 #include <platform_def.h>
-#include <platform.h>
-#include <secure_partition.h>
-#include "../../../../bl1/bl1_private.h"
 
-#if USE_COHERENT_MEM
-/*
- * The next 2 constants identify the extents of the coherent memory region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __COHERENT_RAM_START__ and __COHERENT_RAM_END__ linker symbols
- * refer to page-aligned addresses.
- */
-#define BL1_COHERENT_RAM_BASE (unsigned long)(&__COHERENT_RAM_START__)
-#define BL1_COHERENT_RAM_LIMIT (unsigned long)(&__COHERENT_RAM_END__)
-#define BL2_COHERENT_RAM_BASE (unsigned long)(&__COHERENT_RAM_START__)
-#define BL2_COHERENT_RAM_LIMIT (unsigned long)(&__COHERENT_RAM_END__)
-
-#define BL31_COHERENT_RAM_BASE (uintptr_t)(&__COHERENT_RAM_START__)
-#define BL31_COHERENT_RAM_LIMIT (uintptr_t)(&__COHERENT_RAM_END__)
-#endif
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <drivers/arm/ccn.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/common/platform.h>
+#include <services/secure_partition.h>
 
 #define SGI_MAP_FLASH0_RO	MAP_REGION_FLAT(V2M_FLASH0_BASE,\
 						V2M_FLASH0_SIZE,	\
@@ -124,12 +106,12 @@ const secure_partition_boot_info_t plat_arm_secure_partition_boot_info = {
 	.sp_image_base       = ARM_SP_IMAGE_BASE,
 	.sp_stack_base       = PLAT_SP_IMAGE_STACK_BASE,
 	.sp_heap_base        = ARM_SP_IMAGE_HEAP_BASE,
-	.sp_ns_comm_buf_base = ARM_SP_IMAGE_NS_BUF_BASE,
+	.sp_ns_comm_buf_base = PLAT_SP_IMAGE_NS_BUF_BASE,
 	.sp_shared_buf_base  = PLAT_SPM_BUF_BASE,
 	.sp_image_size       = ARM_SP_IMAGE_SIZE,
 	.sp_pcpu_stack_size  = PLAT_SP_IMAGE_STACK_PCPU_SIZE,
 	.sp_heap_size        = ARM_SP_IMAGE_HEAP_SIZE,
-	.sp_ns_comm_buf_size = ARM_SP_IMAGE_NS_BUF_SIZE,
+	.sp_ns_comm_buf_size = PLAT_SP_IMAGE_NS_BUF_SIZE,
 	.sp_shared_buf_size  = PLAT_SPM_BUF_SIZE,
 	.num_sp_mem_regions  = ARM_SP_IMAGE_NUM_MEM_REGIONS,
 	.num_cpus            = PLATFORM_CORE_COUNT,

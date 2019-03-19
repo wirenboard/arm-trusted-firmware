@@ -1,16 +1,17 @@
 /*
- * Copyright (c) 2013-2017, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2018, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 /* Top level SMC handler for SiP calls. Dispatch PM calls to PM SMC handler. */
 
-#include <runtime_svc.h>
-#include <uuid.h>
+#include <common/runtime_svc.h>
+#include <tools_share/uuid.h>
+
+#include <plat_ipi.h>
 #include "ipi_mailbox_svc.h"
 #include "pm_svc_main.h"
-#include "zynqmp_ipi.h"
 
 /* SMC function IDs for SiP Service queries */
 #define ZYNQMP_SIP_SVC_CALL_COUNT	0x8200ff00
@@ -40,6 +41,9 @@ DEFINE_SVC_UUID2(zynqmp_sip_uuid,
  */
 static int32_t sip_svc_setup(void)
 {
+	/* Configure IPI data for ZynqMP */
+	zynqmp_ipi_config_table_init();
+
 	/* PM implementation as SiP Service */
 	pm_setup();
 

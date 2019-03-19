@@ -8,8 +8,8 @@
 #define PLATFORM_DEF_H
 
 #include <arch.h>
-#include <common_def.h>
-#include <tbbr_img_def.h>
+#include <common/tbbr/tbbr_img_def.h>
+#include <plat/common/common_def.h>
 
 #define PLATFORM_STACK_SIZE		0x1000
 
@@ -106,6 +106,12 @@
 #define WARP7_DTB_BASE			(DRAM_BASE + 0x03000000)
 #define WARP7_DTB_LIMIT			(WARP7_DTB_BASE + WARP7_DTB_SIZE)
 
+/* Define the absolute location of DTB Overlay 0x83100000 - 0x83101000 */
+#define WARP7_DTB_OVERLAY_SIZE		0x00001000
+#define WARP7_DTB_OVERLAY_BASE		WARP7_DTB_LIMIT
+#define WARP7_DTB_OVERLAY_LIMIT		(WARP7_DTB_OVERLAY_BASE + \
+					 WARP7_DTB_OVERLAY_SIZE)
+
 /*
  * BL2 specific defines.
  *
@@ -142,6 +148,8 @@
  *            |       DDR       | BL33/U-BOOT
  * 0x87800000 +-----------------+
  *            |       DDR       | Unallocated
+ * 0x83101000 +-----------------+
+ *            |       DDR       | DTB Overlay
  * 0x83100000 +-----------------+
  *            |       DDR       | DTB
  * 0x83000000 +-----------------+
@@ -169,7 +177,7 @@
 #define MAX_XLAT_TABLES			6
 #define MAX_IO_DEVICES			2
 #define MAX_IO_HANDLES			3
-#define MAX_IO_BLOCK_DEVICES		1
+#define MAX_IO_BLOCK_DEVICES		1U
 
 /* UART defines */
 #if PLAT_WARP7_UART == 1

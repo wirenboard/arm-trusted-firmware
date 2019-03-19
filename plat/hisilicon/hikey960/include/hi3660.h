@@ -366,4 +366,20 @@
 /* GPIO219: PD interrupt. pull up */
 #define IOCG_AO_043_REG			(IOCG_AO_REG_BASE + 0x030)
 
+#define EDMAC_BASE				0xfdf30000
+#define EDMAC_SEC_CTRL				(EDMAC_BASE + 0x694)
+#define EDMAC_AXI_CONF(x)			(EDMAC_BASE + 0x820 + (x << 6))
+#define EDMAC_SEC_CTRL_INTR_SEC			(1 << 1)
+#define EDMAC_SEC_CTRL_GLOBAL_SEC		(1 << 0)
+#define EDMAC_CHANNEL_NUMS				16
+
+#define IOMCU_DMAC_BASE			0xffd77000
+#define IOMCU_DMAC_SEC_CTRL		(IOMCU_DMAC_BASE + 0x694)
+#define IOMCU_DMAC_AXI_CONF(x)			(IOMCU_DMAC_BASE + 0x820 + ((x) << 6))
+#define IOMCU_DMAC_AXI_CONF_ARPROT_NS		(1 << 6)
+#define IOMCU_DMAC_AXI_CONF_AWPROT_NS		(1 << 18)
+#define IOMCU_DMAC_SEC_CTRL_INTR_SEC	(1 << 1)
+#define IOMCU_DMAC_SEC_CTRL_GLOBAL_SEC	(1 << 0)
+#define IOMCU_DMAC_CHANNEL_NUMS			8
+
 #endif /* HI3660_H */

@@ -4,15 +4,14 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <debug.h>
-#include <gicv2.h>
-#include <interrupt_props.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <common/interrupt_props.h>
+#include <drivers/arm/gicv2.h>
 
 #include "ls_16550.h"
 #include "plat_ls.h"
 #include "soc.h"
-
-#define BL32_END (unsigned long)(&__BL32_END__)
 
 static const interrupt_prop_t g0_interrupt_props[] = {
 	INTR_PROP_DESC(9, GIC_HIGHEST_SEC_PRIORITY,

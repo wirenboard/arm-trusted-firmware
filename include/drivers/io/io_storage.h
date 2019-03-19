@@ -10,8 +10,8 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h> /* For ssize_t */
-#include <uuid.h>
 
+#include <tools_share/uuid.h>
 
 /* Device type which can be used to enable policy decisions about which device
  * to access */
@@ -78,8 +78,6 @@ int io_dev_open(const struct io_dev_connector *dev_con,
 /* Initialise a device explicitly - to permit lazy initialisation or
  * re-initialisation */
 int io_dev_init(uintptr_t dev_handle, const uintptr_t init_params);
-
-/* TODO: Consider whether an explicit "shutdown" API should be included */
 
 /* Close a connection to a device */
 int io_dev_close(uintptr_t dev_handle);

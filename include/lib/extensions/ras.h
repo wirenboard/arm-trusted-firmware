@@ -71,7 +71,8 @@
 #ifndef __ASSEMBLY__
 
 #include <assert.h>
-#include <ras_arch.h>
+
+#include <lib/extensions/ras_arch.h>
 
 struct err_record_info;
 
@@ -105,7 +106,7 @@ struct err_handler_data {
 	 */
 	uint32_t syndrome;
 
-	/* For errors signalled via. interrupt, the raw interrupt ID; otherwise, 0. */
+	/* For errors signalled via interrupt, the raw interrupt ID; otherwise, 0. */
 	unsigned int interrupt;
 };
 
@@ -128,7 +129,7 @@ struct err_record_info {
 	union {
 		struct {
 			/*
-			 * For a group accessed via. memory-mapped register,
+			 * For a group accessed via memory-mapped register,
 			 * base address of the page hosting error records, and
 			 * the size of the record group.
 			 */
@@ -140,7 +141,7 @@ struct err_record_info {
 
 		struct {
 			/*
-			 * For error records accessed via. system register, index of
+			 * For error records accessed via system register, index of
 			 * the error record.
 			 */
 			unsigned int idx_start;

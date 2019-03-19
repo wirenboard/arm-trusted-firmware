@@ -4,19 +4,20 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arm_dyn_cfg_helpers.h>
 #include <assert.h>
-#include <debug.h>
-#include <desc_image_load.h>
-#if TRUSTED_BOARD_BOOT
-#include <mbedtls_config.h>
-#endif
-#include <plat_arm.h>
-#include <platform.h>
-#include <platform_def.h>
 #include <string.h>
-#include <tbbr_img_def.h>
 
+#include <platform_def.h>
+
+#include <common/debug.h>
+#include <common/desc_image_load.h>
+#include <common/tbbr/tbbr_img_def.h>
+#if TRUSTED_BOARD_BOOT
+#include <drivers/auth/mbedtls/mbedtls_config.h>
+#endif
+#include <plat/arm/common/arm_dyn_cfg_helpers.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/common/platform.h>
 
 /* Variable to store the address to TB_FW_CONFIG passed from BL1 */
 static void *tb_fw_cfg_dtb;
@@ -242,10 +243,11 @@ void arm_bl2_dyn_cfg_init(void)
 			if (check_uptr_overflow(image_base, image_size))
 				continue;
 
+#ifdef	BL31_BASE
 			/* Ensure the configs don't overlap with BL31 */
 			if ((image_base > BL31_BASE) || ((image_base + image_size) > BL31_BASE))
 				continue;
-
+#endif
 			/* Ensure the configs are loaded in a valid address */
 			if (image_base < ARM_BL_RAM_BASE)
 				continue;

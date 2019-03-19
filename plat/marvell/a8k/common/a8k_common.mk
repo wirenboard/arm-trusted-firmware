@@ -13,6 +13,9 @@ PLAT_COMMON_BASE	:= $(PLAT_FAMILY_BASE)/common
 MARVELL_DRV_BASE	:= drivers/marvell
 MARVELL_COMMON_BASE	:= plat/marvell/common
 
+MARVELL_SVC_TEST		:= 0
+$(eval $(call add_define,MARVELL_SVC_TEST))
+
 ERRATA_A72_859971	:= 1
 
 # Enable MSS support for a8k family
@@ -42,17 +45,11 @@ MARVELL_GIC_SOURCES	:=	drivers/arm/gic/common/gic_common.c	\
 				drivers/arm/gic/v2/gicv2_helpers.c	\
 				plat/common/plat_gicv2.c
 
-ATF_INCLUDES		:=	-Iinclude/common/tbbr
-
 PLAT_INCLUDES		:=	-I$(PLAT_FAMILY_BASE)/$(PLAT)		\
 				-I$(PLAT_COMMON_BASE)/include		\
-				-I$(PLAT_INCLUDE_BASE)/common		\
-				-Iinclude/drivers/marvell		\
-				-Iinclude/drivers/marvell/mochi		\
-				$(ATF_INCLUDES)
+				-I$(PLAT_INCLUDE_BASE)/common
 
 PLAT_BL_COMMON_SOURCES	:=	$(PLAT_COMMON_BASE)/aarch64/a8k_common.c \
-				drivers/console/aarch64/console.S	 \
 				drivers/ti/uart/aarch64/16550_console.S
 
 BLE_PORTING_SOURCES	:=	$(PLAT_FAMILY_BASE)/$(PLAT)/board/dram_port.c \
@@ -60,14 +57,15 @@ BLE_PORTING_SOURCES	:=	$(PLAT_FAMILY_BASE)/$(PLAT)/board/dram_port.c \
 
 MARVELL_MOCHI_DRV	+=	$(MARVELL_DRV_BASE)/mochi/cp110_setup.c
 
-BLE_SOURCES		:=	drivers/mentor/i2c/mi2cv.c			\
-				$(PLAT_COMMON_BASE)/plat_ble_setup.c		\
-				$(MARVELL_MOCHI_DRV)			       \
-				$(PLAT_COMMON_BASE)/plat_pm.c		 	\
-				$(MARVELL_DRV_BASE)/thermal.c			\
-				$(PLAT_COMMON_BASE)/plat_thermal.c		\
-				$(BLE_PORTING_SOURCES)				\
-				$(MARVELL_DRV_BASE)/ccu.c			\
+BLE_SOURCES		:=	drivers/mentor/i2c/mi2cv.c		\
+				$(PLAT_COMMON_BASE)/plat_ble_setup.c	\
+				$(MARVELL_MOCHI_DRV)			\
+				$(PLAT_COMMON_BASE)/plat_pm.c		\
+				$(MARVELL_DRV_BASE)/ap807_clocks_init.c	\
+				$(MARVELL_DRV_BASE)/thermal.c		\
+				$(PLAT_COMMON_BASE)/plat_thermal.c	\
+				$(BLE_PORTING_SOURCES)			\
+				$(MARVELL_DRV_BASE)/ccu.c		\
 				$(MARVELL_DRV_BASE)/io_win.c
 
 BL1_SOURCES		+=	$(PLAT_COMMON_BASE)/aarch64/plat_helpers.S \

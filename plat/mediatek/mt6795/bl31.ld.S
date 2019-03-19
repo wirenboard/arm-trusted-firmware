@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <lib/xlat_tables/xlat_tables_defs.h>
 #include <platform_def.h>
-#include <xlat_tables_defs.h>
 
 OUTPUT_FORMAT(PLATFORM_LINKER_FORMAT)
 OUTPUT_ARCH(PLATFORM_LINKER_ARCH)
@@ -113,9 +113,11 @@ SECTIONS
          */
         . = ALIGN(CACHE_WRITEBACK_GRANULE);
         __BAKERY_LOCK_START__ = .;
+        __PERCPU_BAKERY_LOCK_START__ = .;
         *(bakery_lock)
         . = ALIGN(CACHE_WRITEBACK_GRANULE);
-        __PERCPU_BAKERY_LOCK_SIZE__ = ABSOLUTE(. - __BAKERY_LOCK_START__);
+        __PERCPU_BAKERY_LOCK_END__ = .;
+        __PERCPU_BAKERY_LOCK_SIZE__ = ABSOLUTE(__PERCPU_BAKERY_LOCK_END__ - __PERCPU_BAKERY_LOCK_START__);
         . = . + (__PERCPU_BAKERY_LOCK_SIZE__ * (PLATFORM_CORE_COUNT - 1));
         __BAKERY_LOCK_END__ = .;
 #ifdef PLAT_PERCPU_BAKERY_LOCK_SIZE

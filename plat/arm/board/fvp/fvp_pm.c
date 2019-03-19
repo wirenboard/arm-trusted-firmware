@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
-#include <arm_config.h>
 #include <assert.h>
-#include <debug.h>
 #include <errno.h>
-#include <gicv3.h>
-#include <mmio.h>
-#include <plat_arm.h>
-#include <platform.h>
-#include <psci.h>
-#include <spe.h>
-#include <v2m_def.h>
-#include "../../../../drivers/arm/gic/v3/gicv3_private.h"
-#include "drivers/pwrc/fvp_pwrc.h"
-#include "fvp_def.h"
+
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <drivers/arm/gicv3.h>
+#include <drivers/arm/fvp/fvp_pwrc.h>
+#include <lib/extensions/spe.h>
+#include <lib/mmio.h>
+#include <lib/psci/psci.h>
+#include <plat/arm/common/arm_config.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/common/platform.h>
+#include <platform_def.h>
+
 #include "fvp_private.h"
 
 
@@ -416,3 +416,8 @@ plat_psci_ops_t plat_arm_psci_pm_ops = {
 	.read_mem_protect	= arm_psci_read_mem_protect,
 	.write_mem_protect	= arm_nor_psci_write_mem_protect,
 };
+
+const plat_psci_ops_t *plat_arm_psci_override_pm_ops(plat_psci_ops_t *ops)
+{
+	return ops;
+}

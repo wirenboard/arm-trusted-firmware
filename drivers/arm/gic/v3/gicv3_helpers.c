@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <assert.h>
+
 #include <arch.h>
 #include <arch_helpers.h>
-#include <assert.h>
-#include <debug.h>
-#include <gic_common.h>
-#include <interrupt_props.h>
+#include <common/debug.h>
+#include <common/interrupt_props.h>
+#include <drivers/arm/gic_common.h>
+
 #include "../common/gic_common_private.h"
 #include "gicv3_private.h"
 
@@ -339,8 +341,10 @@ void gicv3_rdistif_base_addrs_probe(uintptr_t *rdistif_base_addrs,
 			proc_num = (typer_val >> TYPER_PROC_NUM_SHIFT) &
 				TYPER_PROC_NUM_MASK;
 		}
-		assert(proc_num < rdistif_num);
-		rdistif_base_addrs[proc_num] = rdistif_base;
+
+		if (proc_num < rdistif_num)
+			rdistif_base_addrs[proc_num] = rdistif_base;
+
 		rdistif_base += (1U << GICR_PCPUBASE_SHIFT);
 	} while ((typer_val & TYPER_LAST_BIT) == 0U);
 }

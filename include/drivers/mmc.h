@@ -8,7 +8,8 @@
 #define MMC_H
 
 #include <stdint.h>
-#include <utils_def.h>
+
+#include <lib/utils_def.h>
 
 #define MMC_BLOCK_SIZE			U(512)
 #define MMC_BLOCK_MASK			(MMC_BLOCK_SIZE - U(1))
@@ -219,6 +220,7 @@ struct mmc_device_info {
 	unsigned long long	device_size;	/* Size of device in bytes */
 	unsigned int		block_size;	/* Block size in bytes */
 	unsigned int		max_bus_freq;	/* Max bus freq in Hz */
+	unsigned int		ocr_voltage;	/* OCR voltage */
 	enum mmc_device_type	mmc_dev_type;	/* Type of MMC */
 };
 

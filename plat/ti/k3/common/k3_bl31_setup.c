@@ -4,24 +4,26 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <assert.h>
+#include <string.h>
+
+#include <platform_def.h>
+
 #include <arch.h>
 #include <arch_helpers.h>
-#include <assert.h>
-#include <bl_common.h>
-#include <debug.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <lib/xlat_tables/xlat_tables_v2.h>
+
 #include <k3_console.h>
 #include <k3_gicv3.h>
-#include <platform_def.h>
-#include <string.h>
 #include <ti_sci.h>
-#include <xlat_tables_v2.h>
 
 /* Table of regions to map using the MMU */
 const mmap_region_t plat_k3_mmap[] = {
 	MAP_REGION_FLAT(SHARED_RAM_BASE, SHARED_RAM_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
 	MAP_REGION_FLAT(K3_USART_BASE_ADDRESS, K3_USART_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
-	MAP_REGION_FLAT(K3_GICD_BASE, K3_GICD_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
-	MAP_REGION_FLAT(K3_GICR_BASE, K3_GICR_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
+	MAP_REGION_FLAT(K3_GIC_BASE, K3_GIC_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
 	MAP_REGION_FLAT(SEC_PROXY_RT_BASE, SEC_PROXY_RT_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
 	MAP_REGION_FLAT(SEC_PROXY_SCFG_BASE, SEC_PROXY_SCFG_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
 	MAP_REGION_FLAT(SEC_PROXY_DATA_BASE, SEC_PROXY_DATA_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
@@ -113,7 +115,7 @@ void bl31_plat_arch_setup(void)
 
 void bl31_platform_setup(void)
 {
-	k3_gic_driver_init(K3_GICD_BASE, K3_GICR_BASE);
+	k3_gic_driver_init(K3_GIC_BASE);
 	k3_gic_init();
 
 	ti_sci_init();

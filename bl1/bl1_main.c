@@ -1,23 +1,26 @@
 /*
- * Copyright (c) 2013-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <assert.h>
+
+#include <platform_def.h>
+
 #include <arch.h>
 #include <arch_helpers.h>
-#include <assert.h>
-#include <auth_mod.h>
-#include <bl1.h>
-#include <bl_common.h>
-#include <console.h>
-#include <debug.h>
-#include <errata_report.h>
-#include <platform.h>
-#include <platform_def.h>
+#include <bl1/bl1.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <drivers/auth/auth_mod.h>
+#include <drivers/console.h>
+#include <lib/cpus/errata_report.h>
+#include <lib/utils.h>
+#include <plat/common/platform.h>
 #include <smccc_helpers.h>
-#include <utils.h>
-#include <uuid.h>
+#include <tools_share/uuid.h>
+
 #include "bl1_private.h"
 
 /* BL1 Service UUID */
@@ -46,6 +49,28 @@ void bl1_calc_bl2_mem_layout(const meminfo_t *bl1_mem_layout,
 	bl2_mem_layout->total_size = BL1_RW_BASE - bl1_mem_layout->total_base;
 
 	flush_dcache_range((unsigned long)bl2_mem_layout, sizeof(meminfo_t));
+}
+
+/*******************************************************************************
+ * Setup function for BL1.
+ ******************************************************************************/
+void bl1_setup(void)
+{
+	/* Perform early platform-specific setup */
+	bl1_early_platform_setup();
+
+#ifdef AARCH64
+	/*
+	 * Update pointer authentication key before the MMU is enabled. It is
+	 * saved in the rodata section, that can be writen before enabling the
+	 * MMU. This function must be called after the console is initialized
+	 * in the early platform setup.
+	 */
+	bl_handle_pauth();
+#endif /* AARCH64 */
+
+	/* Perform late platform-specific setup */
+	bl1_plat_arch_setup();
 }
 
 /*******************************************************************************

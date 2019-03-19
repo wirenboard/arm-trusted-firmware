@@ -1,19 +1,17 @@
 /*
- * Copyright (c) 2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2018-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <debug.h>
 #include <errno.h>
-#if TRUSTED_BOARD_BOOT
-#include <mbedtls_config.h>
-#endif
-#include <platform.h>
-#include <xlat_tables_compat.h>
+
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <lib/xlat_tables/xlat_tables_compat.h>
+#include <plat/common/platform.h>
 
 /*
  * The following platform functions are weakly defined. The Platforms
@@ -25,7 +23,6 @@
 #pragma weak bl2_plat_handle_pre_image_load
 #pragma weak bl2_plat_handle_post_image_load
 #pragma weak plat_try_next_boot_source
-#pragma weak plat_get_mbedtls_heap
 
 void bl2_el3_plat_prepare_exit(void)
 {
@@ -55,24 +52,6 @@ int plat_try_next_boot_source(void)
 {
 	return 0;
 }
-
-#if TRUSTED_BOARD_BOOT
-/*
- * The following default implementation of the function simply returns the
- * by-default allocated heap.
- */
-int plat_get_mbedtls_heap(void **heap_addr, size_t *heap_size)
-{
-	static unsigned char heap[TF_MBEDTLS_HEAP_SIZE];
-
-	assert(heap_addr != NULL);
-	assert(heap_size != NULL);
-
-	*heap_addr = heap;
-	*heap_size = sizeof(heap);
-	return 0;
-}
-#endif /* TRUSTED_BOARD_BOOT */
 
 /*
  * Set up the page tables for the generic and platform-specific memory regions.

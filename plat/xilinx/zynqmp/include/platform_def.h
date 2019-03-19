@@ -8,10 +8,11 @@
 #define PLATFORM_DEF_H
 
 #include <arch.h>
-#include <gic_common.h>
-#include <interrupt_props.h>
-#include <utils_def.h>
-#include "../zynqmp_def.h"
+#include <common/interrupt_props.h>
+#include <drivers/arm/gic_common.h>
+#include <lib/utils_def.h>
+
+#include "zynqmp_def.h"
 
 /*******************************************************************************
  * Generic platform constants
@@ -65,9 +66,9 @@
  * BL33 specific defines.
  ******************************************************************************/
 #ifndef PRELOADED_BL33_BASE
-# define PLAT_ARM_NS_IMAGE_OFFSET	0x8000000
+# define PLAT_ARM_NS_IMAGE_BASE	0x8000000
 #else
-# define PLAT_ARM_NS_IMAGE_OFFSET	PRELOADED_BL33_BASE
+# define PLAT_ARM_NS_IMAGE_BASE	PRELOADED_BL33_BASE
 #endif
 
 /*******************************************************************************

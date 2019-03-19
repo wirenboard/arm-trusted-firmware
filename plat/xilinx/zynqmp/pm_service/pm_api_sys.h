@@ -8,6 +8,7 @@
 #define PM_API_SYS_H
 
 #include <stdint.h>
+
 #include "pm_defs.h"
 
 enum pm_query_id {
@@ -175,5 +176,16 @@ enum pm_ret_status pm_fpga_read(uint32_t reg_numframes,
 enum pm_ret_status pm_aes_engine(uint32_t address_high,
 				 uint32_t address_low,
 				 uint32_t  *value);
+
+enum pm_ret_status pm_pll_set_parameter(enum pm_node_id nid,
+				enum pm_pll_param param_id,
+				unsigned int value);
+
+enum pm_ret_status pm_pll_get_parameter(enum pm_node_id nid,
+				enum pm_pll_param param_id,
+				unsigned int *value);
+
+enum pm_ret_status pm_pll_set_mode(enum pm_node_id nid, enum pm_pll_mode mode);
+enum pm_ret_status pm_pll_get_mode(enum pm_node_id nid, enum pm_pll_mode *mode);
 
 #endif /* PM_API_SYS_H */

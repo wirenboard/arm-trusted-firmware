@@ -15,6 +15,7 @@ LIBS        = -lmbedtls -lfdt -lc
 INC         = $(INCLUDES:-I%=-I../../%)
 PPFLAGS     = $(INC) $(DEFINES) -P -D__ASSEMBLY__ -D__LINKER__ -MD -MP -MT $(BUILD_DIR)/romlib.ld
 OBJS        = $(BUILD_DIR)/jmptbl.o $(BUILD_DIR)/init.o
+MAPFILE     = ../../$(BUILD_PLAT)/romlib/romlib.map
 
 V ?= 0
 ifeq ($(V),0)
@@ -25,7 +26,7 @@ endif
 
 ifeq ($(DEBUG),1)
    CFLAGS  := -g
-   LDFLAGS := -g
+   LDFLAGS := -g --gc-sections -O1 -Map=$(MAPFILE)
 endif
 
 
@@ -59,11 +60,16 @@ $(WRAPPER_DIR)/jmpvar.s: $(BUILD_DIR)/romlib.elf
 
 $(LIB_DIR)/libwrappers.a: jmptbl.i $(WRAPPER_DIR)/jmpvar.o
 	@echo "  AR      $@"
-	$(Q)./genwrappers.sh -b $(WRAPPER_DIR) -o $@ jmptbl.i
+	$(Q)./genwrappers.sh -b $(WRAPPER_DIR) -o $@ $(BUILD_DIR)/jmptbl.i
 
 $(BUILD_DIR)/jmptbl.s: jmptbl.i
 	@echo "  TBL     $@"
-	$(Q)./gentbl.sh -o $@ jmptbl.i
+	if [ -e "../../$(PLAT_DIR)/jmptbl.i" ] ; \
+	then \
+		$(Q)./gentbl.sh -o $@ -b $(BUILD_DIR) ../../$(PLAT_DIR)/jmptbl.i; \
+	else \
+		@echo "USE_ROMLIB=1 requires jump table list file: jmptbl.i in platform directory"; \
+	fi
 
 clean:
 	@rm -f $(BUILD_DIR)/*

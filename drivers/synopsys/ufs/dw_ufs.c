@@ -5,12 +5,13 @@
  */
 
 #include <assert.h>
-#include <debug.h>
-#include <dw_ufs.h>
-#include <mmio.h>
 #include <stdint.h>
 #include <string.h>
-#include <ufs.h>
+
+#include <common/debug.h>
+#include <drivers/dw_ufs.h>
+#include <drivers/ufs.h>
+#include <lib/mmio.h>
 
 static int dwufs_phy_init(ufs_params_t *params)
 {
@@ -182,7 +183,7 @@ static int dwufs_phy_set_pwr_mode(ufs_params_t *params)
 	return 0;
 }
 
-const ufs_ops_t dw_ufs_ops = {
+static const ufs_ops_t dw_ufs_ops = {
 	.phy_init		= dwufs_phy_init,
 	.phy_set_pwr_mode	= dwufs_phy_set_pwr_mode,
 };

@@ -7,15 +7,15 @@
 #ifndef SGI_BASE_PLATFORM_DEF_H
 #define SGI_BASE_PLATFORM_DEF_H
 
-#include <arm_def.h>
-#include <arm_spm_def.h>
-#include <board_css_def.h>
-#include <common_def.h>
-#include <css_def.h>
-#include <soc_css_def.h>
-#include <utils_def.h>
-#include <v2m_def.h>
-#include <xlat_tables_defs.h>
+#include <lib/utils_def.h>
+#include <lib/xlat_tables/xlat_tables_defs.h>
+#include <plat/arm/board/common/board_css_def.h>
+#include <plat/arm/board/common/v2m_def.h>
+#include <plat/arm/common/arm_def.h>
+#include <plat/arm/common/arm_spm_def.h>
+#include <plat/arm/css/common/css_def.h>
+#include <plat/arm/soc/common/soc_css_def.h>
+#include <plat/common/common_def.h>
 
 #define PLATFORM_CORE_COUNT		(PLAT_ARM_CLUSTER_COUNT *	\
 					CSS_SGI_MAX_CPUS_PER_CLUSTER * \
@@ -119,8 +119,6 @@
 #define PLAT_ARM_NSRAM_BASE		0x06000000
 #define PLAT_ARM_NSRAM_SIZE		0x00080000	/* 512KB */
 
-#define PLAT_MAX_PWR_LVL		U(1)
-
 #define PLAT_ARM_G1S_IRQ_PROPS(grp)	CSS_G1S_IRQ_PROPS(grp)
 #define PLAT_ARM_G0_IRQ_PROPS(grp)	ARM_G0_IRQ_PROPS(grp)
 
@@ -148,8 +146,8 @@
 /* Allocate 128KB for CPER buffers */
 #define PLAT_SP_BUF_BASE			ULL(0x20000)
 
-#define PLAT_ARM_SP_IMAGE_STACK_BASE		(ARM_SP_IMAGE_NS_BUF_BASE + \
-						ARM_SP_IMAGE_NS_BUF_SIZE + \
+#define PLAT_ARM_SP_IMAGE_STACK_BASE		(PLAT_SP_IMAGE_NS_BUF_BASE + \
+						PLAT_SP_IMAGE_NS_BUF_SIZE + \
 						PLAT_SP_BUF_BASE)
 
 /* Platform specific SMC FID's used for RAS */
@@ -172,8 +170,8 @@
 	SDEI_EXPLICIT_EVENT(SGI_SDEI_DS_EVENT_1, SDEI_MAPF_CRITICAL),
 #define PLAT_ARM_SHARED_SDEI_EVENTS
 
-#define ARM_SP_CPER_BUF_BASE			(ARM_SP_IMAGE_NS_BUF_BASE + \
-						ARM_SP_IMAGE_NS_BUF_SIZE)
+#define ARM_SP_CPER_BUF_BASE			(PLAT_SP_IMAGE_NS_BUF_BASE + \
+						PLAT_SP_IMAGE_NS_BUF_SIZE)
 #define ARM_SP_CPER_BUF_SIZE			ULL(0x20000)
 #define ARM_SP_CPER_BUF_MMAP			MAP_REGION2(		\
 						ARM_SP_CPER_BUF_BASE,	\
@@ -183,8 +181,8 @@
 						PAGE_SIZE)
 
 #else
-#define PLAT_ARM_SP_IMAGE_STACK_BASE	(ARM_SP_IMAGE_NS_BUF_BASE +	\
-					 ARM_SP_IMAGE_NS_BUF_SIZE)
+#define PLAT_ARM_SP_IMAGE_STACK_BASE	(PLAT_SP_IMAGE_NS_BUF_BASE +	\
+					 PLAT_SP_IMAGE_NS_BUF_SIZE)
 #endif /* RAS_EXTENSION */
 
 /* Platform ID address */

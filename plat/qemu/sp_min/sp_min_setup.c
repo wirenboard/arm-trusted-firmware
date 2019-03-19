@@ -4,18 +4,21 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <console.h>
-#include <debug.h>
-#include <gic_common.h>
-#include <gicv2.h>
-#include <mmio.h>
-#include <platform.h>
-#include <platform_def.h>
 #include <string.h>
-#include <xlat_tables.h>
+
+#include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <drivers/arm/gic_common.h>
+#include <drivers/arm/gicv2.h>
+#include <drivers/console.h>
+#include <lib/mmio.h>
+#include <lib/xlat_tables/xlat_tables.h>
+#include <plat/common/platform.h>
+
 #include "../qemu_private.h"
 
 #if RESET_TO_SP_MIN
@@ -23,29 +26,6 @@
 #endif
 
 static entry_point_info_t bl33_image_ep_info;
-
-/*
- * The next 3 constants identify the extents of the code, RO data region and the
- * limit of the BL3-1 image.  These addresses are used by the MMU setup code and
- * therefore they must be page-aligned.  It is the responsibility of the linker
- * script to ensure that __RO_START__, __RO_END__ & __BL31_END__ linker symbols
- * refer to page-aligned addresses.
- */
-#define BL32_RO_BASE (unsigned long)(&__RO_START__)
-#define BL32_RO_LIMIT (unsigned long)(&__RO_END__)
-#define BL32_END (unsigned long)(&__BL32_END__)
-
-#if USE_COHERENT_MEM
-/*
- * The next 2 constants identify the extents of the coherent memory region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __COHERENT_RAM_START__ and __COHERENT_RAM_END__ linker symbols
- * refer to page-aligned addresses.
- */
-#define BL32_COHERENT_RAM_BASE (unsigned long)(&__COHERENT_RAM_START__)
-#define BL32_COHERENT_RAM_LIMIT (unsigned long)(&__COHERENT_RAM_END__)
-#endif
 
 /******************************************************************************
  * On a GICv2 system, the Group 1 secure interrupts are treated as Group 0
@@ -143,7 +123,7 @@ void sp_min_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 void sp_min_plat_arch_setup(void)
 {
 	qemu_configure_mmu_svc_mon(BL32_RO_BASE, BL32_END - BL32_RO_BASE,
-				  BL32_RO_BASE, BL32_RO_LIMIT,
+				  BL_CODE_BASE, BL_CODE_END,
 				  BL_COHERENT_RAM_BASE, BL_COHERENT_RAM_END);
 
 }

@@ -1,18 +1,22 @@
 /*
- * Copyright (c) 2015-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2015-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include <assert.h>
-#include <debug.h>
+#include <stddef.h>
+
 /* mbed TLS headers */
 #include <mbedtls/memory_buffer_alloc.h>
 #include <mbedtls/platform.h>
-#include <mbedtls_common.h>
-#include <mbedtls_config.h>
-#include <platform.h>
-#include <stddef.h>
+
+#include <common/debug.h>
+#include <drivers/auth/mbedtls/mbedtls_common.h>
+#include <drivers/auth/mbedtls/mbedtls_config.h>
+#include <plat/common/platform.h>
+
+#pragma weak plat_get_mbedtls_heap
 
 static void cleanup(void)
 {
@@ -51,4 +55,20 @@ void mbedtls_init(void)
 #endif
 		ready = 1;
 	}
+}
+
+/*
+ * The following default implementation of the function simply returns the
+ * by default allocated heap.
+ */
+int plat_get_mbedtls_heap(void **heap_addr, size_t *heap_size)
+{
+	static unsigned char heap[TF_MBEDTLS_HEAP_SIZE];
+
+	assert(heap_addr != NULL);
+	assert(heap_size != NULL);
+
+	*heap_addr = heap;
+	*heap_size = sizeof(heap);
+	return 0;
 }

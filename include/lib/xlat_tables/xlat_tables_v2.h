@@ -7,13 +7,14 @@
 #ifndef XLAT_TABLES_V2_H
 #define XLAT_TABLES_V2_H
 
-#include <xlat_tables_defs.h>
-#include <xlat_tables_v2_helpers.h>
+#include <lib/xlat_tables/xlat_tables_defs.h>
+#include <lib/xlat_tables/xlat_tables_v2_helpers.h>
 
 #ifndef __ASSEMBLY__
 #include <stddef.h>
 #include <stdint.h>
-#include <xlat_mmu_helpers.h>
+
+#include <lib/xlat_tables/xlat_mmu_helpers.h>
 
 /*
  * Default granularity size for an mmap_region_t.
@@ -207,6 +208,17 @@ typedef struct xlat_ctx xlat_ctx_t;
  */
 void init_xlat_tables(void);
 void init_xlat_tables_ctx(xlat_ctx_t *ctx);
+
+/*
+ * Fill all fields of a dynamic translation tables context. It must be done
+ * either statically with REGISTER_XLAT_CONTEXT() or at runtime with this
+ * function.
+ */
+void xlat_setup_dynamic_ctx(xlat_ctx_t *ctx, unsigned long long pa_max,
+			    uintptr_t va_max, struct mmap_region *mmap,
+			    unsigned int mmap_num, uint64_t **tables,
+			    unsigned int tables_num, uint64_t *base_table,
+			    int xlat_regime, int *mapped_regions);
 
 /*
  * Add a static region with defined base PA and base VA. This function can only

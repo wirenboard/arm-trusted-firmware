@@ -5,8 +5,10 @@
  */
 
 #include <stdint.h>
-#include <debug.h>
-#include <mmio.h>
+
+#include <common/debug.h>
+#include <lib/mmio.h>
+
 #include "qos_init.h"
 #include "qos_common.h"
 #if RCAR_LSI == RCAR_AUTO
@@ -16,6 +18,7 @@
 #include "H3/qos_init_h3_v30.h"
 #include "M3/qos_init_m3_v10.h"
 #include "M3/qos_init_m3_v11.h"
+#include "M3/qos_init_m3_v30.h"
 #include "M3N/qos_init_m3n_v10.h"
 #endif
 #if RCAR_LSI == RCAR_H3		/* H3 */
@@ -30,6 +33,7 @@
 #if RCAR_LSI == RCAR_M3		/* M3 */
 #include "M3/qos_init_m3_v10.h"
 #include "M3/qos_init_m3_v11.h"
+#include "M3/qos_init_m3_v30.h"
 #endif
 #if RCAR_LSI == RCAR_M3N	/* M3N */
 #include "M3N/qos_init_m3n_v10.h"
@@ -49,6 +53,7 @@
 #define PRR_PRODUCT_10		(0x00U)
 #define PRR_PRODUCT_11		(0x01U)
 #define PRR_PRODUCT_20		(0x10U)
+#define PRR_PRODUCT_21		(0x11U)
 #define PRR_PRODUCT_30		(0x20U)
 
 #if !(RCAR_LSI == RCAR_E3)
@@ -125,9 +130,12 @@ void rcar_qos_init(void)
 		case PRR_PRODUCT_10:
 			qos_init_m3_v10();
 			break;
-		case PRR_PRODUCT_20:	/* M3 Cut 11 */
-		default:
+		case PRR_PRODUCT_21: /* M3 Cut 13 */
 			qos_init_m3_v11();
+			break;
+		case PRR_PRODUCT_30: /* M3 Cut 30 */
+		default:
+			qos_init_m3_v30();
 			break;
 		}
 #else
@@ -208,13 +216,27 @@ void rcar_qos_init(void)
 		PRR_PRODUCT_ERR(reg);
 	}
 	qos_init_m3_v10();
+#elif RCAR_LSI_CUT == RCAR_CUT_11
+	/* M3 Cut 11 */
+	if ((PRR_PRODUCT_M3 | PRR_PRODUCT_20)
+	    != (reg & (PRR_PRODUCT_MASK | PRR_CUT_MASK))) {
+		PRR_PRODUCT_ERR(reg);
+	}
+	qos_init_m3_v11();
+#elif RCAR_LSI_CUT == RCAR_CUT_13
+	/* M3 Cut 13 */
+	if ((PRR_PRODUCT_M3 | PRR_PRODUCT_21)
+	    != (reg & (PRR_PRODUCT_MASK | PRR_CUT_MASK))) {
+		PRR_PRODUCT_ERR(reg);
+	}
+	qos_init_m3_v11();
 #else
-	/* M3 Cut 11 or later */
+	/* M3 Cut 30 or later */
 	if ((PRR_PRODUCT_M3)
 	    != (reg & (PRR_PRODUCT_MASK))) {
 		PRR_PRODUCT_ERR(reg);
 	}
-	qos_init_m3_v11();
+	qos_init_m3_v30();
 #endif
 #elif RCAR_LSI == RCAR_M3N	/* M3N */
 	/* M3N Cut 10 or later */
@@ -236,6 +258,7 @@ void rcar_qos_init(void)
 #endif
 }
 
+#if !(RCAR_LSI == RCAR_E3)
 uint32_t get_refperiod(void)
 {
 	uint32_t refperiod = QOSWT_WTSET0_CYCLE;
@@ -252,11 +275,9 @@ uint32_t get_refperiod(void)
 		case PRR_PRODUCT_11:
 			break;
 		case PRR_PRODUCT_20:
-			refperiod = QOSWT_WTSET0_CYCLE_H3_20;
-			break;
 		case PRR_PRODUCT_30:
 		default:
-			refperiod = QOSWT_WTSET0_CYCLE_H3_30;
+			refperiod = REFPERIOD_CYCLE;
 			break;
 		}
 		break;
@@ -265,7 +286,7 @@ uint32_t get_refperiod(void)
 		switch (reg & PRR_CUT_MASK) {
 		case PRR_PRODUCT_30:
 		default:
-			refperiod = QOSWT_WTSET0_CYCLE_H3N;
+			refperiod = REFPERIOD_CYCLE;
 			break;
 		}
 		break;
@@ -275,21 +296,18 @@ uint32_t get_refperiod(void)
 		switch (reg & PRR_CUT_MASK) {
 		case PRR_PRODUCT_10:
 			break;
-		case PRR_PRODUCT_20:	/* M3 Cut 11 */
+		case PRR_PRODUCT_20: /* M3 Cut 11 */
+		case PRR_PRODUCT_21: /* M3 Cut 13 */
+		case PRR_PRODUCT_30: /* M3 Cut 30 */
 		default:
-			refperiod = QOSWT_WTSET0_CYCLE_M3_11;
+			refperiod = REFPERIOD_CYCLE;
 			break;
 		}
 		break;
 #endif
 #if (RCAR_LSI == RCAR_AUTO) || (RCAR_LSI == RCAR_M3N)
 	case PRR_PRODUCT_M3N:
-		refperiod = QOSWT_WTSET0_CYCLE_M3N;
-		break;
-#endif
-#if (RCAR_LSI == RCAR_E3)
-	case PRR_PRODUCT_E3:
-		refperiod = QOSWT_WTSET0_CYCLE_E3;
+		refperiod = REFPERIOD_CYCLE;
 		break;
 #endif
 	default:
@@ -300,28 +318,27 @@ uint32_t get_refperiod(void)
 	/* H3 Cut 10 */
 #elif RCAR_LSI_CUT == RCAR_CUT_11
 	/* H3 Cut 11 */
-#elif RCAR_LSI_CUT == RCAR_CUT_20
-	/* H3 Cut 20 */
-	refperiod = QOSWT_WTSET0_CYCLE_H3_20;
 #else
+	/* H3 Cut 20 */
 	/* H3 Cut 30 or later */
-	refperiod = QOSWT_WTSET0_CYCLE_H3_30;
+	refperiod = REFPERIOD_CYCLE;
 #endif
 #elif RCAR_LSI == RCAR_H3N
 	/* H3N Cut 30 or later */
-	refperiod = QOSWT_WTSET0_CYCLE_H3N;
+	refperiod = REFPERIOD_CYCLE;
 #elif RCAR_LSI == RCAR_M3
 #if RCAR_LSI_CUT == RCAR_CUT_10
 	/* M3 Cut 10 */
 #else
-	/* M3 Cut 11 or later */
-	refperiod = QOSWT_WTSET0_CYCLE_M3_11;
+	/* M3 Cut 11 */
+	/* M3 Cut 13 */
+	/* M3 Cut 30 or later */
+	refperiod = REFPERIOD_CYCLE;
 #endif
 #elif RCAR_LSI == RCAR_M3N	/* for M3N */
-	refperiod = QOSWT_WTSET0_CYCLE_M3N;
-#elif RCAR_LSI == RCAR_E3	/* for E3 */
-	refperiod = QOSWT_WTSET0_CYCLE_E3;
+	refperiod = REFPERIOD_CYCLE;
 #endif
 
 	return refperiod;
 }
+#endif

@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <console.h>
-#include <debug.h>
-#include <mmio.h>
+
 #include <platform_def.h>
-#include <platform.h>
-#include <psci.h>
+
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <drivers/console.h>
+#include <lib/mmio.h>
+#include <lib/psci/psci.h>
+#include <plat/common/platform.h>
 
 #include "rpi3_hw.h"
 
@@ -138,7 +140,7 @@ static int rpi3_pwr_domain_on(u_register_t mpidr)
  * being turned off earlier. The target_state encodes the low power state that
  * each level has woken up from.
  ******************************************************************************/
-void rpi3_pwr_domain_on_finish(const psci_power_state_t *target_state)
+static void rpi3_pwr_domain_on_finish(const psci_power_state_t *target_state)
 {
 	assert(target_state->pwr_domain_state[MPIDR_AFFLVL0] ==
 					PLAT_LOCAL_STATE_OFF);

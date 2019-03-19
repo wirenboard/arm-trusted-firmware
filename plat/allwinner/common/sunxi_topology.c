@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch.h>
-#include <platform.h>
 #include <platform_def.h>
 
-static unsigned char plat_power_domain_tree_desc[PLAT_MAX_PWR_LVL + 1] = {
+#include <arch.h>
+#include <plat/common/platform.h>
+
+static const unsigned char plat_power_domain_tree_desc[PLAT_MAX_PWR_LVL + 1] = {
 	/* One root node for the SoC */
 	1,
 	/* One node for each cluster */

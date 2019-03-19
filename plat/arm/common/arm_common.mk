@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015-2018, ARM Limited and Contributors. All rights reserved.
+# Copyright (c) 2015-2019, ARM Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -133,11 +133,6 @@ ARM_CRYPTOCELL_INTEG		:=	0
 $(eval $(call assert_boolean,ARM_CRYPTOCELL_INTEG))
 $(eval $(call add_define,ARM_CRYPTOCELL_INTEG))
 
-# Enable PIE support for RESET_TO_BL31 case
-ifeq (${RESET_TO_BL31},1)
-    ENABLE_PIE			:=	1
-endif
-
 # CryptoCell integration relies on coherent buffers for passing data from
 # the AP CPU to the CryptoCell
 ifeq (${ARM_CRYPTOCELL_INTEG},1)
@@ -145,9 +140,6 @@ ifeq (${ARM_CRYPTOCELL_INTEG},1)
         $(error "ARM_CRYPTOCELL_INTEG needs USE_COHERENT_MEM to be set.")
     endif
 endif
-
-PLAT_INCLUDES		+=	-Iinclude/common/tbbr				\
-				-Iinclude/plat/arm/common
 
 ifeq (${ARCH}, aarch64)
 PLAT_INCLUDES		+=	-Iinclude/plat/arm/common/aarch64
@@ -244,6 +236,21 @@ BL31_SOURCES		+=	lib/extensions/ras/std_err_record.c		\
 				lib/extensions/ras/ras_common.c
 endif
 
+# Pointer Authentication sources
+ifeq (${ENABLE_PAUTH}, 1)
+PLAT_BL_COMMON_SOURCES	+=	plat/arm/common/aarch64/arm_pauth.c
+endif
+
+# SPM uses libfdt in Arm platforms
+ifeq (${SPM_MM},0)
+ifeq (${ENABLE_SPM},1)
+BL31_SOURCES		+=	common/fdt_wrappers.c			\
+				plat/common/plat_spm_rd.c		\
+				plat/common/plat_spm_sp.c		\
+				${LIBFDT_SRCS}
+endif
+endif
+
 ifneq (${TRUSTED_BOARD_BOOT},0)
 
     # Include common TBB sources
@@ -251,8 +258,6 @@ ifneq (${TRUSTED_BOARD_BOOT},0)
 				drivers/auth/crypto_mod.c			\
 				drivers/auth/img_parser_mod.c			\
 				drivers/auth/tbbr/tbbr_cot.c			\
-
-    PLAT_INCLUDES	+=	-Iinclude/bl1/tbbr
 
     BL1_SOURCES		+=	${AUTH_SOURCES}					\
 				bl1/tbbr/tbbr_img_desc.c			\
@@ -280,12 +285,7 @@ endif
 
 endif
 
-# RECLAIM_INIT_CODE can only be set when LOAD_IMAGE_V2=2 and xlat tables v2
-# are used
 ifeq (${RECLAIM_INIT_CODE}, 1)
-    ifeq (${LOAD_IMAGE_V2}, 0)
-        $(error "LOAD_IMAGE_V2 must be enabled to use RECLAIM_INIT_CODE")
-    endif
     ifeq (${ARM_XLAT_TABLES_LIB_V1}, 1)
         $(error "To reclaim init code xlat tables v2 must be used")
     endif

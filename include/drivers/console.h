@@ -7,7 +7,7 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include <utils_def.h>
+#include <lib/utils_def.h>
 
 #define CONSOLE_T_NEXT			(U(0) * REGSZ)
 #define CONSOLE_T_FLAGS			(U(1) * REGSZ)
@@ -44,7 +44,9 @@ typedef struct console {
 	int (*const flush)(struct console *console);
 	/* Additional private driver data may follow here. */
 } console_t;
-#include <console_assertions.h> /* offset macro assertions for console_t */
+
+/* offset macro assertions for console_t */
+#include <drivers/console_assertions.h>
 
 /*
  * NOTE: There is no publicly accessible console_register() function. Consoles
@@ -52,8 +54,9 @@ typedef struct console {
  * implementation, e.g. console_16550_register() from <uart_16550.h>. Consoles
  * registered that way can be unregistered/reconfigured with below functions.
  */
-/* Remove a single console_t instance from the console list. */
-int console_unregister(console_t *console);
+/* Remove a single console_t instance from the console list. Return a pointer to
+ * the console that was removed if it was found, or NULL if not. */
+console_t *console_unregister(console_t *console);
 /* Returns 1 if this console is already registered, 0 if not */
 int console_is_registered(console_t *console);
 /*

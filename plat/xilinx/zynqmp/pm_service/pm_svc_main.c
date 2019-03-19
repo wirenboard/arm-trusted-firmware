@@ -10,18 +10,20 @@
  */
 
 #include <errno.h>
-#include <runtime_svc.h>
-#include "../zynqmp_private.h"
+
+#include <common/runtime_svc.h>
+#if ZYNQMP_WDT_RESTART
+#include <arch_helpers.h>
+#include <drivers/arm/gicv2.h>
+#include <lib/mmio.h>
+#include <lib/spinlock.h>
+#include <plat/common/platform.h>
+#endif
+
+#include <plat_private.h>
 #include "pm_api_sys.h"
 #include "pm_client.h"
 #include "pm_ipi.h"
-#if ZYNQMP_WDT_RESTART
-#include <arch_helpers.h>
-#include <gicv2.h>
-#include <mmio.h>
-#include <platform.h>
-#include <spinlock.h>
-#endif
 
 #define PM_SET_SUSPEND_MODE	0xa02
 #define PM_GET_TRUSTZONE_VERSION	0xa03
@@ -561,6 +563,30 @@ uint64_t pm_smc_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2, uint64_t x3,
 
 		ret = pm_aes_engine(pm_arg[0], pm_arg[1], &value);
 		SMC_RET1(handle, (uint64_t)ret | ((uint64_t)value) << 32);
+	}
+
+	case PM_PLL_SET_PARAMETER:
+		ret = pm_pll_set_parameter(pm_arg[0], pm_arg[1], pm_arg[2]);
+		SMC_RET1(handle, (uint64_t)ret);
+
+	case PM_PLL_GET_PARAMETER:
+	{
+		uint32_t value;
+
+		ret = pm_pll_get_parameter(pm_arg[0], pm_arg[1], &value);
+		SMC_RET1(handle, (uint64_t)ret | ((uint64_t)value << 32));
+	}
+
+	case PM_PLL_SET_MODE:
+		ret = pm_pll_set_mode(pm_arg[0], pm_arg[1]);
+		SMC_RET1(handle, (uint64_t)ret);
+
+	case PM_PLL_GET_MODE:
+	{
+		uint32_t mode;
+
+		ret = pm_pll_get_mode(pm_arg[0], &mode);
+		SMC_RET1(handle, (uint64_t)ret | ((uint64_t)mode << 32));
 	}
 
 	default:

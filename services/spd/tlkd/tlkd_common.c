@@ -4,11 +4,13 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <context_mgmt.h>
 #include <string.h>
+
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <lib/el3_runtime/context_mgmt.h>
+
 #include "tlkd_private.h"
 
 #define AT_MASK		3
@@ -124,7 +126,6 @@ uint64_t tlkd_synchronous_sp_entry(tlk_context_t *tlk_ctx)
 
 	/* Passing a NULL context is a critical programming error */
 	assert(tlk_ctx);
-	assert(tlk_ctx->c_rt_ctx == 0);
 
 	/* Apply the Secure EL1 system register context and switch to it */
 	assert(cm_get_context(SECURE) == &tlk_ctx->cpu_ctx);

@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <platform_def.h>
+
 #include <arch.h>
 #include <arch_helpers.h>
-#include <bl_common.h>
-#include <debug.h>
-#include <platform_def.h>
-#include <xlat_mmu_helpers.h>
-#include <xlat_tables_defs.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <lib/xlat_tables/xlat_mmu_helpers.h>
+#include <lib/xlat_tables/xlat_tables_defs.h>
 
-#include "../../bl1/bl1_private.h"
 #include "rpi3_private.h"
 
 /* Data structure which holds the extents of the trusted SRAM for BL1 */

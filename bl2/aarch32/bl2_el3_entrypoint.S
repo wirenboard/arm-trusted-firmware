@@ -1,14 +1,13 @@
 /*
- * Copyright (c) 2017, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2017-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include <arch.h>
 #include <asm_macros.S>
-#include <bl_common.h>
+#include <common/bl_common.h>
 #include <el3_common_macros.S>
-
 
 	.globl	bl2_entrypoint
 	.globl	bl2_run_next_image
@@ -37,8 +36,11 @@ func bl2_entrypoint
 	mov	r2, r11
 	mov	r3, r12
 
-	bl	bl2_el3_early_platform_setup
-	bl	bl2_el3_plat_arch_setup
+	/* ---------------------------------------------
+	 * Perform BL2 setup
+	 * ---------------------------------------------
+	 */
+	bl	bl2_el3_setup
 
 	/* ---------------------------------------------
 	 * Jump to main function.
@@ -76,7 +78,7 @@ func bl2_run_next_image
 	 */
 	ldr	lr, [r8, #ENTRY_POINT_INFO_PC_OFFSET]
 	ldr	r1, [r8, #(ENTRY_POINT_INFO_PC_OFFSET + 4)]
-	msr	spsr, r1
+	msr	spsr_xc, r1
 
 	/* Some BL32 stages expect lr_svc to provide the BL33 entry address */
 	cps	#MODE32_svc

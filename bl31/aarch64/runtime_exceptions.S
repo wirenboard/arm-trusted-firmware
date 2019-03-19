@@ -1,18 +1,19 @@
 /*
- * Copyright (c) 2013-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <platform_def.h>
+
 #include <arch.h>
 #include <asm_macros.S>
+#include <bl31/ea_handle.h>
+#include <bl31/interrupt_mgmt.h>
+#include <common/runtime_svc.h>
 #include <context.h>
-#include <cpu_data.h>
-#include <ea_handle.h>
-#include <interrupt_mgmt.h>
-#include <platform_def.h>
-#include <runtime_svc.h>
-#include <smccc.h>
+#include <lib/el3_runtime/cpu_data.h>
+#include <lib/smccc.h>
 
 	.globl	runtime_exceptions
 
@@ -119,7 +120,17 @@
 	 * ---------------------------------------------------------------------
 	 */
 	.macro	handle_interrupt_exception label
+
 	bl	save_gp_registers
+
+	/* Save ARMv8.3-PAuth registers and load firmware key */
+#if CTX_INCLUDE_PAUTH_REGS
+	bl	pauth_context_save
+#endif
+#if ENABLE_PAUTH
+	bl	pauth_load_bl_apiakey
+#endif
+
 	/* Save the EL3 system registers needed to return from this exception */
 	mrs	x0, spsr_el3
 	mrs	x1, elr_el3
@@ -302,38 +313,6 @@ vector_entry serror_aarch32
 	b	enter_lower_el_async_ea
 end_vector_entry serror_aarch32
 
-
-	/* ---------------------------------------------------------------------
-	 * This macro takes an argument in x16 that is the index in the
-	 * 'rt_svc_descs_indices' array, checks that the value in the array is
-	 * valid, and loads in x15 the pointer to the handler of that service.
-	 * ---------------------------------------------------------------------
-	 */
-	.macro	load_rt_svc_desc_pointer
-	/* Load descriptor index from array of indices */
-	adr	x14, rt_svc_descs_indices
-	ldrb	w15, [x14, x16]
-
-#if SMCCC_MAJOR_VERSION == 1
-	/* Any index greater than 127 is invalid. Check bit 7. */
-	tbnz	w15, 7, smc_unknown
-#elif SMCCC_MAJOR_VERSION == 2
-	/* Verify that the top 3 bits of the loaded index are 0 (w15 <= 31) */
-	cmp	w15, #31
-	b.hi	smc_unknown
-#endif /* SMCCC_MAJOR_VERSION */
-
-	/*
-	 * Get the descriptor using the index
-	 * x11 = (base + off), w15 = index
-	 *
-	 * handler = (base + off) + (index << log2(size))
-	 */
-	adr	x11, (__RT_SVC_DESCS_START__ + RT_SVC_DESC_HANDLE)
-	lsl	w10, w15, #RT_SVC_SIZE_LOG2
-	ldr	x15, [x11, w10, uxtw]
-	.endm
-
 	/* ---------------------------------------------------------------------
 	 * The following code handles secure monitor calls.
 	 * Depending upon the execution state from where the SMC has been
@@ -351,73 +330,49 @@ smc_handler32:
 	tbnz	x0, #FUNCID_CC_SHIFT, smc_prohibited
 
 smc_handler64:
+	/* NOTE: The code below must preserve x0-x4 */
+
+	/* Save general purpose registers */
+	bl	save_gp_registers
+
+	/* Save ARMv8.3-PAuth registers and load firmware key */
+#if CTX_INCLUDE_PAUTH_REGS
+	bl	pauth_context_save
+#endif
+#if ENABLE_PAUTH
+	bl	pauth_load_bl_apiakey
+#endif
+
 	/*
 	 * Populate the parameters for the SMC handler.
 	 * We already have x0-x4 in place. x5 will point to a cookie (not used
 	 * now). x6 will point to the context structure (SP_EL3) and x7 will
 	 * contain flags we need to pass to the handler.
-	 *
-	 * Save x4-x29 and sp_el0.
 	 */
-	stp	x4, x5, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X4]
-	stp	x6, x7, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X6]
-	stp	x8, x9, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X8]
-	stp	x10, x11, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X10]
-	stp	x12, x13, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X12]
-	stp	x14, x15, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X14]
-	stp	x16, x17, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X16]
-	stp	x18, x19, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X18]
-	stp	x20, x21, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X20]
-	stp	x22, x23, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X22]
-	stp	x24, x25, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X24]
-	stp	x26, x27, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X26]
-	stp	x28, x29, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X28]
-	mrs	x18, sp_el0
-	str	x18, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_SP_EL0]
-
 	mov	x5, xzr
 	mov	x6, sp
-
-#if SMCCC_MAJOR_VERSION == 1
 
 	/* Get the unique owning entity number */
 	ubfx	x16, x0, #FUNCID_OEN_SHIFT, #FUNCID_OEN_WIDTH
 	ubfx	x15, x0, #FUNCID_TYPE_SHIFT, #FUNCID_TYPE_WIDTH
 	orr	x16, x16, x15, lsl #FUNCID_OEN_WIDTH
 
-	load_rt_svc_desc_pointer
+	/* Load descriptor index from array of indices */
+	adr	x14, rt_svc_descs_indices
+	ldrb	w15, [x14, x16]
 
-#elif SMCCC_MAJOR_VERSION == 2
-
-	/* Bit 31 must be set */
-	tbz	x0, #FUNCID_TYPE_SHIFT, smc_unknown
-
-	/*
-	 * Check MSB of namespace to decide between compatibility/vendor and
-	 * SPCI/SPRT
-	 */
-	tbz	x0, #(FUNCID_NAMESPACE_SHIFT + 1), compat_or_vendor
-
-	/* Namespaces SPRT and SPCI currently unimplemented */
-	b	smc_unknown
-
-compat_or_vendor:
-
-	/* Namespace is b'00 (compatibility) or b'01 (vendor) */
+	/* Any index greater than 127 is invalid. Check bit 7. */
+	tbnz	w15, 7, smc_unknown
 
 	/*
-	 * Add the LSB of the namespace (bit [28]) to the OEN [27:24] to create
-	 * a 5-bit index into the rt_svc_descs_indices array.
+	 * Get the descriptor using the index
+	 * x11 = (base + off), w15 = index
 	 *
-	 * The low 16 entries of the rt_svc_descs_indices array correspond to
-	 * OENs of the compatibility namespace and the top 16 entries of the
-	 * array are assigned to the vendor namespace descriptor.
+	 * handler = (base + off) + (index << log2(size))
 	 */
-	ubfx	x16, x0, #FUNCID_OEN_SHIFT, #(FUNCID_OEN_WIDTH + 1)
-
-	load_rt_svc_desc_pointer
-
-#endif /* SMCCC_MAJOR_VERSION */
+	adr	x11, (__RT_SVC_DESCS_START__ + RT_SVC_DESC_HANDLE)
+	lsl	w10, w15, #RT_SVC_SIZE_LOG2
+	ldr	x15, [x11, w10, uxtw]
 
 	/*
 	 * Restore the saved C runtime stack value which will become the new

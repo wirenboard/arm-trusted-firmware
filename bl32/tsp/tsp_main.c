@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2013-2017, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
-#include <bl_common.h>
-#include <debug.h>
-#include <platform.h>
 #include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <bl32/tsp/tsp.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <lib/spinlock.h>
+#include <plat/common/platform.h>
 #include <platform_tsp.h>
-#include <spinlock.h>
-#include <tsp.h>
+
 #include "tsp_private.h"
 
 
@@ -36,7 +38,7 @@ work_statistics_t tsp_stats[PLATFORM_CORE_COUNT];
  * linker symbol __BL32_END__. Use these addresses to compute the TSP image
  * size.
  ******************************************************************************/
-#define BL32_TOTAL_LIMIT (unsigned long)(&__BL32_END__)
+#define BL32_TOTAL_LIMIT BL32_END
 #define BL32_TOTAL_SIZE (BL32_TOTAL_LIMIT - (unsigned long) BL32_BASE)
 
 static tsp_args_t *set_smc_args(uint64_t arg0,
@@ -67,6 +69,26 @@ static tsp_args_t *set_smc_args(uint64_t arg0,
 	write_sp_arg(pcpu_smc_args, TSP_ARG7, arg7);
 
 	return pcpu_smc_args;
+}
+
+/*******************************************************************************
+ * Setup function for TSP.
+ ******************************************************************************/
+void tsp_setup(void)
+{
+	/* Perform early platform-specific setup */
+	tsp_early_platform_setup();
+
+	/*
+	 * Update pointer authentication key before the MMU is enabled. It is
+	 * saved in the rodata section, that can be writen before enabling the
+	 * MMU. This function must be called after the console is initialized
+	 * in the early platform setup.
+	 */
+	bl_handle_pauth();
+
+	/* Perform late platform-specific setup */
+	tsp_plat_arch_setup();
 }
 
 /*******************************************************************************
@@ -360,7 +382,7 @@ tsp_args_t *tsp_smc_handler(uint64_t func,
 
 	/*
 	 * Request a service back from dispatcher/secure monitor. This call
-	 * return and thereafter resume exectuion
+	 * return and thereafter resume execution
 	 */
 	tsp_get_magic(service_args);
 
@@ -393,7 +415,7 @@ tsp_args_t *tsp_smc_handler(uint64_t func,
 }
 
 /*******************************************************************************
- * TSP smc abort handler. This function is called when aborting a preemtped
+ * TSP smc abort handler. This function is called when aborting a preempted
  * yielding SMC request. It should cleanup all resources owned by the SMC
  * handler such as locks or dynamically allocated memory so following SMC
  * request are executed in a clean environment.

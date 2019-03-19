@@ -8,11 +8,12 @@
 #define PLATFORM_DEF_H
 
 #include <arch.h>
-#include <common_def.h>
+#include <common/tbbr/tbbr_img_def.h>
+#include <lib/utils_def.h>
+#include <plat/common/common_def.h>
+
 #include <hikey_def.h>
 #include <hikey_layout.h>		/* BL memory region sizes, etc */
-#include <tbbr_img_def.h>
-#include <utils_def.h>
 
 /* Special value used to verify platform parameters from BL2 to BL3-1 */
 #define HIKEY_BL31_PLAT_PARAM_VAL	0x0f1e2d3c4b5a6978ULL
@@ -41,7 +42,7 @@
 #define MAX_IO_DEVICES			3
 #define MAX_IO_HANDLES			4
 /* eMMC RPMB and eMMC User Data */
-#define MAX_IO_BLOCK_DEVICES		2
+#define MAX_IO_BLOCK_DEVICES		U(2)
 
 /* GIC related constants (no GICR in GIC-400) */
 #define PLAT_ARM_GICD_BASE		0xF6801000

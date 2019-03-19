@@ -1,15 +1,17 @@
 /*
- * Copyright (c) 2014-2016, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2014-2018, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <debug.h>
-#include <mmio.h>
+
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <lib/mmio.h>
+#include <plat_private.h>
+
 #include "zynqmp_def.h"
-#include "zynqmp_private.h"
 
 /*
  * ATFHandoffParams

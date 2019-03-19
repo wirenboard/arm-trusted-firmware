@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2014-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -7,28 +7,17 @@
 #ifndef PLATFORM_DEF_H
 #define PLATFORM_DEF_H
 
-/* Enable the dynamic translation tables library. */
-#ifdef AARCH32
-# if defined(IMAGE_BL32) && RESET_TO_SP_MIN
-#  define PLAT_XLAT_TABLES_DYNAMIC     1
-# endif
-#else
-# if defined(IMAGE_BL31) && RESET_TO_BL31
-#  define PLAT_XLAT_TABLES_DYNAMIC     1
-# endif
-#endif /* AARCH32 */
-
-
-#include <arm_def.h>
-#include <board_css_def.h>
-#include <common_def.h>
-#include <css_def.h>
+#include <drivers/arm/tzc400.h>
 #if TRUSTED_BOARD_BOOT
-#include <mbedtls_config.h>
+#include <drivers/auth/mbedtls/mbedtls_config.h>
 #endif
-#include <soc_css_def.h>
-#include <tzc400.h>
-#include <v2m_def.h>
+#include <plat/arm/board/common/board_css_def.h>
+#include <plat/arm/board/common/v2m_def.h>
+#include <plat/arm/common/arm_def.h>
+#include <plat/arm/css/common/css_def.h>
+#include <plat/arm/soc/common/soc_css_def.h>
+#include <plat/common/common_def.h>
+
 #include "../juno_def.h"
 
 /* Required platform porting definitions */
@@ -55,7 +44,8 @@
 #define PLAT_ARM_TRUSTED_SRAM_SIZE	UL(0x00040000)	/* 256 KB */
 
 /* Use the bypass address */
-#define PLAT_ARM_TRUSTED_ROM_BASE	V2M_FLASH0_BASE + BL1_ROM_BYPASS_OFFSET
+#define PLAT_ARM_TRUSTED_ROM_BASE	(V2M_FLASH0_BASE + \
+					BL1_ROM_BYPASS_OFFSET)
 
 #define NSRAM_BASE			UL(0x2e000000)
 #define NSRAM_SIZE			UL(0x00008000)	/* 32KB */
@@ -64,11 +54,22 @@
 #define PLAT_ARM_MEM_PROTEC_VA_FRAME	UL(0xc0000000)
 
 /*
+ * PLAT_ARM_MAX_ROMLIB_RW_SIZE is define to use a full page
+ */
+
+#if USE_ROMLIB
+#define PLAT_ARM_MAX_ROMLIB_RW_SIZE	UL(0x1000)
+#define PLAT_ARM_MAX_ROMLIB_RO_SIZE	UL(0xe000)
+#else
+#define PLAT_ARM_MAX_ROMLIB_RW_SIZE	UL(0)
+#define PLAT_ARM_MAX_ROMLIB_RO_SIZE	UL(0)
+#endif
+
+/*
  * Actual ROM size on Juno is 64 KB, but TBB currently requires at least 80 KB
  * in debug mode. We can test TBB on Juno bypassing the ROM and using 128 KB of
  * flash
  */
-#define PLAT_ARM_MAX_ROMLIB_RO_SIZE	0
 
 #if TRUSTED_BOARD_BOOT
 #define PLAT_ARM_TRUSTED_ROM_SIZE	UL(0x00020000)
@@ -121,15 +122,6 @@
 #endif
 
 /*
- * PLAT_ARM_MAX_ROMLIB_RW_SIZE is define to use a full page
- */
-#if USE_ROMLIB
-#define PLAT_ARM_MAX_ROMLIB_RW_SIZE	UL(0x1000)
-#else
-#define PLAT_ARM_MAX_ROMLIB_RW_SIZE	UL(0)
-#endif
-
-/*
  * PLAT_ARM_MAX_BL2_SIZE is calculated using the current BL2 debug size plus a
  * little space for growth.
  */
@@ -139,7 +131,7 @@
 #elif TF_MBEDTLS_KEY_ALG_ID == TF_MBEDTLS_ECDSA
 # define PLAT_ARM_MAX_BL2_SIZE		UL(0x1D000)
 #else
-# define PLAT_ARM_MAX_BL2_SIZE		UL(0x1C000)
+# define PLAT_ARM_MAX_BL2_SIZE		UL(0x1D000)
 #endif
 #else
 # define PLAT_ARM_MAX_BL2_SIZE		UL(0xF000)
@@ -230,6 +222,7 @@
 
 /* MHU related constants */
 #define PLAT_CSS_MHU_BASE		UL(0x2b1f0000)
+#define PLAT_MHUV2_BASE			PLAT_CSS_MHU_BASE
 
 /*
  * Base address of the first memory region used for communication between AP
@@ -291,5 +284,8 @@
 
 #define PLAT_ARM_PRIVATE_SDEI_EVENTS	ARM_SDEI_PRIVATE_EVENTS
 #define PLAT_ARM_SHARED_SDEI_EVENTS	ARM_SDEI_SHARED_EVENTS
+
+/* System power domain level */
+#define CSS_SYSTEM_PWR_DMN_LVL		ARM_PWR_LVL2
 
 #endif /* PLATFORM_DEF_H */

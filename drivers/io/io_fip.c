@@ -5,19 +5,21 @@
  */
 
 #include <assert.h>
-#include <bl_common.h>
-#include <debug.h>
 #include <errno.h>
-#include <firmware_image_package.h>
-#include <io_driver.h>
-#include <io_fip.h>
-#include <io_storage.h>
-#include <platform.h>
-#include <platform_def.h>
 #include <stdint.h>
 #include <string.h>
-#include <utils.h>
-#include <uuid.h>
+
+#include <platform_def.h>
+
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <drivers/io/io_driver.h>
+#include <drivers/io/io_fip.h>
+#include <drivers/io/io_storage.h>
+#include <lib/utils.h>
+#include <plat/common/platform.h>
+#include <tools_share/firmware_image_package.h>
+#include <tools_share/uuid.h>
 
 #ifndef MAX_FIP_DEVICES
 #define MAX_FIP_DEVICES		1
@@ -83,7 +85,6 @@ static inline int compare_uuids(const uuid_t *uuid1, const uuid_t *uuid2)
 }
 
 
-/* TODO: We could check version numbers or do a package checksum? */
 static inline int is_valid_header(fip_toc_header_t *header)
 {
 	if ((header->name == TOC_HEADER_NAME) && (header->serial_number != 0)) {

@@ -4,16 +4,21 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <desc_image_load.h>
-#include <arch_helpers.h>
-#include <bl_common.h>
-#include <bl1.h>
-#include <console.h>
-#include <debug.h>
-#include <mmio.h>
-#include <platform.h>
-#include <platform_def.h>
 #include <string.h>
+
+#include <libfdt.h>
+
+#include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <bl1/bl1.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <common/desc_image_load.h>
+#include <drivers/console.h>
+#include <lib/mmio.h>
+#include <lib/xlat_tables/xlat_tables_defs.h>
+#include <plat/common/platform.h>
 
 #include "avs_driver.h"
 #include "boot_init_dram.h"
@@ -56,6 +61,8 @@ extern void rcar_rpc_init(void);
 extern void rcar_pfc_init(void);
 extern void rcar_dma_init(void);
 
+static void bl2_init_generic_timer(void);
+
 /* R-Car Gen3 product check */
 #if (RCAR_LSI == RCAR_H3) || (RCAR_LSI == RCAR_H3N)
 #define TARGET_PRODUCT			RCAR_PRODUCT_H3
@@ -69,6 +76,8 @@ extern void rcar_dma_init(void);
 #elif RCAR_LSI == RCAR_E3
 #define TARGET_PRODUCT			RCAR_PRODUCT_E3
 #define TARGET_NAME			"R-Car E3"
+#elif RCAR_LSI == RCAR_AUTO
+#define TARGET_NAME			"R-Car H3/M3/M3N"
 #endif
 
 #if (RCAR_LSI == RCAR_E3)
@@ -85,6 +94,32 @@ CASSERT((PARAMS_BASE + sizeof(bl2_to_bl31_params_mem_t) + 0x100)
 
 static meminfo_t bl2_tzram_layout __aligned(CACHE_WRITEBACK_GRANULE);
 
+/* FDT with DRAM configuration */
+uint64_t fdt_blob[PAGE_SIZE_4KB / sizeof(uint64_t)];
+static void *fdt = (void *)fdt_blob;
+
+static void unsigned_num_print(unsigned long long int unum, unsigned int radix,
+				char *string)
+{
+	/* Just need enough space to store 64 bit decimal integer */
+	char num_buf[20];
+	int i = 0;
+	unsigned int rem;
+
+	do {
+		rem = unum % radix;
+		if (rem < 0xa)
+			num_buf[i] = '0' + rem;
+		else
+			num_buf[i] = 'a' + (rem - 0xa);
+		i++;
+		unum /= radix;
+	} while (unum > 0U);
+
+	while (--i >= 0)
+		*string++ = num_buf[i];
+}
+
 #if (RCAR_LOSSY_ENABLE == 1)
 typedef struct bl2_lossy_info {
 	uint32_t magic;
@@ -92,12 +127,74 @@ typedef struct bl2_lossy_info {
 	uint32_t b0;
 } bl2_lossy_info_t;
 
+static void bl2_lossy_gen_fdt(uint32_t no, uint64_t start_addr,
+			      uint64_t end_addr, uint32_t format,
+			      uint32_t enable, int fcnlnode)
+{
+	const uint64_t fcnlsize = cpu_to_fdt64(end_addr - start_addr);
+	char nodename[40] = { 0 };
+	int ret, node;
+
+	/* Ignore undefined addresses */
+	if (start_addr == 0 && end_addr == 0)
+		return;
+
+	snprintf(nodename, sizeof(nodename), "lossy-decompression@");
+	unsigned_num_print(start_addr, 16, nodename + strlen(nodename));
+
+	node = ret = fdt_add_subnode(fdt, fcnlnode, nodename);
+	if (ret < 0) {
+		NOTICE("BL2: Cannot create FCNL node (ret=%i)\n", ret);
+		panic();
+	}
+
+	ret = fdt_setprop_string(fdt, node, "compatible",
+				 "renesas,lossy-decompression");
+	if (ret < 0) {
+		NOTICE("BL2: Cannot add FCNL compat string (ret=%i)\n", ret);
+		panic();
+	}
+
+	ret = fdt_appendprop_string(fdt, node, "compatible",
+				    "shared-dma-pool");
+	if (ret < 0) {
+		NOTICE("BL2: Cannot append FCNL compat string (ret=%i)\n", ret);
+		panic();
+	}
+
+	ret = fdt_setprop_u64(fdt, node, "reg", start_addr);
+	if (ret < 0) {
+		NOTICE("BL2: Cannot add FCNL reg prop (ret=%i)\n", ret);
+		panic();
+	}
+
+	ret = fdt_appendprop(fdt, node, "reg", &fcnlsize, sizeof(fcnlsize));
+	if (ret < 0) {
+		NOTICE("BL2: Cannot append FCNL reg size prop (ret=%i)\n", ret);
+		panic();
+	}
+
+	ret = fdt_setprop(fdt, node, "no-map", NULL, 0);
+	if (ret < 0) {
+		NOTICE("BL2: Cannot add FCNL no-map prop (ret=%i)\n", ret);
+		panic();
+	}
+
+	ret = fdt_setprop_u32(fdt, node, "renesas,formats", format);
+	if (ret < 0) {
+		NOTICE("BL2: Cannot add FCNL formats prop (ret=%i)\n", ret);
+		panic();
+	}
+}
+
 static void bl2_lossy_setting(uint32_t no, uint64_t start_addr,
 			      uint64_t end_addr, uint32_t format,
-			      uint32_t enable)
+			      uint32_t enable, int fcnlnode)
 {
 	bl2_lossy_info_t info;
 	uint32_t reg;
+
+	bl2_lossy_gen_fdt(no, start_addr, end_addr, format, enable, fcnlnode);
 
 	reg = format | (start_addr >> 20);
 	mmio_write_32(AXI_DCMPAREACRA0 + 0x8 * no, reg);
@@ -139,7 +236,7 @@ void bl2_plat_flush_bl31_params(void)
 	product = reg & RCAR_PRODUCT_MASK;
 	cut = reg & RCAR_CUT_MASK;
 
-	if (product == RCAR_PRODUCT_M3)
+	if (product == RCAR_PRODUCT_M3 && RCAR_CUT_VER30 > cut)
 		goto tlb;
 
 	if (product == RCAR_PRODUCT_H3 && RCAR_CUT_VER20 > cut)
@@ -166,8 +263,10 @@ tlb:
 		   product_cut == (RCAR_PRODUCT_M3N | RCAR_CUT_VER11)) {
 		mmio_write_32(IPMMUVI0_IMSCTLR, IMSCTLR_DISCACHE);
 		mmio_write_32(IPMMUPV0_IMSCTLR, IMSCTLR_DISCACHE);
-	} else if (product_cut == (RCAR_PRODUCT_E3 | RCAR_CUT_VER10)) {
+	} else if ((product_cut == (RCAR_PRODUCT_E3 | RCAR_CUT_VER10)) ||
+		   (product_cut == (RCAR_PRODUCT_E3 | RCAR_CUT_VER11))) {
 		mmio_write_32(IPMMUVI0_IMSCTLR, IMSCTLR_DISCACHE);
+		mmio_write_32(IPMMUVP0_IMSCTLR, IMSCTLR_DISCACHE);
 		mmio_write_32(IPMMUPV0_IMSCTLR, IMSCTLR_DISCACHE);
 	}
 
@@ -295,16 +394,212 @@ int bl2_plat_handle_post_image_load(unsigned int image_id)
 	return 0;
 }
 
-meminfo_t *bl2_plat_sec_mem_layout(void)
+struct meminfo *bl2_plat_sec_mem_layout(void)
 {
 	return &bl2_tzram_layout;
+}
+
+static void bl2_populate_compatible_string(void *fdt)
+{
+	uint32_t board_type;
+	uint32_t board_rev;
+	uint32_t reg;
+	int ret;
+
+	/* Populate compatible string */
+	rcar_get_board_type(&board_type, &board_rev);
+	switch (board_type) {
+	case BOARD_SALVATOR_X:
+		ret = fdt_setprop_string(fdt, 0, "compatible",
+					 "renesas,salvator-x");
+		break;
+	case BOARD_SALVATOR_XS:
+		ret = fdt_setprop_string(fdt, 0, "compatible",
+					 "renesas,salvator-xs");
+		break;
+	case BOARD_STARTER_KIT:
+		ret = fdt_setprop_string(fdt, 0, "compatible",
+					 "renesas,m3ulcb");
+		break;
+	case BOARD_STARTER_KIT_PRE:
+		ret = fdt_setprop_string(fdt, 0, "compatible",
+					 "renesas,h3ulcb");
+		break;
+	case BOARD_EBISU:
+	case BOARD_EBISU_4D:
+		ret = fdt_setprop_string(fdt, 0, "compatible",
+					 "renesas,ebisu");
+		break;
+	default:
+		NOTICE("BL2: Cannot set compatible string, board unsupported\n");
+		panic();
+	}
+
+	if (ret < 0) {
+		NOTICE("BL2: Cannot set compatible string (ret=%i)\n", ret);
+		panic();
+	}
+
+	reg = mmio_read_32(RCAR_PRR);
+	switch (reg & RCAR_PRODUCT_MASK) {
+	case RCAR_PRODUCT_H3:
+		ret = fdt_appendprop_string(fdt, 0, "compatible",
+					    "renesas,r8a7795");
+		break;
+	case RCAR_PRODUCT_M3:
+		ret = fdt_appendprop_string(fdt, 0, "compatible",
+					    "renesas,r8a7796");
+		break;
+	case RCAR_PRODUCT_M3N:
+		ret = fdt_appendprop_string(fdt, 0, "compatible",
+					    "renesas,r8a77965");
+		break;
+	case RCAR_PRODUCT_E3:
+		ret = fdt_appendprop_string(fdt, 0, "compatible",
+					    "renesas,r8a77990");
+		break;
+	default:
+		NOTICE("BL2: Cannot set compatible string, SoC unsupported\n");
+		panic();
+	}
+
+	if (ret < 0) {
+		NOTICE("BL2: Cannot set compatible string (ret=%i)\n", ret);
+		panic();
+	}
+}
+
+static void bl2_advertise_dram_entries(uint64_t dram_config[8])
+{
+	char nodename[32] = { 0 };
+	uint64_t start, size;
+	uint64_t fdtsize;
+	int ret, node, chan;
+
+	for (chan = 0; chan < 4; chan++) {
+		start = dram_config[2 * chan];
+		size = dram_config[2 * chan + 1];
+		if (!size)
+			continue;
+
+		NOTICE("BL2: CH%d: %llx - %llx, %lld GiB\n",
+			chan, start, start + size - 1, size >> 30);
+	}
+
+	/*
+	 * We add the DT nodes in reverse order here. The fdt_add_subnode()
+	 * adds the DT node before the first existing DT node, so we have
+	 * to add them in reverse order to get nodes sorted by address in
+	 * the resulting DT.
+	 */
+	for (chan = 3; chan >= 0; chan--) {
+		start = dram_config[2 * chan];
+		size = dram_config[2 * chan + 1];
+		if (!size)
+			continue;
+
+		/*
+		 * Channel 0 is mapped in 32bit space and the first
+		 * 128 MiB are reserved
+		 */
+		if (chan == 0) {
+			start = 0x48000000;
+			size -= 0x8000000;
+		}
+
+		fdtsize = cpu_to_fdt64(size);
+
+		snprintf(nodename, sizeof(nodename), "memory@");
+		unsigned_num_print(start, 16, nodename + strlen(nodename));
+		node = ret = fdt_add_subnode(fdt, 0, nodename);
+		if (ret < 0)
+			goto err;
+
+		ret = fdt_setprop_string(fdt, node, "device_type", "memory");
+		if (ret < 0)
+			goto err;
+
+		ret = fdt_setprop_u64(fdt, node, "reg", start);
+		if (ret < 0)
+			goto err;
+
+		ret = fdt_appendprop(fdt, node, "reg", &fdtsize,
+				     sizeof(fdtsize));
+		if (ret < 0)
+			goto err;
+	}
+
+	return;
+err:
+	NOTICE("BL2: Cannot add memory node to FDT (ret=%i)\n", ret);
+	panic();
+}
+
+static void bl2_advertise_dram_size(uint32_t product)
+{
+	uint64_t dram_config[8] = {
+		[0] = 0x400000000ULL,
+		[2] = 0x500000000ULL,
+		[4] = 0x600000000ULL,
+		[6] = 0x700000000ULL,
+	};
+
+	switch (product) {
+	case RCAR_PRODUCT_H3:
+#if (RCAR_DRAM_LPDDR4_MEMCONF == 0)
+		/* 4GB(1GBx4) */
+		dram_config[1] = 0x40000000ULL;
+		dram_config[3] = 0x40000000ULL;
+		dram_config[5] = 0x40000000ULL;
+		dram_config[7] = 0x40000000ULL;
+#elif (RCAR_DRAM_LPDDR4_MEMCONF == 1) && \
+      (RCAR_DRAM_CHANNEL        == 5) && \
+      (RCAR_DRAM_SPLIT          == 2)
+		/* 4GB(2GBx2 2ch split) */
+		dram_config[1] = 0x80000000ULL;
+		dram_config[3] = 0x80000000ULL;
+#elif (RCAR_DRAM_LPDDR4_MEMCONF == 1) && (RCAR_DRAM_CHANNEL == 15)
+		/* 8GB(2GBx4: default) */
+		dram_config[1] = 0x80000000ULL;
+		dram_config[3] = 0x80000000ULL;
+		dram_config[5] = 0x80000000ULL;
+		dram_config[7] = 0x80000000ULL;
+#endif /* RCAR_DRAM_LPDDR4_MEMCONF == 0 */
+		break;
+
+	case RCAR_PRODUCT_M3:
+		/* 4GB(2GBx2 2ch split) */
+		dram_config[1] = 0x80000000ULL;
+		dram_config[5] = 0x80000000ULL;
+		break;
+
+	case RCAR_PRODUCT_M3N:
+		/* 2GB(1GBx2) */
+		dram_config[1] = 0x80000000ULL;
+		break;
+
+	case RCAR_PRODUCT_E3:
+#if (RCAR_DRAM_DDR3L_MEMCONF == 0)
+		/* 1GB(512MBx2) */
+		dram_config[1] = 0x40000000ULL;
+#elif (RCAR_DRAM_DDR3L_MEMCONF == 1)
+		/* 2GB(512MBx4) */
+		dram_config[1] = 0x80000000ULL;
+#elif (RCAR_DRAM_DDR3L_MEMCONF == 2)
+		/* 4GB(1GBx4) */
+		dram_config[1] = 0x100000000ULL;
+#endif /* RCAR_DRAM_DDR3L_MEMCONF == 0 */
+		break;
+	}
+
+	bl2_advertise_dram_entries(dram_config);
 }
 
 void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 				  u_register_t arg3, u_register_t arg4)
 {
 	uint32_t reg, midr, lcs, boot_dev, boot_cpu, sscg, type, rev;
-	uint32_t cut, product, product_cut, major, minor;
+	uint32_t product, product_cut, major, minor;
 	int32_t ret;
 	const char *str;
 	const char *unknown = "unknown";
@@ -331,6 +626,11 @@ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 #else
 	const char *boot_hyper160 = "HyperFlash(160MHz)";
 #endif
+#if (RCAR_LOSSY_ENABLE == 1)
+	int fcnlnode;
+#endif
+
+	bl2_init_generic_timer();
 
 	reg = mmio_read_32(RCAR_MODEMR);
 	boot_dev = reg & MODEMR_BOOT_DEV_MASK;
@@ -374,7 +674,6 @@ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 	reg = mmio_read_32(RCAR_PRR);
 	product_cut = reg & (RCAR_PRODUCT_MASK | RCAR_CUT_MASK);
 	product = reg & RCAR_PRODUCT_MASK;
-	cut = reg & RCAR_CUT_MASK;
 
 	switch (product) {
 	case RCAR_PRODUCT_H3:
@@ -394,8 +693,17 @@ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 		break;
 	}
 
-	if (RCAR_PRODUCT_M3_CUT11 == product_cut) {
-		NOTICE("BL2: PRR is R-Car %s Ver.1.1 / Ver.1.2\n", str);
+	if ((RCAR_PRODUCT_M3 == product) &&
+	    (RCAR_CUT_VER20 == (reg & RCAR_MAJOR_MASK))) {
+		if (RCAR_M3_CUT_VER11 == (reg & RCAR_CUT_MASK)) {
+			/* M3 Ver.1.1 or Ver.1.2 */
+			NOTICE("BL2: PRR is R-Car %s Ver.1.1 / Ver.1.2\n",
+				str);
+		} else {
+			NOTICE("BL2: PRR is R-Car %s Ver.1.%d\n",
+				str,
+				(reg & RCAR_MINOR_MASK) + RCAR_M3_MINOR_OFFSET);
+		}
 	} else {
 		major = (reg & RCAR_MAJOR_MASK) >> RCAR_MAJOR_SHIFT;
 		major = major + RCAR_MAJOR_OFFSET;
@@ -506,33 +814,6 @@ lcm_state:
 	bl2_tzram_layout.total_base = BL31_BASE;
 	bl2_tzram_layout.total_size = BL31_LIMIT - BL31_BASE;
 
-	if (product == RCAR_PRODUCT_H3 && cut >= RCAR_CUT_VER30) {
-#if (RCAR_DRAM_LPDDR4_MEMCONF == 0)
-		NOTICE("BL2: CH0: 0x400000000 - 0x440000000, 1 GiB\n");
-		NOTICE("BL2: CH1: 0x500000000 - 0x540000000, 1 GiB\n");
-		NOTICE("BL2: CH2: 0x600000000 - 0x640000000, 1 GiB\n");
-		NOTICE("BL2: CH3: 0x700000000 - 0x740000000, 1 GiB\n");
-#elif (RCAR_DRAM_LPDDR4_MEMCONF == 1) && \
-      (RCAR_DRAM_CHANNEL        == 5) && \
-      (RCAR_DRAM_SPLIT          == 2)
-		NOTICE("BL2: CH0: 0x400000000 - 0x480000000, 2 GiB\n");
-		NOTICE("BL2: CH1: 0x500000000 - 0x580000000, 2 GiB\n");
-#elif (RCAR_DRAM_LPDDR4_MEMCONF == 1) && (RCAR_DRAM_CHANNEL == 15)
-		NOTICE("BL2: CH0: 0x400000000 - 0x480000000, 2 GiB\n");
-		NOTICE("BL2: CH1: 0x500000000 - 0x580000000, 2 GiB\n");
-		NOTICE("BL2: CH2: 0x600000000 - 0x680000000, 2 GiB\n");
-		NOTICE("BL2: CH3: 0x700000000 - 0x780000000, 2 GiB\n");
-#endif
-	}
-
-	if (product == RCAR_PRODUCT_E3) {
-#if (RCAR_DRAM_DDR3L_MEMCONF == 0)
-		NOTICE("BL2: 0x400000000 - 0x440000000, 1 GiB\n");
-#elif (RCAR_DRAM_DDR3L_MEMCONF == 1)
-		NOTICE("BL2: 0x400000000 - 0x480000000, 2 GiB\n");
-#endif
-	}
-
 	if (boot_cpu == MODEMR_BOOT_CPU_CA57 ||
 	    boot_cpu == MODEMR_BOOT_CPU_CA53) {
 		ret = rcar_dram_init();
@@ -542,6 +823,19 @@ lcm_state:
 		}
 		rcar_qos_init();
 	}
+
+	/* Set up FDT */
+	ret = fdt_create_empty_tree(fdt, sizeof(fdt_blob));
+	if (ret) {
+		NOTICE("BL2: Cannot allocate FDT for U-Boot (ret=%i)\n", ret);
+		panic();
+	}
+
+	/* Add platform compatible string */
+	bl2_populate_compatible_string(fdt);
+
+	/* Print DRAM layout */
+	bl2_advertise_dram_size(product);
 
 	if (boot_dev == MODEMR_BOOT_DEV_EMMC_25X1 ||
 	    boot_dev == MODEMR_BOOT_DEV_EMMC_50X8) {
@@ -591,13 +885,24 @@ lcm_state:
 	}
 #if (RCAR_LOSSY_ENABLE == 1)
 	NOTICE("BL2: Lossy Decomp areas\n");
+
+	fcnlnode = fdt_add_subnode(fdt, 0, "reserved-memory");
+	if (fcnlnode < 0) {
+		NOTICE("BL2: Cannot create reserved mem node (ret=%i)\n",
+			fcnlnode);
+		panic();
+	}
+
 	bl2_lossy_setting(0, LOSSY_ST_ADDR0, LOSSY_END_ADDR0,
-			  LOSSY_FMT0, LOSSY_ENA_DIS0);
+			  LOSSY_FMT0, LOSSY_ENA_DIS0, fcnlnode);
 	bl2_lossy_setting(1, LOSSY_ST_ADDR1, LOSSY_END_ADDR1,
-			  LOSSY_FMT1, LOSSY_ENA_DIS1);
+			  LOSSY_FMT1, LOSSY_ENA_DIS1, fcnlnode);
 	bl2_lossy_setting(2, LOSSY_ST_ADDR2, LOSSY_END_ADDR2,
-			  LOSSY_FMT2, LOSSY_ENA_DIS2);
+			  LOSSY_FMT2, LOSSY_ENA_DIS2, fcnlnode);
 #endif
+
+	fdt_pack(fdt);
+	NOTICE("BL2: FDT at %p\n", fdt);
 
 	if (boot_dev == MODEMR_BOOT_DEV_EMMC_25X1 ||
 	    boot_dev == MODEMR_BOOT_DEV_EMMC_50X8)
@@ -611,7 +916,7 @@ void bl2_el3_plat_arch_setup(void)
 #if RCAR_BL2_DCACHE == 1
 	NOTICE("BL2: D-Cache enable\n");
 	rcar_configure_mmu_el3(BL2_BASE,
-			       RCAR_SYSRAM_LIMIT - BL2_BASE,
+			       BL2_END - BL2_BASE,
 			       BL2_RO_BASE, BL2_RO_LIMIT
 #if USE_COHERENT_MEM
 			       , BL2_COHERENT_RAM_BASE, BL2_COHERENT_RAM_LIMIT
@@ -623,4 +928,53 @@ void bl2_el3_plat_arch_setup(void)
 void bl2_platform_setup(void)
 {
 
+}
+
+static void bl2_init_generic_timer(void)
+{
+#if RCAR_LSI == RCAR_E3
+	uint32_t reg_cntfid = EXTAL_EBISU;
+#else /* RCAR_LSI == RCAR_E3 */
+	uint32_t reg;
+	uint32_t reg_cntfid;
+	uint32_t modemr;
+	uint32_t modemr_pll;
+	uint32_t board_type;
+	uint32_t board_rev;
+	uint32_t pll_table[] = {
+		EXTAL_MD14_MD13_TYPE_0,	/* MD14/MD13 : 0b00 */
+		EXTAL_MD14_MD13_TYPE_1,	/* MD14/MD13 : 0b01 */
+		EXTAL_MD14_MD13_TYPE_2,	/* MD14/MD13 : 0b10 */
+		EXTAL_MD14_MD13_TYPE_3	/* MD14/MD13 : 0b11 */
+	};
+
+	modemr = mmio_read_32(RCAR_MODEMR);
+	modemr_pll = (modemr & MODEMR_BOOT_PLL_MASK);
+
+	/* Set frequency data in CNTFID0 */
+	reg_cntfid = pll_table[modemr_pll >> MODEMR_BOOT_PLL_SHIFT];
+	reg = mmio_read_32(RCAR_PRR) & (RCAR_PRODUCT_MASK | RCAR_CUT_MASK);
+	switch (modemr_pll) {
+	case MD14_MD13_TYPE_0:
+		rcar_get_board_type(&board_type, &board_rev);
+		if (BOARD_SALVATOR_XS == board_type) {
+			reg_cntfid = EXTAL_SALVATOR_XS;
+		}
+		break;
+	case MD14_MD13_TYPE_3:
+		if (RCAR_PRODUCT_H3_CUT10 == reg) {
+			reg_cntfid = reg_cntfid >> 1U;
+		}
+		break;
+	default:
+		/* none */
+		break;
+	}
+#endif /* RCAR_LSI == RCAR_E3 */
+	/* Update memory mapped and register based freqency */
+	write_cntfrq_el0((u_register_t )reg_cntfid);
+	mmio_write_32(ARM_SYS_CNTCTL_BASE + (uintptr_t)CNTFID_OFF, reg_cntfid);
+	/* Enable counter */
+	mmio_setbits_32(RCAR_CNTC_BASE + (uintptr_t)CNTCR_OFF,
+			(uint32_t)CNTCR_EN);
 }

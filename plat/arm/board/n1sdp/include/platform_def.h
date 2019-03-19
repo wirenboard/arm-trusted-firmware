@@ -7,9 +7,24 @@
 #ifndef PLATFORM_DEF_H
 #define PLATFORM_DEF_H
 
-#include <arm_def.h>
-#include <board_css_def.h>
-#include <css_def.h>
+#include <plat/arm/board/common/v2m_def.h>
+#include <plat/arm/common/arm_def.h>
+#include <plat/arm/css/common/css_def.h>
+
+/* UART related constants */
+#define PLAT_ARM_BOOT_UART_BASE			0x2A400000
+#define PLAT_ARM_BOOT_UART_CLK_IN_HZ		50000000
+
+#define PLAT_ARM_RUN_UART_BASE		0x2A410000
+#define PLAT_ARM_RUN_UART_CLK_IN_HZ	50000000
+
+#define PLAT_ARM_SP_MIN_RUN_UART_BASE		0x2A410000
+#define PLAT_ARM_SP_MIN_RUN_UART_CLK_IN_HZ	50000000
+
+#define PLAT_ARM_CRASH_UART_BASE		PLAT_ARM_RUN_UART_BASE
+#define PLAT_ARM_CRASH_UART_CLK_IN_HZ		PLAT_ARM_RUN_UART_CLK_IN_HZ
+
+#define PLAT_ARM_DRAM2_SIZE			ULL(0x780000000)
 
 #if CSS_USE_SCMI_SDS_DRIVER
 #define N1SDP_SCMI_PAYLOAD_BASE			0x45400000
@@ -32,6 +47,8 @@
 						N1SDP_MAX_CPUS_PER_CLUSTER *	\
 						N1SDP_MAX_PE_PER_CPU)
 
+/* System power domain level */
+#define CSS_SYSTEM_PWR_DMN_LVL			ARM_PWR_LVL2
 
 /*
  * PLAT_ARM_MMAP_ENTRIES depends on the number of entries in the
@@ -44,6 +61,7 @@
 
 #define PLAT_ARM_NSTIMER_FRAME_ID		0
 #define PLAT_CSS_MHU_BASE			0x45000000
+#define PLAT_MHUV2_BASE				PLAT_CSS_MHU_BASE
 #define PLAT_MAX_PWR_LVL			1
 
 #define PLAT_ARM_G1S_IRQS			ARM_G1S_IRQS,			\
@@ -55,7 +73,7 @@
 
 
 #define N1SDP_DEVICE_BASE			(0x20000000)
-#define N1SDP_DEVICE_SIZE			(0x20000000)
+#define N1SDP_DEVICE_SIZE			(0x30000000)
 #define N1SDP_MAP_DEVICE			MAP_REGION_FLAT(	\
 						N1SDP_DEVICE_BASE,	\
 						N1SDP_DEVICE_SIZE,	\

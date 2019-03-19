@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2015-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -7,7 +7,7 @@
 #ifndef BL1_H
 #define BL1_H
 
-#include <bl_common.h>
+#include <common/bl_common.h>
 
 /*
  * Defines for BL1 SMC function ids.
@@ -62,7 +62,8 @@
     ((_fid >= FWU_SMC_FID_START) && (_fid <= FWU_SMC_FID_END))
 
 #ifndef __ASSEMBLY__
-#include <cassert.h>
+
+#include <lib/cassert.h>
 
 struct entry_point_info;
 
@@ -82,6 +83,7 @@ register_t bl1_smc_handler(unsigned int smc_fid,
 
 void bl1_print_next_bl_ep_info(const struct entry_point_info *bl_ep_info);
 
+void bl1_setup(void);
 void bl1_main(void);
 void bl1_plat_prepare_exit(entry_point_info_t *ep_info);
 

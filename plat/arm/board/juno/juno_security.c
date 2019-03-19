@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <debug.h>
-#include <mmio.h>
-#include <nic_400.h>
-#include <plat_arm.h>
-#include <soc_css.h>
+#include <common/debug.h>
+#include <drivers/arm/nic_400.h>
+#include <lib/mmio.h>
+#include <platform_def.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/arm/soc/common/soc_css.h>
 
-#include "juno_def.h"
 #include "juno_tzmp1_def.h"
 
 #ifdef JUNO_TZMP1

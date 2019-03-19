@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <errno.h>
-#include <platform.h>
-#include <v2m_def.h>
+
+#include <arch_helpers.h>
+#include <plat/common/platform.h>
+#include <platform_def.h>
 
 /*
  * Juno error handler

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013-2018, ARM Limited and Contributors. All rights reserved.
+# Copyright (c) 2013-2019, ARM Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -8,11 +8,16 @@
 # Include SPM Makefile
 ################################################################################
 ifeq (${ENABLE_SPM},1)
-ifeq (${EL3_EXCEPTION_HANDLING},0)
-  $(error EL3_EXCEPTION_HANDLING must be 1 for SPM support)
-endif
-$(info Including SPM makefile)
-include services/std_svc/spm/spm.mk
+  ifeq (${SPM_MM},1)
+    ifeq (${EL3_EXCEPTION_HANDLING},0)
+      $(error EL3_EXCEPTION_HANDLING must be 1 for SPM support)
+    endif
+    $(info Including makefile of SPM based on MM)
+    include services/std_svc/spm_mm/spm.mk
+  else
+    $(info Including SPM makefile)
+    include services/std_svc/spm/spm.mk
+  endif
 endif
 
 
@@ -26,7 +31,6 @@ BL31_SOURCES		+=	bl31/bl31_main.c				\
 				bl31/aarch64/runtime_exceptions.S		\
 				bl31/bl31_context_mgmt.c			\
 				common/runtime_svc.c				\
-				lib/aarch64/setjmp.S				\
 				lib/cpus/aarch64/dsu_helpers.S			\
 				plat/common/aarch64/platform_mp_stack.S		\
 				services/arm_arch_svc/arm_arch_svc_setup.c	\
@@ -69,6 +73,10 @@ endif
 
 ifeq (${ENABLE_MPAM_FOR_LOWER_ELS},1)
 BL31_SOURCES		+=	lib/extensions/mpam/mpam.c
+endif
+
+ifeq (${ENABLE_PAUTH},1)
+BL31_CFLAGS		+=	-msign-return-address=non-leaf
 endif
 
 ifeq (${WORKAROUND_CVE_2017_5715},1)

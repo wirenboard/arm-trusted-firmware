@@ -5,12 +5,15 @@
  */
 
 #include <stdint.h>
-#include <debug.h>
+
+#include <common/debug.h>
+
 #include "../qos_common.h"
 #include "../qos_reg.h"
 #include "qos_init_m3_v11.h"
 
-#define	RCAR_QOS_VERSION		"rev.0.17"
+#define	RCAR_QOS_VERSION		"rev.0.18"
+
 
 #define QOSWT_TIME_BANK0				(20000000U)	/* unit:ns */
 

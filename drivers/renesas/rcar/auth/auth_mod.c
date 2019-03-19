@@ -5,12 +5,14 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
-#include <debug.h>
-#include <mmio.h>
-#include <platform.h>
-#include <platform_def.h>
 #include <stddef.h>
+
+#include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <lib/mmio.h>
+#include <plat/common/platform.h>
 
 #include "rom_api.h"
 
@@ -111,7 +113,7 @@ verify_image:
 	}
 #if RCAR_BL2_DCACHE == 1
 	/* clean and disable */
-	write_sctlr_el1(read_sctlr_el1() & ~SCTLR_C_BIT);
+	write_sctlr_el3(read_sctlr_el3() & ~SCTLR_C_BIT);
 	dcsw_op_all(DCCISW);
 #endif
 	ret = (mmio_read_32(RCAR_BOOT_KEY_CERT_NEW) == RCAR_CERT_MAGIC_NUM) ?
@@ -122,7 +124,7 @@ verify_image:
 
 #if RCAR_BL2_DCACHE == 1
 	/* enable */
-	write_sctlr_el1(read_sctlr_el1() | SCTLR_C_BIT);
+	write_sctlr_el3(read_sctlr_el3() | SCTLR_C_BIT);
 #endif
 
 #endif

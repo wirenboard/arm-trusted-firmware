@@ -8,9 +8,10 @@ RK_PLAT			:=	plat/rockchip
 RK_PLAT_SOC		:=	${RK_PLAT}/${PLAT}
 RK_PLAT_COMMON		:=	${RK_PLAT}/common
 
+include lib/libfdt/libfdt.mk
+
 PLAT_INCLUDES		:=	-Idrivers/arm/gic/common/			\
 				-Idrivers/arm/gic/v2/			\
-				-Iinclude/plat/common/				\
 				-I${RK_PLAT_COMMON}/                            \
 				-I${RK_PLAT_COMMON}/include/                    \
 				-I${RK_PLAT_COMMON}/pmusram                     \
@@ -34,12 +35,12 @@ PLAT_BL_COMMON_SOURCES	:=	lib/xlat_tables/aarch64/xlat_tables.c		\
 
 BL31_SOURCES		+=	${RK_GIC_SOURCES}				\
 				drivers/arm/cci/cci.c				\
-				drivers/console/aarch64/console.S		\
 				drivers/ti/uart/aarch64/16550_console.S		\
 				drivers/delay_timer/delay_timer.c		\
 				drivers/delay_timer/generic_delay_timer.c	\
 				lib/cpus/aarch64/aem_generic.S			\
 				lib/cpus/aarch64/cortex_a53.S			\
+				$(LIBFDT_SRCS)					\
 				${RK_PLAT_COMMON}/drivers/parameter/ddr_parameter.c	\
 				${RK_PLAT_COMMON}/aarch64/plat_helpers.S	\
 				${RK_PLAT_COMMON}/bl31_plat_setup.c		\

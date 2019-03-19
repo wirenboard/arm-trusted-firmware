@@ -4,49 +4,32 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <debug.h>
-#include <delay_timer.h>
-#include <desc_image_load.h>
-#include <dw_mmc.h>
 #include <errno.h>
+#include <string.h>
+
+#include <platform_def.h>	/* also includes hikey_def.h and hikey_layout.h*/
+
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <common/desc_image_load.h>
+#include <drivers/arm/pl011.h>
+#include <drivers/delay_timer.h>
+#include <drivers/mmc.h>
+#include <drivers/synopsys/dw_mmc.h>
+#include <lib/mmio.h>
+#ifdef SPD_opteed
+#include <lib/optee_utils.h>
+#endif
+#include <plat/common/platform.h>
+
 #include <hi6220.h>
 #include <hisi_mcu.h>
 #include <hisi_sram_map.h>
-#include <mmc.h>
-#include <mmio.h>
-#ifdef SPD_opteed
-#include <optee_utils.h>
-#endif
-#include <pl011.h>
-#include <platform.h>
-#include <platform_def.h>	/* also includes hikey_def.h and hikey_layout.h*/
-#include <string.h>
-
 #include "hikey_private.h"
 
-/*
- * The next 2 constants identify the extents of the code & RO data region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __RO_START__ and __RO_END__ linker symbols refer to page-aligned addresses.
- */
-#define BL2_RO_BASE (unsigned long)(&__RO_START__)
-#define BL2_RO_LIMIT (unsigned long)(&__RO_END__)
-
-#define BL2_RW_BASE		(BL2_RO_LIMIT)
-
-/*
- * The next 2 constants identify the extents of the coherent memory region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __COHERENT_RAM_START__ and __COHERENT_RAM_END__ linker symbols refer to
- * page-aligned addresses.
- */
-#define BL2_COHERENT_RAM_BASE (unsigned long)(&__COHERENT_RAM_START__)
-#define BL2_COHERENT_RAM_LIMIT (unsigned long)(&__COHERENT_RAM_END__)
+#define BL2_RW_BASE		(BL_CODE_END)
 
 static meminfo_t bl2_el3_tzram_layout;
 static console_pl011_t console;
@@ -293,10 +276,10 @@ void bl2_el3_plat_arch_setup(void)
 {
 	hikey_init_mmu_el3(bl2_el3_tzram_layout.total_base,
 			   bl2_el3_tzram_layout.total_size,
-			   BL2_RO_BASE,
-			   BL2_RO_LIMIT,
-			   BL2_COHERENT_RAM_BASE,
-			   BL2_COHERENT_RAM_LIMIT);
+			   BL_CODE_BASE,
+			   BL_CODE_END,
+			   BL_COHERENT_RAM_BASE,
+			   BL_COHERENT_RAM_END);
 }
 
 void bl2_platform_setup(void)
@@ -336,7 +319,6 @@ void bl2_platform_setup(void)
 	params.flags = MMC_FLAG_CMD23;
 	info.mmc_dev_type = MMC_IS_EMMC;
 	dw_mmc_init(&params, &info);
-	mdelay(20);
 
 	hikey_io_setup();
 }

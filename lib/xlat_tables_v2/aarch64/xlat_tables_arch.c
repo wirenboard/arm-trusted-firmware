@@ -1,17 +1,20 @@
 /*
- * Copyright (c) 2017-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2017-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch.h>
-#include <arch_helpers.h>
 #include <assert.h>
-#include <cassert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <utils_def.h>
-#include <xlat_tables_v2.h>
+
+#include <arch.h>
+#include <arch_features.h>
+#include <arch_helpers.h>
+#include <lib/cassert.h>
+#include <lib/utils_def.h>
+#include <lib/xlat_tables/xlat_tables_v2.h>
+
 #include "../xlat_tables_private.h"
 
 /*
@@ -97,6 +100,21 @@ unsigned long long xlat_arch_get_max_supported_pa(void)
 	assert(pa_range < ARRAY_SIZE(pa_range_bits_arr));
 
 	return (1ULL << pa_range_bits_arr[pa_range]) - 1ULL;
+}
+
+/*
+ * Return minimum virtual address space size supported by the architecture
+ */
+uintptr_t xlat_get_min_virt_addr_space_size(void)
+{
+	uintptr_t ret;
+
+	if (is_armv8_4_ttst_present())
+		ret = MIN_VIRT_ADDR_SPACE_SIZE_TTST;
+	else
+		ret = MIN_VIRT_ADDR_SPACE_SIZE;
+
+	return ret;
 }
 #endif /* ENABLE_ASSERTIONS*/
 
@@ -218,7 +236,11 @@ void setup_mmu_cfg(uint64_t *params, unsigned int flags,
 	assert(max_va < ((uint64_t)UINTPTR_MAX));
 
 	virtual_addr_space_size = (uintptr_t)max_va + 1U;
-	assert(CHECK_VIRT_ADDR_SPACE_SIZE(virtual_addr_space_size));
+
+	assert(virtual_addr_space_size >=
+		xlat_get_min_virt_addr_space_size());
+	assert(virtual_addr_space_size <= MAX_VIRT_ADDR_SPACE_SIZE);
+	assert(IS_POWER_OF_TWO(virtual_addr_space_size));
 
 	/*
 	 * __builtin_ctzll(0) is undefined but here we are guaranteed that
@@ -264,13 +286,10 @@ void setup_mmu_cfg(uint64_t *params, unsigned int flags,
 	/* Set TTBR bits as well */
 	ttbr0 = (uint64_t) base_table;
 
-#if ARM_ARCH_AT_LEAST(8, 2)
-	/*
-	 * Enable CnP bit so as to share page tables with all PEs. This
-	 * is mandatory for ARMv8.2 implementations.
-	 */
-	ttbr0 |= TTBR_CNP_BIT;
-#endif
+	if (is_armv8_2_ttcnp_present()) {
+		/* Enable CnP bit so as to share page tables with all PEs. */
+		ttbr0 |= TTBR_CNP_BIT;
+	}
 
 	params[MMU_CFG_MAIR] = mair;
 	params[MMU_CFG_TCR] = tcr;

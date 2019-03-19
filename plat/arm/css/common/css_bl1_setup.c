@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <bl_common.h>
-#include <debug.h>
-#include <plat_arm.h>
-#include <platform.h>
-#include <soc_css.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/arm/soc/common/soc_css.h>
+#include <plat/common/platform.h>
 
 void bl1_platform_setup(void)
 {

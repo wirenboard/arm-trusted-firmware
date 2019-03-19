@@ -5,15 +5,17 @@
  */
 
 #include <assert.h>
-#include <bl_common.h>
-#include <console.h>
-#include <debug.h>
-#include <mmio.h>
-#include <pl011.h>
-#include <plat_arm.h>
-#include <platform.h>
+
 #include <platform_def.h>
-#include <platform_sp_min.h>
+
+#include <bl32/sp_min/platform_sp_min.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <drivers/arm/pl011.h>
+#include <drivers/console.h>
+#include <lib/mmio.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/common/platform.h>
 
 static entry_point_info_t bl33_image_ep_info;
 
@@ -191,12 +193,14 @@ void sp_min_platform_setup(void)
 #endif
 
 	/* Enable and initialize the System level generic timer */
+#ifdef ARM_SYS_CNTCTL_BASE
 	mmio_write_32(ARM_SYS_CNTCTL_BASE + CNTCR_OFF,
 			CNTCR_FCREQ(0U) | CNTCR_EN);
-
+#endif
+#ifdef ARM_SYS_TIMCTL_BASE
 	/* Allow access to the System counter timer module */
 	arm_configure_sys_timer();
-
+#endif
 	/* Initialize power controller before setting up topology */
 	plat_arm_pwrc_setup();
 }

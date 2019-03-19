@@ -4,42 +4,26 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <cci.h>
-#include <debug.h>
 #include <errno.h>
-#include <gicv2.h>
+
+#include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <common/interrupt_props.h>
+#include <drivers/arm/cci.h>
+#include <drivers/arm/gicv2.h>
+#include <drivers/arm/pl011.h>
+#include <lib/mmio.h>
+
 #include <hi6220.h>
 #include <hikey_def.h>
 #include <hisi_ipc.h>
 #include <hisi_pwrc.h>
-#include <interrupt_props.h>
-#include <mmio.h>
-#include <pl011.h>
-#include <platform_def.h>
 
 #include "hikey_private.h"
-
-/*
- * The next 2 constants identify the extents of the code & RO data region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __RO_START__ and __RO_END__ linker symbols refer to page-aligned addresses.
- */
-#define BL31_RO_BASE (unsigned long)(&__RO_START__)
-#define BL31_RO_LIMIT (unsigned long)(&__RO_END__)
-
-/*
- * The next 2 constants identify the extents of the coherent memory region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __COHERENT_RAM_START__ and __COHERENT_RAM_END__ linker symbols refer to
- * page-aligned addresses.
- */
-#define BL31_COHERENT_RAM_BASE (unsigned long)(&__COHERENT_RAM_START__)
-#define BL31_COHERENT_RAM_LIMIT (unsigned long)(&__COHERENT_RAM_END__)
 
 static entry_point_info_t bl32_ep_info;
 static entry_point_info_t bl33_ep_info;
@@ -132,10 +116,10 @@ void bl31_plat_arch_setup(void)
 {
 	hikey_init_mmu_el3(BL31_BASE,
 			   BL31_LIMIT - BL31_BASE,
-			   BL31_RO_BASE,
-			   BL31_RO_LIMIT,
-			   BL31_COHERENT_RAM_BASE,
-			   BL31_COHERENT_RAM_LIMIT);
+			   BL_CODE_BASE,
+			   BL_CODE_END,
+			   BL_COHERENT_RAM_BASE,
+			   BL_COHERENT_RAM_END);
 }
 
 /* Initialize EDMAC controller with non-secure mode. */

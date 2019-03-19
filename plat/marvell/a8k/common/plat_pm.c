@@ -5,19 +5,21 @@
  * https://spdx.org/licenses
  */
 
-#include <armada_common.h>
 #include <assert.h>
-#include <bakery_lock.h>
-#include <debug.h>
-#include <delay_timer.h>
-#include <cache_llc.h>
-#include <console.h>
-#include <gicv2.h>
+
+#include <common/debug.h>
+#include <drivers/arm/gicv2.h>
+#include <drivers/console.h>
+#include <drivers/delay_timer.h>
+#include <drivers/marvell/cache_llc.h>
+#include <lib/bakery_lock.h>
+#include <lib/mmio.h>
+#include <plat/common/platform.h>
+
+#include <armada_common.h>
 #include <marvell_pm.h>
-#include <mmio.h>
 #include <mss_pm_ipc.h>
 #include <plat_marvell.h>
-#include <platform.h>
 #include <plat_pm_trace.h>
 
 #define MVEBU_PRIVATE_UID_REG		0x30
@@ -79,7 +81,7 @@ enum CPU_ID {
 	#define PWRC_CPUN_CR_PWR_DN_RQ_OFFSET		1
 	#define PWRC_CPUN_CR_LDO_BYPASS_RDY_OFFSET	0
 #else
-#define PWRC_CPUN_CR_PWR_DN_RQ_OFFSET		0
+	#define PWRC_CPUN_CR_PWR_DN_RQ_OFFSET		0
 	#define PWRC_CPUN_CR_LDO_BYPASS_RDY_OFFSET	31
 #endif
 
@@ -106,7 +108,7 @@ enum CPU_ID {
 #define AP807_PWRC_LDO_CR0_OFFSET		16
 #define AP807_PWRC_LDO_CR0_MASK			\
 			(0xff << AP807_PWRC_LDO_CR0_OFFSET)
-#define AP807_PWRC_LDO_CR0_VAL			0xfd
+#define AP807_PWRC_LDO_CR0_VAL			0xfc
 
 /*
  * Power down CPU:

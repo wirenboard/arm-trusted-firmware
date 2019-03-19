@@ -7,9 +7,11 @@
 #ifndef XLAT_TABLES_PRIVATE_H
 #define XLAT_TABLES_PRIVATE_H
 
-#include <platform_def.h>
 #include <stdbool.h>
-#include <xlat_tables_defs.h>
+
+#include <platform_def.h>
+
+#include <lib/xlat_tables/xlat_tables_defs.h>
 
 #if PLAT_XLAT_TABLES_DYNAMIC
 /*
@@ -99,5 +101,10 @@ bool is_mmu_enabled_ctx(const xlat_ctx_t *ctx);
 
 /* Returns true if the data cache is enabled at the current EL. */
 bool is_dcache_enabled(void);
+
+/*
+ * Returns minimum virtual address space size supported by the architecture
+ */
+uintptr_t xlat_get_min_virt_addr_space_size(void);
 
 #endif /* XLAT_TABLES_PRIVATE_H */

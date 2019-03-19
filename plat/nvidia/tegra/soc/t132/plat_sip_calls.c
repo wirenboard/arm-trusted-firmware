@@ -4,13 +4,15 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <assert.h>
+#include <errno.h>
+
 #include <arch.h>
 #include <arch_helpers.h>
-#include <assert.h>
-#include <bl_common.h>
-#include <context_mgmt.h>
-#include <debug.h>
-#include <errno.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <lib/el3_runtime/context_mgmt.h>
+
 #include <tegra_private.h>
 
 #define NS_SWITCH_AARCH32	1
@@ -36,7 +38,7 @@ int plat_sip_handler(uint32_t smc_fid,
 		     uint64_t x2,
 		     uint64_t x3,
 		     uint64_t x4,
-		     void *cookie,
+		     const void *cookie,
 		     void *handle,
 		     uint64_t flags)
 {

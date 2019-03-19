@@ -4,31 +4,25 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <debug.h>
-#include <desc_image_load.h>
-#include <dw_mmc.h>
 #include <errno.h>
-#include <generic_delay_timer.h>
-#include <mmc.h>
-#include <mmio.h>
-#include <optee_utils.h>
-#include <partition/partition.h>
-#include <pl011.h>
-#include <platform.h>
 #include <string.h>
+
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <common/desc_image_load.h>
+#include <drivers/arm/pl011.h>
+#include <drivers/generic_delay_timer.h>
+#include <drivers/partition/partition.h>
+#include <drivers/synopsys/dw_mmc.h>
+#include <drivers/mmc.h>
+#include <lib/mmio.h>
+#include <lib/optee_utils.h>
+#include <plat/common/platform.h>
+
 #include "hi3798cv200.h"
 #include "plat_private.h"
-
-/* Memory ranges for code and read only data sections */
-#define BL2_RO_BASE	(unsigned long)(&__RO_START__)
-#define BL2_RO_LIMIT	(unsigned long)(&__RO_END__)
-
-/* Memory ranges for coherent memory section */
-#define BL2_COHERENT_RAM_BASE	(unsigned long)(&__COHERENT_RAM_START__)
-#define BL2_COHERENT_RAM_LIMIT	(unsigned long)(&__COHERENT_RAM_END__)
 
 static meminfo_t bl2_tzram_layout __aligned(CACHE_WRITEBACK_GRANULE);
 static console_pl011_t console;
@@ -204,10 +198,10 @@ void bl2_plat_arch_setup(void)
 {
 	plat_configure_mmu_el1(bl2_tzram_layout.total_base,
 			       bl2_tzram_layout.total_size,
-			       BL2_RO_BASE,
-			       BL2_RO_LIMIT,
-			       BL2_COHERENT_RAM_BASE,
-			       BL2_COHERENT_RAM_LIMIT);
+			       BL_CODE_BASE,
+			       BL_CODE_END,
+			       BL_COHERENT_RAM_BASE,
+			       BL_COHERENT_RAM_END);
 }
 
 void bl2_platform_setup(void)

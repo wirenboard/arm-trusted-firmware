@@ -10,7 +10,7 @@ Trusted Firmware-A - version 2.0
 New Features
 ------------
 
--  Removal of a number of deprecated API's
+-  Removal of a number of deprecated APIs
 
    -  A new Platform Compatibility Policy document has been created which
       references a wiki page that maintains a listing of deprecated
@@ -20,7 +20,7 @@ New Features
       from the code base.
 
    -  Various Arm and partner platforms have been updated to remove the use of
-      removed API's in this release.
+      removed APIs in this release.
 
    -  This release is otherwise unchanged from 1.6 release
 
@@ -130,7 +130,7 @@ New Features
       the clang linker is not used because it is unable to link TF-A objects
       due to immaturity of clang linker functionality at this time.
 
--  Refactor support API's into Libraries
+-  Refactor support APIs into Libraries
 
    -  Evolve libfdt, mbed TLS library and standard C library sources as
       proper libraries that TF-A may be linked against.
@@ -435,7 +435,7 @@ New features
 
    -  Introduced APIs to get and set the memory attributes of a region.
 
-   -  Added support to manage both priviledge levels in translation regimes that
+   -  Added support to manage both privilege levels in translation regimes that
       describe translations for 2 Exception levels, specifically the EL1&0
       translation regime, and extended the memory map region attributes to
       include specifying Non-privileged access.
@@ -683,7 +683,7 @@ New features
 -  Enhancements to Firmware Update feature:
 
    -  The FWU logic now checks for overlapping images to prevent execution of
-      unauthenticated arbitary code.
+      unauthenticated arbitrary code.
 
    -  Introduced new FWU_SMC_IMAGE_RESET SMC that changes the image loading
       state machine to go from COPYING, COPIED or AUTHENTICATED states to
@@ -855,7 +855,7 @@ New features
 
    -  Essential control registers are fully initialised on EL3 start-up, when
       initialising the non-secure and secure context structures and when
-      preparing to leave EL3 for a lower EL. This gives better alignement with
+      preparing to leave EL3 for a lower EL. This gives better alignment with
       the Arm ARM which states that software must initialise RES0 and RES1
       fields with 0 / 1.
 
@@ -969,11 +969,11 @@ New features
    fixed sample points at key places in the code.
 
 -  To support the QEMU platform port, imported libfdt v1.4.1 from
-   https://git.kernel.org/cgit/utils/dtc/dtc.git
+   https://git.kernel.org/pub/scm/utils/dtc/dtc.git
 
 -  Updated PSCI support:
 
-   -  Added support for PSCI NODE\_HW\_STATE API for Arm platforms.
+   -  Added support for PSCI NODE_HW_STATE API for Arm platforms.
 
    -  New optional platform hook, ``pwr_domain_pwr_down_wfi()``, in
       ``plat_psci_ops`` to enable platforms to perform platform-specific actions
@@ -1000,14 +1000,14 @@ New features
       This can be useful to map a non-cacheable memory region, such as a DMA
       buffer.
 
-   -  Introduced the MT\_EXECUTE/MT\_EXECUTE\_NEVER memory mapping attributes to
+   -  Introduced the MT_EXECUTE/MT_EXECUTE_NEVER memory mapping attributes to
       specify the access permissions for instruction execution of a memory
       region.
 
 -  Enabled support to isolate code and read-only data on separate memory pages,
    allowing independent access control to be applied to each.
 
--  Enabled SCR\_EL3.SIF (Secure Instruction Fetch) bit in BL1 and BL31 common
+-  Enabled SCR_EL3.SIF (Secure Instruction Fetch) bit in BL1 and BL31 common
    architectural setup code, preventing fetching instructions from non-secure
    memory when in secure state.
 
@@ -1025,7 +1025,7 @@ New features
       the working directory.
 
    -  Aligned command line options for specifying images to use same naming
-      convention as specified by TBBR and already used in cert\_create tool.
+      convention as specified by TBBR and already used in cert_create tool.
 
 -  Refactored the TZC-400 driver to also support memory controllers that
    integrate TZC functionality, for example Arm CoreLink DMC-500. Also added
@@ -1036,7 +1036,7 @@ New features
 
 -  Enhanced support for Arm platforms:
 
-   -  Updated image loading support to make SCP images (SCP\_BL2 and SCP\_BL2U)
+   -  Updated image loading support to make SCP images (SCP_BL2 and SCP_BL2U)
       optional.
 
    -  Enhanced topology description support to allow multi-cluster topology
@@ -1104,7 +1104,7 @@ New features
       **Note** the default build of TF-A will not be able to boot
       Linux kernel with GICv2 FDT blob.
 
-   -  Enabled wake-up from CPU\_SUSPEND to stand-by by temporarily re-routing
+   -  Enabled wake-up from CPU_SUSPEND to stand-by by temporarily re-routing
       interrupts and then restoring after resume.
 
 Issues resolved since last release
@@ -1219,7 +1219,7 @@ New features
 
    -  Better alignment with version 1.0 of the PSCI specification.
 
--  Added support for the SYSTEM\_SUSPEND PSCI API on Arm platforms. When invoked
+-  Added support for the SYSTEM_SUSPEND PSCI API on Arm platforms. When invoked
    on the last running core on a supported platform, this puts the system
    into a low power mode with memory retention.
 
@@ -1345,7 +1345,7 @@ New features
 -  It is now possible to specify the name of the FIP at build time by defining
    the ``FIP_NAME`` variable.
 
--  Issues with depedencies on the 'fiptool' makefile target have been
+-  Issues with dependencies on the 'fiptool' makefile target have been
    rectified. The ``fip_create`` tool is now rebuilt whenever its source files
    change.
 
@@ -1376,7 +1376,7 @@ New features
       the secure world. This can be done by setting the build flag
       ``FVP_TSP_RAM_LOCATION`` to the value ``dram``.
 
--  Separate transation tables are created for each boot loader image. The
+-  Separate translation tables are created for each boot loader image. The
    ``IMAGE_BLx`` build options are used to do this. This allows each stage to
    create mappings only for areas in the memory map that it needs.
 
@@ -1530,7 +1530,7 @@ New features
    -  Clarified the platform porting interface to the TSP.
 
    -  Reworked the TSPD setup code to support the alternate BL3-2
-      intialization flow where BL3-1 generic code hands control to BL3-2,
+      initialization flow where BL3-1 generic code hands control to BL3-2,
       rather than expecting the TSPD to hand control directly to BL3-2.
 
    -  Considerable rework to PSCI generic code to support CPU specific
@@ -1569,7 +1569,7 @@ Issues resolved since last release
 
 -  Removed the concept of top/bottom image loading. The image loader now
    automatically detects the position of the image inside the current memory
-   layout and updates the layout to minimize fragementation. This resolves the
+   layout and updates the layout to minimize fragmentation. This resolves the
    image loader limitations of previously releases. There are currently no
    plans to support dynamic image loading.
 
@@ -1615,7 +1615,7 @@ Known issues
        <SimName>System Generator:FVP_Base_A57x4_A53x4</SimName>
 
    to
-   System Generator:FVP\_Base\_Cortex-A57x4\_A53x4
+   System Generator:FVP_Base_Cortex-A57x4_A53x4
 
    A similar change can be made to the other Cortex-A57-A53 Base FVP variants.
 
@@ -1643,7 +1643,7 @@ New features
 
 -  Moved architectural timer setup to platform-specific code.
 
--  Added standby state support to PSCI cpu\_suspend implementation.
+-  Added standby state support to PSCI cpu_suspend implementation.
 
 -  SRAM usage improvements:
 
@@ -1669,7 +1669,7 @@ New features
    default configuration is provided for the Base FVPs. This means the model
    parameter ``-C bp.secure_memory=1`` is now supported.
 
--  Started saving the PSCI cpu\_suspend 'power\_state' parameter prior to
+-  Started saving the PSCI cpu_suspend 'power_state' parameter prior to
    suspending a CPU. This allows platforms that implement multiple power-down
    states at the same affinity level to identify a specific state.
 
@@ -1767,13 +1767,13 @@ New features
    instructions for how to contribute and updated copyright text in all files
    to acknowledge contributors.
 
--  The PSCI CPU\_SUSPEND API has been stabilised to the extent where it can be
+-  The PSCI CPU_SUSPEND API has been stabilised to the extent where it can be
    used for entry into power down states with the following restrictions:
 
    -  Entry into standby states is not supported.
    -  The API is only supported on the AEMv8 and Cortex-A57-A53 Base FVPs.
 
--  The PSCI AFFINITY\_INFO api has undergone limited testing on the Base FVPs to
+-  The PSCI AFFINITY_INFO api has undergone limited testing on the Base FVPs to
    allow experimental use.
 
 -  Required C library and runtime header files are now included locally in
@@ -1803,7 +1803,7 @@ New features
    particular code modules to DRAM itself.
 
 -  Reworked BL2 to BL3-1 handover interface. A new composite structure
-   (bl31\_args) holds the superset of information that needs to be passed from
+   (bl31_args) holds the superset of information that needs to be passed from
    BL2 to BL3-1, including information on how handover execution control to
    BL3-2 (if present) and BL3-3 (non-trusted firmware).
 
@@ -1817,7 +1817,7 @@ New features
 -  Added a framework for implementing EL3 runtime services. Reworked the PSCI
    implementation to be one such runtime service.
 
--  Reworked the exception handling logic, making use of both SP\_EL0 and SP\_EL3
+-  Reworked the exception handling logic, making use of both SP_EL0 and SP_EL3
    stack pointers for determining the type of exception, managing general
    purpose and system register context on exception entry/exit, and handling
    SMCs. SMCs are directed to the correct EL3 runtime service.

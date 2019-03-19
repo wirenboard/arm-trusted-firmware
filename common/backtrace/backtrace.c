@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2018-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <console.h>
-#include <debug.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <drivers/console.h>
 
 /* Maximum number of entries in the backtrace to display */
 #define UNWIND_LIMIT	20U
@@ -230,7 +231,7 @@ static void unwind_stack(struct frame_record *fr, uintptr_t current_pc,
  * Usage of the trace: addr2line can be used to map the addresses to function
  * and source code location when given the ELF file compiled with debug
  * information. The "-i" flag is highly recommended to improve display of
- * inlined function. The *.dump files generated when buildidng each image can
+ * inlined function. The *.dump files generated when building each image can
  * also be used.
  *
  * WARNING: In case of corrupted stack, this function could display security

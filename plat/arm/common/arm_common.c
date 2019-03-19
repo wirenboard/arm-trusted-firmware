@@ -3,17 +3,20 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+
+#include <assert.h>
+
+#include <platform_def.h>
+
 #include <arch.h>
 #include <arch_helpers.h>
-#include <assert.h>
-#include <debug.h>
-#include <mmio.h>
-#include <plat_arm.h>
-#include <platform.h>
-#include <platform_def.h>
-#include <romlib.h>
-#include <secure_partition.h>
-#include <xlat_tables_compat.h>
+#include <common/debug.h>
+#include <common/romlib.h>
+#include <lib/mmio.h>
+#include <lib/xlat_tables/xlat_tables_compat.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/common/platform.h>
+#include <services/secure_partition.h>
 
 /* Weak definitions may be overridden in specific ARM standard platform */
 #pragma weak plat_get_ns_image_entrypoint
@@ -37,7 +40,7 @@ uintptr_t plat_get_ns_image_entrypoint(void)
 #ifdef PRELOADED_BL33_BASE
 	return PRELOADED_BL33_BASE;
 #else
-	return PLAT_ARM_NS_IMAGE_OFFSET;
+	return PLAT_ARM_NS_IMAGE_BASE;
 #endif
 }
 
@@ -128,10 +131,10 @@ void arm_configure_sys_timer(void)
 	/*
 	 * Initialize CNTFRQ register in Non-secure CNTBase frame.
 	 * This is only required for Juno, because it doesn't follow ARM ARM
-	 * in that the value updated in CNTFRQ is not reflected in CNTBASE_CNTFRQ.
-	 * Hence update the value manually.
+	 * in that the value updated in CNTFRQ is not reflected in
+	 * CNTBASEN_CNTFRQ. Hence update the value manually.
 	 */
-	mmio_write_32(ARM_SYS_CNT_BASE_NS + CNTBASE_CNTFRQ, freq_val);
+	mmio_write_32(ARM_SYS_CNT_BASE_NS + CNTBASEN_CNTFRQ, freq_val);
 #endif
 }
 #endif /* ARM_SYS_TIMCTL_BASE */

@@ -1,22 +1,23 @@
 /*
- * Copyright (c) 2014-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2014-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include <assert.h>
-#include <cpu_data.h>
-#include <debug.h>
-#include <pmf.h>
-#include <psci.h>
-#include <runtime_instr.h>
-#include <runtime_svc.h>
-#include <sdei.h>
-#include <smccc_helpers.h>
-#include <spm_svc.h>
-#include <std_svc.h>
 #include <stdint.h>
-#include <uuid.h>
+
+#include <common/debug.h>
+#include <common/runtime_svc.h>
+#include <lib/el3_runtime/cpu_data.h>
+#include <lib/pmf/pmf.h>
+#include <lib/psci/psci.h>
+#include <lib/runtime_instr.h>
+#include <services/sdei.h>
+#include <services/spm_svc.h>
+#include <services/std_svc.h>
+#include <smccc_helpers.h>
+#include <tools_share/uuid.h>
 
 /* Standard Service UUID */
 static uuid_t arm_svc_uid = {
@@ -102,7 +103,7 @@ static uintptr_t std_svc_smc_handler(uint32_t smc_fid,
 		SMC_RET1(handle, ret);
 	}
 
-#if ENABLE_SPM
+#if ENABLE_SPM && SPM_MM
 	/*
 	 * Dispatch SPM calls to SPM SMC handler and return its return
 	 * value

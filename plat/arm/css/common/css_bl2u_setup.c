@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <bl_common.h>
-#include <debug.h>
-#include <plat_arm.h>
-#include <platform.h>
-#include "../drivers/scp/css_scp.h"
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <drivers/arm/css/css_scp.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/common/platform.h>
 
 /* Weak definition may be overridden in specific CSS based platform */
 #pragma weak bl2u_plat_handle_scp_bl2u

@@ -7,9 +7,9 @@
 #ifndef PLATFORM_DEF_H
 #define PLATFORM_DEF_H
 
-#include <common_def.h>
-#include <tbbr/tbbr_img_def.h>
-#include <utils_def.h>
+#include <common/tbbr/tbbr_img_def.h>
+#include <lib/utils_def.h>
+#include <plat/common/common_def.h>
 
 #define PLATFORM_STACK_SIZE		0x1000
 
@@ -53,7 +53,7 @@
 
 #define MAX_IO_HANDLES			2
 #define MAX_IO_DEVICES			2
-#define MAX_IO_BLOCK_DEVICES		1
+#define MAX_IO_BLOCK_DEVICES		U(1)
 
 #define TSP_SEC_MEM_BASE		(BL32_BASE)
 #define TSP_SEC_MEM_SIZE		((BL32_LIMIT) - (BL32_BASE))

@@ -1,29 +1,31 @@
 /*
- * Copyright (c) 2016-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2016-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch.h>
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <console.h>
-#include <context.h>
-#include <context_mgmt.h>
-#include <debug.h>
-#include <platform.h>
-#include <platform_def.h>
-#include <platform_sp_min.h>
-#include <psci.h>
-#include <runtime_svc.h>
-#include <smccc_helpers.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <std_svc.h>
-#include <stdint.h>
 #include <string.h>
-#include <utils.h>
+
+#include <platform_def.h>
+
+#include <arch.h>
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <common/runtime_svc.h>
+#include <context.h>
+#include <drivers/console.h>
+#include <lib/el3_runtime/context_mgmt.h>
+#include <lib/psci/psci.h>
+#include <lib/utils.h>
+#include <plat/common/platform.h>
+#include <platform_sp_min.h>
+#include <services/std_svc.h>
+#include <smccc_helpers.h>
+
 #include "sp_min_private.h"
 
 /* Pointers to per-core cpu contexts */
@@ -33,7 +35,7 @@ static void *sp_min_cpu_ctx_ptr[PLATFORM_CORE_COUNT];
 static smc_ctx_t sp_min_smc_context[PLATFORM_CORE_COUNT];
 
 /******************************************************************************
- * Define the smccc helper library API's
+ * Define the smccc helper library APIs
  *****************************************************************************/
 void *smc_get_ctx(unsigned int security_state)
 {

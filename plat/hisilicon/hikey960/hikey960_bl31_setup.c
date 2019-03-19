@@ -4,44 +4,28 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <cci.h>
-#include <console.h>
-#include <debug.h>
 #include <errno.h>
-#include <generic_delay_timer.h>
-#include <gicv2.h>
-#include <hi3660.h>
-#include <hisi_ipc.h>
-#include <interrupt_mgmt.h>
-#include <interrupt_props.h>
-#include <pl011.h>
-#include <platform.h>
+
 #include <platform_def.h>
 
+#include <arch_helpers.h>
+#include <bl31/interrupt_mgmt.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <common/interrupt_props.h>
+#include <drivers/arm/cci.h>
+#include <drivers/arm/gicv2.h>
+#include <drivers/arm/pl011.h>
+#include <drivers/console.h>
+#include <drivers/generic_delay_timer.h>
+#include <lib/mmio.h>
+#include <plat/common/platform.h>
+
+#include <hi3660.h>
+#include <hisi_ipc.h>
 #include "hikey960_def.h"
 #include "hikey960_private.h"
-
-/*
- * The next 2 constants identify the extents of the code & RO data region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __RO_START__ and __RO_END__ linker symbols refer to page-aligned addresses.
- */
-#define BL31_RO_BASE	(unsigned long)(&__RO_START__)
-#define BL31_RO_LIMIT	(unsigned long)(&__RO_END__)
-
-/*
- * The next 2 constants identify the extents of the coherent memory region.
- * These addresses are used by the MMU setup code and therefore they must be
- * page-aligned.  It is the responsibility of the linker script to ensure that
- * __COHERENT_RAM_START__ and __COHERENT_RAM_END__ linker symbols refer to
- * page-aligned addresses.
- */
-#define BL31_COHERENT_RAM_BASE	(unsigned long)(&__COHERENT_RAM_START__)
-#define BL31_COHERENT_RAM_LIMIT	(unsigned long)(&__COHERENT_RAM_END__)
 
 static entry_point_info_t bl32_ep_info;
 static entry_point_info_t bl33_ep_info;
@@ -137,10 +121,39 @@ void bl31_plat_arch_setup(void)
 {
 	hikey960_init_mmu_el3(BL31_BASE,
 			BL31_LIMIT - BL31_BASE,
-			BL31_RO_BASE,
-			BL31_RO_LIMIT,
-			BL31_COHERENT_RAM_BASE,
-			BL31_COHERENT_RAM_LIMIT);
+			BL_CODE_BASE,
+			BL_CODE_END,
+			BL_COHERENT_RAM_BASE,
+			BL_COHERENT_RAM_END);
+}
+
+static void hikey960_edma_init(void)
+{
+	int i;
+	uint32_t non_secure;
+
+	non_secure = EDMAC_SEC_CTRL_INTR_SEC | EDMAC_SEC_CTRL_GLOBAL_SEC;
+	mmio_write_32(EDMAC_SEC_CTRL, non_secure);
+
+	/* Channel 0 is reserved for LPM3, keep secure */
+	for (i = 1; i < EDMAC_CHANNEL_NUMS; i++) {
+		mmio_write_32(EDMAC_AXI_CONF(i), (1 << 6) | (1 << 18));
+	}
+}
+
+static void hikey960_iomcu_dma_init(void)
+{
+	int i;
+	uint32_t non_secure;
+
+	non_secure = IOMCU_DMAC_SEC_CTRL_INTR_SEC | IOMCU_DMAC_SEC_CTRL_GLOBAL_SEC;
+	mmio_write_32(IOMCU_DMAC_SEC_CTRL, non_secure);
+
+	/* channels 0-3 are reserved */
+	for (i = 4; i < IOMCU_DMAC_CHANNEL_NUMS; i++) {
+		mmio_write_32(IOMCU_DMAC_AXI_CONF(i), IOMCU_DMAC_AXI_CONF_ARPROT_NS |
+				 IOMCU_DMAC_AXI_CONF_AWPROT_NS);
+	}
 }
 
 void bl31_platform_setup(void)
@@ -150,6 +163,9 @@ void bl31_platform_setup(void)
 	gicv2_distif_init();
 	gicv2_pcpu_distif_init();
 	gicv2_cpuif_enable();
+
+	hikey960_edma_init();
+	hikey960_iomcu_dma_init();
 
 	hisi_ipc_init();
 }

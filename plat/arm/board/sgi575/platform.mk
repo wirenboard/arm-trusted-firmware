@@ -14,12 +14,14 @@ SGI_CPU_SOURCES		:=	lib/cpus/aarch64/cortex_a75.S
 
 BL1_SOURCES		+=	${SGI_CPU_SOURCES}
 
-BL2_SOURCES		+=	${SGI575_BASE}/sgi575_security.c	\
+BL2_SOURCES		+=	${SGI575_BASE}/sgi575_plat.c		\
+				${SGI575_BASE}/sgi575_security.c	\
 				drivers/arm/tzc/tzc_dmc620.c		\
 				lib/utils/mem_region.c			\
 				plat/arm/common/arm_nor_psci_mem_protect.c
 
 BL31_SOURCES		+=	${SGI_CPU_SOURCES}			\
+				${SGI575_BASE}/sgi575_plat.c		\
 				drivers/cfi/v2m/v2m_flash.c		\
 				lib/utils/mem_region.c			\
 				plat/arm/common/arm_nor_psci_mem_protect.c
@@ -31,8 +33,8 @@ TB_FW_CONFIG		:=	${BUILD_PLAT}/fdts/${PLAT}_tb_fw_config.dtb
 # Add the TB_FW_CONFIG to FIP and specify the same to certtool
 $(eval $(call TOOL_ADD_PAYLOAD,${TB_FW_CONFIG},--tb-fw-config))
 
-FDT_SOURCES		+=	${SGI575_BASE}/fdts/${PLAT}.dts
-HW_CONFIG		:=	${BUILD_PLAT}/fdts/${PLAT}.dtb
+FDT_SOURCES		+=	${SGI575_BASE}/fdts/${PLAT}_nt_fw_config.dts
+NT_FW_CONFIG		:=	${BUILD_PLAT}/fdts/${PLAT}_nt_fw_config.dtb
 
-# Add the HW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${HW_CONFIG},--hw-config))
+# Add the NT_FW_CONFIG to FIP and specify the same to certtool
+$(eval $(call TOOL_ADD_PAYLOAD,${NT_FW_CONFIG},--nt-fw-config))

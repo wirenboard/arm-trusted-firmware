@@ -4,15 +4,17 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
-#include <console.h>
-#include <debug.h>
 #include <errno.h>
-#include <plat_arm.h>
-#include <platform.h>
-#include <platform_def.h>
 #include <stdint.h>
-#include <v2m_flash.h>
+
+#include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <drivers/cfi/v2m_flash.h>
+#include <drivers/console.h>
+#include <plat/arm/common/plat_arm.h>
+#include <plat/common/platform.h>
 
 #pragma weak plat_arm_error_handler
 

@@ -4,22 +4,25 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arch_helpers.h>
-#include <bakery_lock.h>
-#include <bl_common.h>
-#include <cci.h>
-#include <debug.h>
 #include <errno.h>
-#include <gicv2.h>
-#include <mmio.h>
-#include <platform.h>
+
 #include <platform_def.h>
-#include <psci.h>
+
+#include <arch_helpers.h>
+#include <common/bl_common.h>
+#include <common/debug.h>
+#include <drivers/arm/cci.h>
+#include <drivers/arm/gicv2.h>
+#include <lib/bakery_lock.h>
+#include <lib/mmio.h>
+#include <lib/psci/psci.h>
+#include <plat/common/platform.h>
 
 #include "iic_dvfs.h"
 #include "pwrc.h"
 #include "rcar_def.h"
 #include "rcar_private.h"
+#include "ulcb_cpld.h"
 
 #define	DVFS_SET_VID_0V		(0x00)
 #define	P_ALL_OFF		(0x80)
@@ -38,10 +41,6 @@ extern void rcar_pwrc_restore_generic_timer(uint64_t *stack);
 extern void plat_rcar_gic_driver_init(void);
 extern void plat_rcar_gic_init(void);
 extern u_register_t rcar_boot_mpidr;
-
-#if (RCAR_GEN3_ULCB == 1)
-extern void rcar_cpld_reset_cpu(void);
-#endif
 
 static uintptr_t rcar_sec_entrypoint;
 
@@ -153,6 +152,7 @@ static void rcar_pwr_domain_suspend_finish(const psci_power_state_t
 	write_cntfrq_el0(plat_get_syscnt_freq2());
 	mmio_write_32(RCAR_CNTC_BASE + CNTCR_OFF, CNTCR_FCREQ(U(0)) | CNTCR_EN);
 	rcar_pwrc_setup();
+	rcar_pwrc_code_copy_to_system_ram();
 
 #if RCAR_SYSTEM_SUSPEND
 	rcar_pwrc_init_suspend_to_ram();
@@ -165,11 +165,9 @@ static void __dead2 rcar_system_off(void)
 {
 #if PMIC_ROHM_BD9571
 #if PMIC_LEVEL_MODE
-	rcar_pwrc_code_copy_to_system_ram();
 	if (rcar_iic_dvfs_send(PMIC, DVFS_SET_VID, DVFS_SET_VID_0V))
 		ERROR("BL3-1:Failed the SYSTEM-OFF.\n");
 #else
-	rcar_pwrc_code_copy_to_system_ram();
 	if (rcar_iic_dvfs_send(PMIC, BKUP_MODE_CNT, P_ALL_OFF))
 		ERROR("BL3-1:Failed the SYSTEM-RESET.\n");
 #endif
@@ -177,7 +175,7 @@ static void __dead2 rcar_system_off(void)
 	uint64_t cpu = read_mpidr_el1() & 0x0000ffff;
 	int32_t rtn_on;
 
-	rtn_on = cpu_on_check(cpu);
+	rtn_on = rcar_pwrc_cpu_on_check(cpu);
 
 	if (cpu == rcar_boot_mpidr)
 		panic();
@@ -202,7 +200,6 @@ static void __dead2 rcar_system_reset(void)
 	uint8_t mode;
 	int32_t error;
 
-	rcar_pwrc_code_copy_to_system_ram();
 	error = rcar_iic_dvfs_send(PMIC, REG_KEEP10, KEEP10_MAGIC);
 	if (error) {
 		ERROR("Failed send KEEP10 magic ret=%d \n", error);
@@ -225,7 +222,6 @@ static void __dead2 rcar_system_reset(void)
 	rcar_pwrc_set_suspend_to_ram();
 done:
 #else
-	rcar_pwrc_code_copy_to_system_ram();
 	if (rcar_iic_dvfs_send(PMIC, BKUP_MODE_CNT, P_ALL_OFF))
 		ERROR("BL3-1:Failed the SYSTEM-RESET.\n");
 #endif

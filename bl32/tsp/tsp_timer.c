@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 2014-2015, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2014-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include <arch_helpers.h>
+
 #include <assert.h>
-#include <platform.h>
+
+#include <arch_helpers.h>
+#include <plat/common/platform.h>
+
 #include "tsp_private.h"
 
 /*******************************************************************************
@@ -77,7 +80,7 @@ void tsp_generic_timer_save(void)
 }
 
 /*******************************************************************************
- * This function restores the timer context post cpu resummption
+ * This function restores the timer context post cpu resumption
  ******************************************************************************/
 void tsp_generic_timer_restore(void)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2014-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -7,23 +7,13 @@
 #ifndef PLATFORM_DEF_H
 #define PLATFORM_DEF_H
 
-/* Enable the dynamic translation tables library. */
-#ifdef AARCH32
-# if defined(IMAGE_BL32) && RESET_TO_SP_MIN
-#  define PLAT_XLAT_TABLES_DYNAMIC     1
-# endif
-#else
-# if defined(IMAGE_BL31) && RESET_TO_BL31
-#  define PLAT_XLAT_TABLES_DYNAMIC     1
-# endif
-#endif /* AARCH32 */
+#include <drivers/arm/tzc400.h>
+#include <lib/utils_def.h>
+#include <plat/arm/board/common/v2m_def.h>
+#include <plat/arm/common/arm_def.h>
+#include <plat/arm/common/arm_spm_def.h>
+#include <plat/common/common_def.h>
 
-#include <arm_def.h>
-#include <arm_spm_def.h>
-#include <common_def.h>
-#include <tzc400.h>
-#include <utils_def.h>
-#include <v2m_def.h>
 #include "../fvp_def.h"
 
 /* Required platform porting definitions */
@@ -63,7 +53,7 @@
 /*
  * Load address of BL33 for this platform port
  */
-#define PLAT_ARM_NS_IMAGE_OFFSET	(ARM_DRAM1_BASE + UL(0x8000000))
+#define PLAT_ARM_NS_IMAGE_BASE		(ARM_DRAM1_BASE + UL(0x8000000))
 
 /*
  * PLAT_ARM_MMAP_ENTRIES depends on the number of entries in the
@@ -72,8 +62,8 @@
 #if defined(IMAGE_BL31)
 # if ENABLE_SPM
 #  define PLAT_ARM_MMAP_ENTRIES		9
-#  define MAX_XLAT_TABLES		7
-#  define PLAT_SP_IMAGE_MMAP_REGIONS	7
+#  define MAX_XLAT_TABLES		9
+#  define PLAT_SP_IMAGE_MMAP_REGIONS	30
 #  define PLAT_SP_IMAGE_MAX_XLAT_TABLES	10
 # else
 #  define PLAT_ARM_MMAP_ENTRIES		8
@@ -123,7 +113,11 @@
  * calculated using the current BL31 PROGBITS debug size plus the sizes of
  * BL2 and BL1-RW
  */
+#if ENABLE_SPM && !SPM_MM
+#define PLAT_ARM_MAX_BL31_SIZE		UL(0x60000)
+#else
 #define PLAT_ARM_MAX_BL31_SIZE		UL(0x3B000)
+#endif
 
 #ifdef AARCH32
 /*
@@ -152,13 +146,7 @@
 #elif defined(IMAGE_BL2U)
 # define PLATFORM_STACK_SIZE		UL(0x400)
 #elif defined(IMAGE_BL31)
-# if ENABLE_SPM
-#  define PLATFORM_STACK_SIZE		UL(0x500)
-# elif PLAT_XLAT_TABLES_DYNAMIC
 #  define PLATFORM_STACK_SIZE		UL(0x800)
-# else
-#  define PLATFORM_STACK_SIZE		UL(0x400)
-# endif
 #elif defined(IMAGE_BL32)
 # define PLATFORM_STACK_SIZE		UL(0x440)
 #endif
@@ -179,14 +167,11 @@
 #define PLAT_ARM_BOOT_UART_BASE		V2M_IOFPGA_UART0_BASE
 #define PLAT_ARM_BOOT_UART_CLK_IN_HZ	V2M_IOFPGA_UART0_CLK_IN_HZ
 
-#define PLAT_ARM_BL31_RUN_UART_BASE		V2M_IOFPGA_UART1_BASE
-#define PLAT_ARM_BL31_RUN_UART_CLK_IN_HZ	V2M_IOFPGA_UART1_CLK_IN_HZ
+#define PLAT_ARM_RUN_UART_BASE		V2M_IOFPGA_UART1_BASE
+#define PLAT_ARM_RUN_UART_CLK_IN_HZ	V2M_IOFPGA_UART1_CLK_IN_HZ
 
-#define PLAT_ARM_SP_MIN_RUN_UART_BASE		V2M_IOFPGA_UART1_BASE
-#define PLAT_ARM_SP_MIN_RUN_UART_CLK_IN_HZ	V2M_IOFPGA_UART1_CLK_IN_HZ
-
-#define PLAT_ARM_CRASH_UART_BASE	PLAT_ARM_BL31_RUN_UART_BASE
-#define PLAT_ARM_CRASH_UART_CLK_IN_HZ	PLAT_ARM_BL31_RUN_UART_CLK_IN_HZ
+#define PLAT_ARM_CRASH_UART_BASE	PLAT_ARM_RUN_UART_BASE
+#define PLAT_ARM_CRASH_UART_CLK_IN_HZ	PLAT_ARM_RUN_UART_CLK_IN_HZ
 
 #define PLAT_ARM_TSP_UART_BASE		V2M_IOFPGA_UART2_BASE
 #define PLAT_ARM_TSP_UART_CLK_IN_HZ	V2M_IOFPGA_UART2_CLK_IN_HZ
@@ -265,8 +250,8 @@
 #define PLAT_ARM_PRIVATE_SDEI_EVENTS	ARM_SDEI_PRIVATE_EVENTS
 #define PLAT_ARM_SHARED_SDEI_EVENTS	ARM_SDEI_SHARED_EVENTS
 
-#define PLAT_ARM_SP_IMAGE_STACK_BASE	(ARM_SP_IMAGE_NS_BUF_BASE +	\
-					 ARM_SP_IMAGE_NS_BUF_SIZE)
+#define PLAT_ARM_SP_IMAGE_STACK_BASE	(PLAT_SP_IMAGE_NS_BUF_BASE +	\
+					 PLAT_SP_IMAGE_NS_BUF_SIZE)
 
 #define PLAT_SP_PRI			PLAT_RAS_PRI
 

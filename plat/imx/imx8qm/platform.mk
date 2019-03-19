@@ -22,11 +22,12 @@ BL31_SOURCES		+=	plat/imx/common/lpuart_console.S	\
 				plat/imx/imx8qm/imx8qm_psci.c		\
 				plat/imx/common/imx8_topology.c		\
 				plat/imx/common/imx8_psci.c		\
+				plat/imx/common/imx_sip_svc.c		\
+				plat/imx/common/imx_sip_handler.c	\
 				lib/xlat_tables/aarch64/xlat_tables.c		\
 				lib/xlat_tables/xlat_tables_common.c		\
 				lib/cpus/aarch64/cortex_a53.S			\
 				lib/cpus/aarch64/cortex_a72.S			\
-				drivers/console/aarch64/console.S		\
 				drivers/arm/cci/cci.c				\
 				${IMX_GIC_SOURCES}				\
 
@@ -37,3 +38,7 @@ RESET_TO_BL31		:=	1
 A53_DISABLE_NON_TEMPORAL_HINT := 0
 MULTI_CONSOLE_API	:=	1
 ERRATA_A72_859971	:=	1
+
+ERRATA_A53_835769	:=	1
+ERRATA_A53_843419	:=	1
+ERRATA_A53_855873	:=	1

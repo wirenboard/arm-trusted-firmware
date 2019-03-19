@@ -1,27 +1,29 @@
 /*
- * Copyright (c) 2013-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <amu.h>
-#include <arch.h>
-#include <arch_helpers.h>
 #include <assert.h>
-#include <bl_common.h>
-#include <context.h>
-#include <context_mgmt.h>
-#include <interrupt_mgmt.h>
-#include <mpam.h>
-#include <platform.h>
-#include <platform_def.h>
-#include <pubsub_events.h>
-#include <smccc_helpers.h>
-#include <spe.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sve.h>
-#include <utils.h>
+
+#include <platform_def.h>
+
+#include <arch.h>
+#include <arch_helpers.h>
+#include <bl31/interrupt_mgmt.h>
+#include <common/bl_common.h>
+#include <context.h>
+#include <lib/el3_runtime/context_mgmt.h>
+#include <lib/el3_runtime/pubsub_events.h>
+#include <lib/extensions/amu.h>
+#include <lib/extensions/mpam.h>
+#include <lib/extensions/spe.h>
+#include <lib/extensions/sve.h>
+#include <lib/utils.h>
+#include <plat/common/platform.h>
+#include <smccc_helpers.h>
 
 
 /*******************************************************************************
@@ -53,7 +55,7 @@ void __init cm_init(void)
  * The security state to initialize is determined by the SECURE attribute
  * of the entry_point_info.
  *
- * The EE and ST attributes are used to configure the endianess and secure
+ * The EE and ST attributes are used to configure the endianness and secure
  * timer availability for the new execution context.
  *
  * To prepare the register state for entry call cm_prepare_el3_exit() and
@@ -120,9 +122,23 @@ void cm_setup_context(cpu_context_t *ctx, const entry_point_info_t *ep)
 	scr_el3 |= SCR_FIEN_BIT;
 #endif
 
+#if !CTX_INCLUDE_PAUTH_REGS
+	/*
+	 * If the pointer authentication registers aren't saved during world
+	 * switches the value of the registers can be leaked from the Secure to
+	 * the Non-secure world. To prevent this, rather than enabling pointer
+	 * authentication everywhere, we only enable it in the Non-secure world.
+	 *
+	 * If the Secure world wants to use pointer authentication,
+	 * CTX_INCLUDE_PAUTH_REGS must be set to 1.
+	 */
+	if (security_state == NON_SECURE)
+		scr_el3 |= SCR_API_BIT | SCR_APK_BIT;
+#endif /* !CTX_INCLUDE_PAUTH_REGS */
+
 #ifdef IMAGE_BL31
 	/*
-	 * SCR_EL3.IRQ, SCR_EL3.FIQ: Enable the physical FIQ and IRQ rounting as
+	 * SCR_EL3.IRQ, SCR_EL3.FIQ: Enable the physical FIQ and IRQ routing as
 	 *  indicated by the interrupt routing model for BL31.
 	 */
 	scr_el3 |= get_scr_el3_from_routing_model(security_state);
@@ -171,9 +187,17 @@ void cm_setup_context(cpu_context_t *ctx, const entry_point_info_t *ep)
 					| SCTLR_NTWI_BIT | SCTLR_NTWE_BIT;
 	}
 
+#if ERRATA_A75_764081
+	/*
+	 * If workaround of errata 764081 for Cortex-A75 is used then set
+	 * SCTLR_EL1.IESB to enable Implicit Error Synchronization Barrier.
+	 */
+	sctlr_elx |= SCTLR_IESB_BIT;
+#endif
+
 	/*
 	 * Store the initialised SCTLR_EL1 value in the cpu_context - SCTLR_EL2
-	 * and other EL2 registers are set up by cm_preapre_ns_entry() as they
+	 * and other EL2 registers are set up by cm_prepare_ns_entry() as they
 	 * are not part of the stored cpu_context.
 	 */
 	write_ctx_reg(get_sysregs_ctx(ctx), CTX_SCTLR_EL1, sctlr_elx);
@@ -303,6 +327,14 @@ void cm_prepare_el3_exit(uint32_t security_state)
 							   CTX_SCTLR_EL1);
 			sctlr_elx &= SCTLR_EE_BIT;
 			sctlr_elx |= SCTLR_EL2_RES1;
+#if ERRATA_A75_764081
+			/*
+			 * If workaround of errata 764081 for Cortex-A75 is used
+			 * then set SCTLR_EL2.IESB to enable Implicit Error
+			 * Synchronization Barrier.
+			 */
+			sctlr_elx |= SCTLR_IESB_BIT;
+#endif
 			write_sctlr_el2(sctlr_elx);
 		} else if (el_implemented(2) != EL_IMPL_NONE) {
 			el2_unused = true;
@@ -348,7 +380,7 @@ void cm_prepare_el3_exit(uint32_t security_state)
 					| CPTR_EL2_TFP_BIT));
 
 			/*
-			 * Initiliase CNTHCTL_EL2. All fields are
+			 * Initialise CNTHCTL_EL2. All fields are
 			 * architecturally UNKNOWN on reset and are set to zero
 			 * except for field(s) listed below.
 			 *

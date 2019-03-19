@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <arm_def.h>
 #include <assert.h>
-#include <debug.h>
-#include <plat_arm.h>
+
 #include <platform_def.h>
-#include <tzc_dmc500.h>
+
+#include <common/debug.h>
+#include <drivers/arm/tzc_dmc500.h>
+#include <plat/arm/common/plat_arm.h>
 
 /*******************************************************************************
  * Initialize the DMC500-TrustZone Controller for ARM standard platforms.

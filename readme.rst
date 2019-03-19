@@ -9,7 +9,7 @@ such as:
 -  The `Power State Coordination Interface (PSCI)`_
 -  Trusted Board Boot Requirements (TBBR, Arm DEN0006C-1)
 -  `SMC Calling Convention`_
--  `System Control and Management Interface`_
+-  `System Control and Management Interface (SCMI)`_
 -  `Software Delegated Exception Interface (SDEI)`_
 
 Where possible, the code is designed for reuse or porting to other Armv7-A and
@@ -58,7 +58,7 @@ This release
 
 This release provides a suitable starting point for productization of secure
 world boot and runtime firmware, in either the AArch32 or AArch64 execution
-state.
+states.
 
 Users are encouraged to do their own security validation, including penetration
 testing, on any secure world code derived from TF-A.
@@ -95,13 +95,13 @@ Functionality
 -  Secure Monitor library code such as world switching, EL1 context management
    and interrupt routing.
    When a Secure-EL1 Payload (SP) is present, for example a Secure OS, the
-   AArch64 EL3 Runtime Software must be integrated with a dispatcher component
-   (SPD) to customize the interaction with the SP.
+   AArch64 EL3 Runtime Software must be integrated with a Secure Payload
+   Dispatcher (SPD) component to customize the interaction with the SP.
 
--  A Test SP/SPD to demonstrate AArch64 Secure Monitor functionality and SP
+-  A Test SP and SPD to demonstrate AArch64 Secure Monitor functionality and SP
    interaction with PSCI.
 
--  SPDs for the `OP-TEE Secure OS`_, `NVidia Trusted Little Kernel`_
+-  SPDs for the `OP-TEE Secure OS`_, `NVIDIA Trusted Little Kernel`_
    and `Trusty Secure OS`_.
 
 -  A Trusted Board Boot implementation, conforming to all mandatory TBBR
@@ -136,8 +136,8 @@ Functionality
 
 -  Support for the GCC, LLVM and Arm Compiler 6 toolchains.
 
--  Support combining several libraries into a self-called "romlib" image, that
-   may be shared across images to reduce memory footprint. The romlib image
+-  Support for combining several libraries into a self-called "romlib" image
+   that may be shared across images to reduce memory footprint. The romlib image
    is stored in ROM but is accessed through a jump-table that may be stored
    in read-write memory, allowing for the library code to be patched.
 
@@ -148,8 +148,8 @@ provides details of changes made since the last release.
 Platforms
 ~~~~~~~~~
 
-Various AArch32 and AArch64 builds of this release has been tested on variants
-r0, r1 and r2 of the `Juno Arm Development Platform`_.
+Various AArch32 and AArch64 builds of this release have been tested on r0, r1
+and r2 variants of the `Juno Arm Development Platform`_.
 
 Various AArch64 builds of this release have been tested on the following Arm
 Fixed Virtual Platforms (`FVP`_) without shifted affinities that do not
@@ -194,19 +194,21 @@ This release also contains the following platform support:
 
 -  Allwinner sun50i_64 and sun50i_h6
 -  Amlogic Meson S905 (GXBB)
--  ARM SGI-575 and SGM-775
+-  Arm SGI-575, RDN1Edge, RDE1Edge and SGM-775
+-  Arm Neoverse N1 System Development Platform
 -  HiKey, HiKey960 and Poplar boards
--  Marvell Armada 8K
+-  Marvell Armada 3700 and 8K
 -  MediaTek MT6795 and MT8173 SoCs
--  NVidia T132, T186 and T210 SoCs
--  NXP QorIQ LS1043A, i.MX8QX, i.MX8QM and i.MX7Solo WaRP7
--  QEMU emulator
--  Raspberry Pi 3 board
+-  NVIDIA T132, T186 and T210 SoCs
+-  NXP QorIQ LS1043A, i.MX8MQ, i.MX8QX, i.MX8QM and i.MX7Solo WaRP7
+-  QEMU
+-  Raspberry Pi 3
+-  R-Car Generation 3
 -  RockChip RK3328, RK3368 and RK3399 SoCs
 -  Socionext UniPhier SoC family and SynQuacer SC2A11 SoCs
 -  STMicroelectronics STM32MP1
 -  Texas Instruments K3 SoCs
--  Xilinx Zynq UltraScale + MPSoC
+-  Xilinx Versal and Zynq UltraScale + MPSoC
 
 Still to come
 ~~~~~~~~~~~~~
@@ -229,10 +231,10 @@ Getting started
 
 Get the TF-A source code from `GitHub`_.
 
-See the `User Guide`_ for instructions on how to install, build and use
-the TF-A with the Arm `FVP`_\ s.
+See the `User Guide`_ for instructions on how to install, build and use TF-A
+with the Arm `FVP`_\ s.
 
-See the `Firmware Design`_ for information on how the TF-A works.
+See the `Firmware Design`_ for information on how TF-A works.
 
 See the `Porting Guide`_ as well for information about how to use this
 software on another Armv7-A or Armv8-A platform.
@@ -253,21 +255,34 @@ Feedback and support
 
 Arm welcomes any feedback on TF-A. If you think you have found a security
 vulnerability, please report this using the process defined in the TF-A
-`Security Centre`_. For all other feedback, please use the
+`Security Center`_. For all other feedback, please use the
 `GitHub issue tracker`_.
 
 Arm licensees may contact Arm directly via their partner managers.
 
+Security advisories
+~~~~~~~~~~~~~~~~~~~
+
+-  `Security Advisory TFV-1`_
+-  `Security Advisory TFV-2`_
+-  `Security Advisory TFV-3`_
+-  `Security Advisory TFV-4`_
+-  `Security Advisory TFV-5`_
+-  `Security Advisory TFV-6`_
+-  `Security Advisory TFV-7`_
+-  `Security Advisory TFV-8`_
+
+
 --------------
 
-*Copyright (c) 2013-2018, Arm Limited and Contributors. All rights reserved.*
+*Copyright (c) 2013-2019, Arm Limited and Contributors. All rights reserved.*
 
 .. _Armv7-A and Armv8-A: https://developer.arm.com/products/architecture/a-profile
 .. _Secure Monitor: http://www.arm.com/products/processors/technologies/trustzone/tee-smc.php
 .. _Power State Coordination Interface (PSCI): PSCI_
 .. _PSCI: http://infocenter.arm.com/help/topic/com.arm.doc.den0022d/Power_State_Coordination_Interface_PDD_v1_1_DEN0022D.pdf
 .. _SMC Calling Convention: http://infocenter.arm.com/help/topic/com.arm.doc.den0028b/ARM_DEN0028B_SMC_Calling_Convention.pdf
-.. _System Control and Management Interface: SCMI_
+.. _System Control and Management Interface (SCMI): SCMI_
 .. _SCMI: http://infocenter.arm.com/help/topic/com.arm.doc.den0056a/DEN0056A_System_Control_and_Management_Interface.pdf
 .. _Software Delegated Exception Interface (SDEI): SDEI_
 .. _SDEI: http://infocenter.arm.com/help/topic/com.arm.doc.den0054a/ARM_DEN0054A_Software_Delegated_Exception_Interface.pdf
@@ -276,11 +291,11 @@ Arm licensees may contact Arm directly via their partner managers.
 .. _FVP: https://developer.arm.com/products/system-design/fixed-virtual-platforms
 .. _Linaro Release 18.04: https://community.arm.com/dev-platforms/b/documents/posts/linaro-release-notes-deprecated#LinaroRelease18.04
 .. _OP-TEE Secure OS: https://github.com/OP-TEE/optee_os
-.. _NVidia Trusted Little Kernel: http://nv-tegra.nvidia.com/gitweb/?p=3rdparty/ote_partner/tlk.git;a=summary
+.. _NVIDIA Trusted Little Kernel: http://nv-tegra.nvidia.com/gitweb/?p=3rdparty/ote_partner/tlk.git;a=summary
 .. _Trusty Secure OS: https://source.android.com/security/trusty
 .. _GitHub: https://www.github.com/ARM-software/arm-trusted-firmware
 .. _GitHub issue tracker: https://github.com/ARM-software/tf-issues/issues
-.. _Security Centre: https://github.com/ARM-software/arm-trusted-firmware/wiki/ARM-Trusted-Firmware-Security-Centre
+.. _Security Center: ./docs/security-center.rst
 .. _license: ./license.rst
 .. _Contributing Guidelines: ./contributing.rst
 .. _Acknowledgments: ./acknowledgements.rst
@@ -290,3 +305,11 @@ Arm licensees may contact Arm directly via their partner managers.
 .. _Porting Guide: ./docs/porting-guide.rst
 .. _FreeBSD: http://www.freebsd.org
 .. _SCC: http://www.simple-cc.org/
+.. _Security Advisory TFV-1: ./docs/security_advisories/security-advisory-tfv-1.rst
+.. _Security Advisory TFV-2: ./docs/security_advisories/security-advisory-tfv-2.rst
+.. _Security Advisory TFV-3: ./docs/security_advisories/security-advisory-tfv-3.rst
+.. _Security Advisory TFV-4: ./docs/security_advisories/security-advisory-tfv-4.rst
+.. _Security Advisory TFV-5: ./docs/security_advisories/security-advisory-tfv-5.rst
+.. _Security Advisory TFV-6: ./docs/security_advisories/security-advisory-tfv-6.rst
+.. _Security Advisory TFV-7: ./docs/security_advisories/security-advisory-tfv-7.rst
+.. _Security Advisory TFV-8: ./docs/security_advisories/security-advisory-tfv-8.rst

@@ -5,14 +5,18 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <allwinner/sunxi_rsb.h>
-#include <arch_helpers.h>
-#include <debug.h>
-#include <delay_timer.h>
 #include <errno.h>
+
 #include <libfdt.h>
-#include <mmio.h>
+
 #include <platform_def.h>
+
+#include <arch_helpers.h>
+#include <common/debug.h>
+#include <drivers/allwinner/sunxi_rsb.h>
+#include <drivers/delay_timer.h>
+#include <lib/mmio.h>
+
 #include <sunxi_def.h>
 #include <sunxi_mmap.h>
 #include <sunxi_private.h>
@@ -171,7 +175,7 @@ static int fdt_get_regulator_millivolt(const void *fdt, int node)
 
 #define NO_SPLIT 0xff
 
-struct axp_regulator {
+static const struct axp_regulator {
 	char *dt_name;
 	uint16_t min_volt;
 	uint16_t max_volt;
@@ -225,8 +229,8 @@ static void setup_axp803_rails(const void *fdt)
 
 	/* locate the PMIC DT node, bail out if not found */
 	node = fdt_node_offset_by_compatible(fdt, -1, "x-powers,axp803");
-	if (node == -FDT_ERR_NOTFOUND) {
-		WARN("BL31: PMIC: No AXP803 DT node, skipping initial setup.\n");
+	if (node < 0) {
+		WARN("BL31: PMIC: Cannot find AXP803 DT node, skipping initial setup.\n");
 		return;
 	}
 
@@ -237,13 +241,17 @@ static void setup_axp803_rails(const void *fdt)
 	}
 
 	/* descend into the "regulators" subnode */
-	node = fdt_first_subnode(fdt, node);
+	node = fdt_subnode_offset(fdt, node, "regulators");
+	if (node < 0) {
+		WARN("BL31: PMIC: Cannot find regulators subnode, skipping initial setup.\n");
+		return;
+	}
 
 	/* iterate over all regulators to find used ones */
 	for (node = fdt_first_subnode(fdt, node);
-	     node != -FDT_ERR_NOTFOUND;
+	     node >= 0;
 	     node = fdt_next_subnode(fdt, node)) {
-		struct axp_regulator *reg;
+		const struct axp_regulator *reg;
 		const char *name;
 		int length;
 
