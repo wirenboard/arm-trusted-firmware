@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Maintainer: Vagrant Cascadian <vagrant@debian.org>
 Standards-Version: 4.3.0
-Build-Depends: debhelper-compat (= 11),
+Build-Depends: debhelper-compat (= 12),
 Rules-Requires-Root: no
 Homepage: https://github.com/ARM-software/arm-trusted-firmware
 Vcs-Browser: https://salsa.debian.org/debian/arm-trusted-firmware
