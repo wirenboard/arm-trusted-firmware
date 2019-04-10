@@ -1,3 +1,12 @@
+arm-trusted-firmware (2.1-1) experimental; urgency=medium
+
+  * New upstream version.
+  * debian/control:
+    - Update Standards-Version to 4.3.0, no changes needed.
+    - Switch to debhelper-compat 12.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Wed, 10 Apr 2019 01:02:30 -0700
+
 arm-trusted-firmware (2.0+290.98aab974-2) unstable; urgency=medium
 
   * Upload to unstable.
