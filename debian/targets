@@ -1,2 +1,3 @@
 gxbb bl31.bin
 sun50i_a64 bl31.bin
+rk3328 bl31/bl31.elf
