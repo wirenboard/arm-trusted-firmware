@@ -12,7 +12,6 @@ Vcs-Git: https://salsa.debian.org/debian/arm-trusted-firmware.git -b debian/mast
 Package: arm-trusted-firmware
 Architecture: arm64
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: u-boot-sunxi
 Description: "secure world" software for ARM SoCs
  The "secure world" on arm64 machines is a special level of CPU
  privilege that is hidden from the normal OS, and has complete
