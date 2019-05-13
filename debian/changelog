@@ -1,3 +1,10 @@
+arm-trusted-firmware (2.1-2) experimental; urgency=medium
+
+  * Build rk3328 bl31.elf.
+  * Drop Recommends on u-boot-sunxi.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Mon, 13 May 2019 16:23:51 -0700
+
 arm-trusted-firmware (2.1-1) experimental; urgency=medium
 
   * New upstream version.
