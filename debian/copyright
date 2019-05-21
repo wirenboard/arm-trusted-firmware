@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: arm-trusted-firmware
-Source: https://github.com/ARM-software/arm-trusted-firmware.git
+Source: https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git/
 
 Files: *
 Copyright:
