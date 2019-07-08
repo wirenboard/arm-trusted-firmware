@@ -2,7 +2,7 @@ Source: arm-trusted-firmware
 Section: admin
 Priority: optional
 Maintainer: Vagrant Cascadian <vagrant@debian.org>
-Standards-Version: 4.3.0
+Standards-Version: 4.4.0
 Build-Depends: debhelper-compat (= 12),
 Rules-Requires-Root: no
 Homepage: https://www.trustedfirmware.org/
