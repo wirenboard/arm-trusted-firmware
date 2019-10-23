@@ -25,13 +25,15 @@ N1SDP_GIC_SOURCES	:=	drivers/arm/gic/common/gic_common.c	\
 PLAT_BL_COMMON_SOURCES	:=	${N1SDP_BASE}/n1sdp_plat.c	        \
 				${N1SDP_BASE}/aarch64/n1sdp_helper.S
 
+BL1_SOURCES		+=	drivers/arm/sbsa/sbsa.c
 
 BL31_SOURCES		:=	${N1SDP_CPU_SOURCES}			\
 				${INTERCONNECT_SOURCES}			\
 				${N1SDP_GIC_SOURCES}			\
 				${N1SDP_BASE}/n1sdp_bl31_setup.c	        \
 				${N1SDP_BASE}/n1sdp_topology.c	        \
-				${N1SDP_BASE}/n1sdp_security.c
+				${N1SDP_BASE}/n1sdp_security.c		\
+				drivers/arm/css/sds/sds.c
 
 
 # TF-A not required to load the SCP Images

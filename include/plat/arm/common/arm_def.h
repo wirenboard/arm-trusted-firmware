@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2015-2019, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -148,7 +148,7 @@
 #define ARM_DRAM1_END			(ARM_DRAM1_BASE +		\
 					 ARM_DRAM1_SIZE - 1)
 
-#define ARM_DRAM2_BASE			UL(0x880000000)
+#define ARM_DRAM2_BASE			PLAT_ARM_DRAM2_BASE
 #define ARM_DRAM2_SIZE			PLAT_ARM_DRAM2_SIZE
 #define ARM_DRAM2_END			(ARM_DRAM2_BASE +		\
 					 ARM_DRAM2_SIZE - 1)
@@ -312,19 +312,6 @@
  *****************************************************************************/
 
 /*
- * We need to access DRAM2 from BL2 for PSCI_MEM_PROTECT for
- * AArch64 builds
- */
-#ifdef AARCH64
-#define PLAT_PHY_ADDR_SPACE_SIZE			(1ULL << 36)
-#define PLAT_VIRT_ADDR_SPACE_SIZE			(1ULL << 36)
-#else
-#define PLAT_PHY_ADDR_SPACE_SIZE			(1ULL << 32)
-#define PLAT_VIRT_ADDR_SPACE_SIZE			(1ULL << 32)
-#endif
-
-
-/*
  * This macro defines the deepest retention state possible. A higher state
  * id will represent an invalid or a power down state.
  */
@@ -447,7 +434,7 @@
 #endif
 #endif
 
-#if defined(AARCH32) || JUNO_AARCH32_EL3_RUNTIME
+#if !defined(__aarch64__) || JUNO_AARCH32_EL3_RUNTIME
 /*******************************************************************************
  * BL32 specific defines for EL3 runtime in AArch32 mode
  ******************************************************************************/
@@ -511,17 +498,17 @@
 # else
 #  error "Unsupported ARM_TSP_RAM_LOCATION_ID value"
 # endif
-#endif /* AARCH32 || JUNO_AARCH32_EL3_RUNTIME */
+#endif /* !__aarch64__ || JUNO_AARCH32_EL3_RUNTIME */
 
 /*
  * BL32 is mandatory in AArch32. In AArch64, undefine BL32_BASE if there is no
  * SPD and no SPM, as they are the only ones that can be used as BL32.
  */
-#if !(defined(AARCH32) || JUNO_AARCH32_EL3_RUNTIME)
+#if defined(__aarch64__) && !JUNO_AARCH32_EL3_RUNTIME
 # if defined(SPD_none) && !ENABLE_SPM
 #  undef BL32_BASE
 # endif /* defined(SPD_none) && !ENABLE_SPM */
-#endif /* !(defined(AARCH32) || JUNO_AARCH32_EL3_RUNTIME) */
+#endif /* defined(__aarch64__) && !JUNO_AARCH32_EL3_RUNTIME */
 
 /*******************************************************************************
  * FWU Images: NS_BL1U, BL2U & NS_BL2U defines.

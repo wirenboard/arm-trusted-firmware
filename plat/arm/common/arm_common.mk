@@ -125,9 +125,6 @@ ENABLE_PMF			:=	1
 # mapping the former as executable and the latter as execute-never.
 SEPARATE_CODE_AND_RODATA	:=	1
 
-# Use the multi console API, which is only available for AArch64 for now
-MULTI_CONSOLE_API		:=	1
-
 # Disable ARM Cryptocell by default
 ARM_CRYPTOCELL_INTEG		:=	0
 $(eval $(call assert_boolean,ARM_CRYPTOCELL_INTEG))
@@ -158,8 +155,7 @@ include lib/xlat_tables_v2/xlat_tables.mk
 PLAT_BL_COMMON_SOURCES	+=	${XLAT_TABLES_LIB_SRCS}
 endif
 
-BL1_SOURCES		+=	drivers/arm/sp805/sp805.c			\
-				drivers/io/io_fip.c				\
+BL1_SOURCES		+=	drivers/io/io_fip.c				\
 				drivers/io/io_memmap.c				\
 				drivers/io/io_storage.c				\
 				plat/arm/common/arm_bl1_setup.c			\
@@ -238,7 +234,8 @@ endif
 
 # Pointer Authentication sources
 ifeq (${ENABLE_PAUTH}, 1)
-PLAT_BL_COMMON_SOURCES	+=	plat/arm/common/aarch64/arm_pauth.c
+PLAT_BL_COMMON_SOURCES	+=	plat/arm/common/aarch64/arm_pauth.c	\
+				lib/extensions/pauth/pauth_helpers.S
 endif
 
 # SPM uses libfdt in Arm platforms
