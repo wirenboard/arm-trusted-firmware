@@ -1,3 +1,9 @@
+arm-trusted-firmware (2.2-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Wed, 08 Jan 2020 00:24:14 -0800
+
 arm-trusted-firmware (2.2-1) experimental; urgency=medium
 
   * New upstream version.
