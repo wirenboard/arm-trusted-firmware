@@ -1,5 +1,4 @@
 gxbb bl31.bin
+rk3399 bl31/bl31.elf
 sun50i_a64 bl31.bin
 rk3328 bl31/bl31.elf
-# Only builds on stretch:
-#rk3399 bl31/bl31.elf
