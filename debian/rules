@@ -1,6 +1,7 @@
 #!/usr/bin/make -f
 export DH_VERBOSE=1
 export DEB_BUILD_MAINT_OPTIONS=hardening=-relro,-stackprotector
+export DEB_CFLAGS_MAINT_SET =
 export DEB_LDFLAGS_MAINT_SET =
 export TF_CFLAGS += -fno-pie
 
