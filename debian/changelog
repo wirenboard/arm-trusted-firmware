@@ -1,3 +1,17 @@
+arm-trusted-firmware (2.2-3) unstable; urgency=medium
+
+  [ Vagrant Cascadian ]
+  * debian/control:
+    - Add build-deps for rk3399.
+    - Update Standards-Version to 4.5.0, no changes.
+  * Enable rk3399 target.
+  * Add lintian override for rk3399.
+
+  [ Walter Lozano ]
+  * Fix build for rk3399 (Closes: #956298)
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Fri, 10 Apr 2020 08:34:34 -0700
+
 arm-trusted-firmware (2.2-2) unstable; urgency=medium
 
   * Upload to unstable.
