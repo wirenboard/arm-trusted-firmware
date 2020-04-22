@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2017-2020, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -92,6 +92,48 @@ uint8_t fdt_get_status(int node)
 	return status;
 }
 
+#if ENABLE_ASSERTIONS
+/*******************************************************************************
+ * This function returns the address cells from the node parent.
+ * Returns:
+ * - #address-cells value if success.
+ * - invalid value if error.
+ * - a default value if undefined #address-cells property as per libfdt
+ *   implementation.
+ ******************************************************************************/
+static int fdt_get_node_parent_address_cells(int node)
+{
+	int parent;
+
+	parent = fdt_parent_offset(fdt, node);
+	if (parent < 0) {
+		return -FDT_ERR_NOTFOUND;
+	}
+
+	return fdt_address_cells(fdt, parent);
+}
+
+/*******************************************************************************
+ * This function returns the size cells from the node parent.
+ * Returns:
+ * - #size-cells value if success.
+ * - invalid value if error.
+ * - a default value if undefined #size-cells property as per libfdt
+ *   implementation.
+ ******************************************************************************/
+static int fdt_get_node_parent_size_cells(int node)
+{
+	int parent;
+
+	parent = fdt_parent_offset(fdt, node);
+	if (parent < 0) {
+		return -FDT_ERR_NOTFOUND;
+	}
+
+	return fdt_size_cells(fdt, parent);
+}
+#endif
+
 /*******************************************************************************
  * This function reads a value of a node property (generic use of fdt
  * library).
@@ -140,6 +182,46 @@ int fdt_read_uint32_array(int node, const char *prop_name, uint32_t *array,
 		*array = fdt32_to_cpu(*cuint);
 		array++;
 		cuint++;
+	}
+
+	return 0;
+}
+
+/*******************************************************************************
+ * This function fills reg node info (base & size) with an index found by
+ * checking the reg-names node.
+ * Returns 0 on success and a negative FDT error code on failure.
+ ******************************************************************************/
+int fdt_get_reg_props_by_name(int node, const char *name, uintptr_t *base,
+			      size_t *size)
+{
+	const fdt32_t *cuint;
+	int index, len;
+
+	assert((fdt_get_node_parent_address_cells(node) == 1) &&
+	       (fdt_get_node_parent_size_cells(node) == 1));
+
+	index = fdt_stringlist_search(fdt, node, "reg-names", name);
+	if (index < 0) {
+		return index;
+	}
+
+	cuint = fdt_getprop(fdt, node, "reg", &len);
+	if (cuint == NULL) {
+		return -FDT_ERR_NOTFOUND;
+	}
+
+	if ((index * (int)sizeof(uint32_t)) > len) {
+		return -FDT_ERR_BADVALUE;
+	}
+
+	cuint += index << 1;
+	if (base != NULL) {
+		*base = fdt32_to_cpu(*cuint);
+	}
+	cuint++;
+	if (size != NULL) {
+		*size = fdt32_to_cpu(*cuint);
 	}
 
 	return 0;
@@ -214,6 +296,8 @@ int dt_set_stdout_pinctrl(void)
 void dt_fill_device_info(struct dt_node_info *info, int node)
 {
 	const fdt32_t *cuint;
+
+	assert(fdt_get_node_parent_address_cells(node) == 1);
 
 	cuint = fdt_getprop(fdt, node, "reg", NULL);
 	if (cuint != NULL) {
@@ -309,6 +393,9 @@ uintptr_t dt_get_ddrctrl_base(void)
 		return 0;
 	}
 
+	assert((fdt_get_node_parent_address_cells(node) == 1) &&
+	       (fdt_get_node_parent_size_cells(node) == 1));
+
 	if (fdt_read_uint32_array(node, "reg", array, 4) < 0) {
 		return 0;
 	}
@@ -331,6 +418,9 @@ uintptr_t dt_get_ddrphyc_base(void)
 		return 0;
 	}
 
+	assert((fdt_get_node_parent_address_cells(node) == 1) &&
+	       (fdt_get_node_parent_size_cells(node) == 1));
+
 	if (fdt_read_uint32_array(node, "reg", array, 4) < 0) {
 		return 0;
 	}
@@ -352,6 +442,8 @@ uintptr_t dt_get_pwr_base(void)
 		INFO("%s: Cannot read PWR node in DT\n", __func__);
 		return 0;
 	}
+
+	assert(fdt_get_node_parent_address_cells(node) == 1);
 
 	cuint = fdt_getprop(fdt, node, "reg", NULL);
 	if (cuint == NULL) {
@@ -377,7 +469,7 @@ uint32_t dt_get_pwr_vdd_voltage(void)
 	}
 
 	pwr_regulators_node = fdt_subnode_offset(fdt, node, "pwr-regulators");
-	if (node < 0) {
+	if (pwr_regulators_node < 0) {
 		INFO("%s: Cannot read pwr-regulators node in DT\n", __func__);
 		return 0;
 	}
@@ -414,6 +506,8 @@ uintptr_t dt_get_syscfg_base(void)
 		INFO("%s: Cannot read SYSCFG node in DT\n", __func__);
 		return 0;
 	}
+
+	assert(fdt_get_node_parent_address_cells(node) == 1);
 
 	cuint = fdt_getprop(fdt, node, "reg", NULL);
 	if (cuint == NULL) {

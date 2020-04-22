@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2013-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2020, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <common/bl_common.ld.h>
 #include <lib/xlat_tables/xlat_tables_defs.h>
-#include <platform_def.h>
 
 OUTPUT_FORMAT(PLATFORM_LINKER_FORMAT)
 OUTPUT_ARCH(PLATFORM_LINKER_ARCH)
@@ -36,6 +36,9 @@ SECTIONS
     .rodata . : {
         __RODATA_START__ = .;
         *(.rodata*)
+
+	RODATA_COMMON
+
         . = ALIGN(PAGE_SIZE);
         __RODATA_END__ = .;
     } >RAM
@@ -45,7 +48,11 @@ SECTIONS
         *tsp_entrypoint.o(.text*)
         *(.text*)
         *(.rodata*)
+
+	RODATA_COMMON
+
         *(.vectors)
+
         __RO_END_UNALIGNED__ = .;
         /*
          * Memory page(s) mapped to this section will be marked as
@@ -69,6 +76,17 @@ SECTIONS
         __DATA_END__ = .;
     } >RAM
 
+    /*
+     * .rela.dyn needs to come after .data for the read-elf utility to parse
+     * this section correctly. Ensure 8-byte alignment so that the fields of
+     * RELA data structure are aligned.
+     */
+    . = ALIGN(8);
+    __RELA_START__ = .;
+    .rela.dyn . : {
+    } >RAM
+    __RELA_END__ = .;
+
 #ifdef TSP_PROGBITS_LIMIT
     ASSERT(. <= TSP_PROGBITS_LIMIT, "TSP progbits has exceeded its limit.")
 #endif
@@ -79,27 +97,8 @@ SECTIONS
         __STACKS_END__ = .;
     } >RAM
 
-    /*
-     * The .bss section gets initialised to 0 at runtime.
-     * Its base address should be 16-byte aligned for better performance of the
-     * zero-initialization code.
-     */
-    .bss : ALIGN(16) {
-        __BSS_START__ = .;
-        *(SORT_BY_ALIGNMENT(.bss*))
-        *(COMMON)
-        __BSS_END__ = .;
-    } >RAM
-
-    /*
-     * The xlat_table section is for full, aligned page tables (4K).
-     * Removing them from .bss avoids forcing 4K alignment on
-     * the .bss section. The tables are initialized to zero by the translation
-     * tables library.
-     */
-    xlat_table (NOLOAD) : {
-        *(xlat_table)
-    } >RAM
+    BSS_SECTION >RAM
+    XLAT_TABLE_SECTION >RAM
 
 #if USE_COHERENT_MEM
     /*
@@ -128,6 +127,10 @@ SECTIONS
      */
     __RW_END__ = .;
     __BL32_END__ = .;
+
+    /DISCARD/ : {
+        *(.dynsym .dynstr .hash .gnu.hash)
+    }
 
     __BSS_SIZE__ = SIZEOF(.bss);
 #if USE_COHERENT_MEM

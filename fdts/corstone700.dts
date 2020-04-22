@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019-2020, Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -14,9 +14,8 @@
 	#size-cells = <1>;
 
 	chosen {
-		bootargs = "console=ttyAMA0 root=/dev/vda2 rw loglevel=9";
-		linux,initrd-start = <0x02a00000>;
-		linux,initrd-end = <0x04000000>;
+		bootargs = "console=ttyAMA0 \
+		loglevel=9";
 	};
 
 	cpus {
@@ -32,9 +31,9 @@
 
 	};
 
-	memory@2000000 {
+	memory@80000000 {
 		device_type = "memory";
-		reg = <0x02000000 0x02000000>;
+		reg = <0x80000000 0x80000000>;
 	};
 
 	gic: interrupt-controller@1c000000 {
@@ -68,14 +67,21 @@
 		clock-output-names = "smclk";
 	};
 
+	uartclk: uartclk {
+		/* UART clock - 32MHz */
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <32000000>;
+		clock-output-names = "uartclk";
+	};
 
 	serial0: uart@1a510000 {
 		compatible = "arm,pl011", "arm,primecell";
 		reg = <0x1a510000 0x1000>;
 		interrupt-parent = <&gic>;
 		interrupts = <0 19 4>;
-		clocks = <&refclk100mhz>, <&smbclk>;
-		clock-names = "apb_pclk", "smclk";
+		clocks = <&uartclk>, <&refclk100mhz>;
+		clock-names = "uartclk", "apb_pclk";
 	};
 
 	serial1: uart@1a520000 {
@@ -83,8 +89,8 @@
 		reg = <0x1a520000 0x1000>;
 		interrupt-parent = <&gic>;
 		interrupts = <0 20 4>;
-		clocks = <&refclk100mhz>, <&smbclk>;
-		clock-names = "apb_pclk", "smclk";
+		clocks = <&uartclk>, <&refclk100mhz>;
+		clock-names = "uartclk", "apb_pclk";
 	};
 
 	timer {

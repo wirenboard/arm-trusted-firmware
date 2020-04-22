@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013-2019, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2020, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2020, NVIDIA Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -96,6 +97,32 @@
 #define ICC_SGI0R_EL1		S3_0_c12_c11_7
 
 /*******************************************************************************
+ * Definitions for EL2 system registers for save/restore routine
+ ******************************************************************************/
+
+#define CNTPOFF_EL2		S3_4_C14_C0_6
+#define HAFGRTR_EL2		S3_4_C3_C1_6
+#define HDFGRTR_EL2		S3_4_C3_C1_4
+#define HDFGWTR_EL2		S3_4_C3_C1_5
+#define HFGITR_EL2		S3_4_C1_C1_6
+#define HFGRTR_EL2		S3_4_C1_C1_4
+#define HFGWTR_EL2		S3_4_C1_C1_5
+#define ICH_HCR_EL2		S3_4_C12_C11_0
+#define ICH_VMCR_EL2		S3_4_C12_C11_7
+#define MPAMVPM0_EL2		S3_4_C10_C5_0
+#define MPAMVPM1_EL2		S3_4_C10_C5_1
+#define MPAMVPM2_EL2		S3_4_C10_C5_2
+#define MPAMVPM3_EL2		S3_4_C10_C5_3
+#define MPAMVPM4_EL2		S3_4_C10_C5_4
+#define MPAMVPM5_EL2		S3_4_C10_C5_5
+#define MPAMVPM6_EL2		S3_4_C10_C5_6
+#define MPAMVPM7_EL2		S3_4_C10_C5_7
+#define MPAMVPMV_EL2		S3_4_C10_C4_1
+#define TRFCR_EL2		S3_4_C1_C2_1
+#define PMSCR_EL2		S3_4_C9_C9_0
+#define TFSR_EL2		S3_4_C5_C6_0
+
+/*******************************************************************************
  * Generic timer memory mapped registers & offsets
  ******************************************************************************/
 #define CNTCR_OFF			U(0x000)
@@ -140,6 +167,8 @@
 #define ID_AA64PFR0_GIC_MASK	ULL(0xf)
 #define ID_AA64PFR0_SVE_SHIFT	U(32)
 #define ID_AA64PFR0_SVE_MASK	ULL(0xf)
+#define ID_AA64PFR0_SEL2_SHIFT	U(36)
+#define ID_AA64PFR0_SEL2_MASK	ULL(0xf)
 #define ID_AA64PFR0_MPAM_SHIFT	U(40)
 #define ID_AA64PFR0_MPAM_MASK	ULL(0xf)
 #define ID_AA64PFR0_DIT_SHIFT	U(48)
@@ -235,8 +264,8 @@
 			 (U(1) << 22) | (U(1) << 18) | (U(1) << 16) | \
 			 (U(1) << 11) | (U(1) << 5) | (U(1) << 4))
 
-#define SCTLR_EL1_RES1	((U(1) << 29) | (U(1) << 28) | (U(1) << 23) | \
-			 (U(1) << 22) | (U(1) << 20) | (U(1) << 11))
+#define SCTLR_EL1_RES1	((UL(1) << 29) | (UL(1) << 28) | (UL(1) << 23) | \
+			 (UL(1) << 22) | (UL(1) << 20) | (UL(1) << 11))
 #define SCTLR_AARCH32_EL1_RES1 \
 			((U(1) << 23) | (U(1) << 22) | (U(1) << 11) | \
 			 (U(1) << 4) | (U(1) << 3))
@@ -285,6 +314,7 @@
 #define SCR_RES1_BITS		((U(1) << 4) | (U(1) << 5))
 #define SCR_ATA_BIT		(U(1) << 26)
 #define SCR_FIEN_BIT		(U(1) << 21)
+#define SCR_EEL2_BIT		(U(1) << 18)
 #define SCR_API_BIT		(U(1) << 17)
 #define SCR_APK_BIT		(U(1) << 16)
 #define SCR_TWE_BIT		(U(1) << 13)
@@ -422,6 +452,9 @@
 #define SPSR_M_AARCH64		U(0x0)
 #define SPSR_M_AARCH32		U(0x1)
 
+#define SPSR_EL_SHIFT		U(2)
+#define SPSR_EL_WIDTH		U(2)
+
 #define SPSR_SSBS_BIT_AARCH64	BIT_64(12)
 #define SPSR_SSBS_BIT_AARCH32	BIT_64(23)
 
@@ -527,6 +560,7 @@
 
 #define MODE_EL_SHIFT		U(0x2)
 #define MODE_EL_MASK		U(0x3)
+#define MODE_EL_WIDTH		U(0x2)
 #define MODE_EL3		U(0x3)
 #define MODE_EL2		U(0x2)
 #define MODE_EL1		U(0x1)
@@ -593,6 +627,10 @@
 #define CNTP_CTL_ENABLE_MASK    U(1)
 #define CNTP_CTL_IMASK_MASK     U(1)
 #define CNTP_CTL_ISTATUS_MASK   U(1)
+
+/* Physical timer control macros */
+#define CNTP_CTL_ENABLE_BIT	(U(1) << CNTP_CTL_ENABLE_SHIFT)
+#define CNTP_CTL_IMASK_BIT	(U(1) << CNTP_CTL_IMASK_SHIFT)
 
 /* Exception Syndrome register bits and bobs */
 #define ESR_EC_SHIFT			U(26)

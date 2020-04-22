@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2015-2020, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -18,7 +18,12 @@
 
 
 /*
- * Maximum key and hash sizes (in DER format)
+ * Maximum key and hash sizes (in DER format).
+ *
+ * Both RSA and ECDSA keys may be used at the same time. In this case, the key
+ * buffers must be big enough to hold either. As RSA keys are bigger than ECDSA
+ * ones for all key sizes we support, they impose the minimum size of these
+ * buffers.
  */
 #if TF_MBEDTLS_USE_RSA
 #if TF_MBEDTLS_KEY_SIZE == 1024
@@ -32,11 +37,19 @@
 #else
 #error "Invalid value for TF_MBEDTLS_KEY_SIZE"
 #endif
-#else
-#define PK_DER_LEN			294
+#else /* Only using ECDSA keys. */
+#define PK_DER_LEN			91
 #endif
 
+#if TF_MBEDTLS_HASH_ALG_ID == TF_MBEDTLS_SHA256
+#define HASH_DER_LEN			51
+#elif TF_MBEDTLS_HASH_ALG_ID == TF_MBEDTLS_SHA384
+#define HASH_DER_LEN			67
+#elif TF_MBEDTLS_HASH_ALG_ID == TF_MBEDTLS_SHA512
 #define HASH_DER_LEN			83
+#else
+#error "Invalid value for TF_MBEDTLS_HASH_ALG_ID"
+#endif
 
 /*
  * The platform must allocate buffers to store the authentication parameters

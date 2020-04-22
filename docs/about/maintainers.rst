@@ -17,10 +17,16 @@ Main maintainers
 :G: `sandrine-bailleux-arm`_
 :M: Alexei Fedorov <alexei.fedorov@arm.com>
 :G: `AlexeiFedorov`_
-:M: Paul Beesley <paul.beesley@arm.com>
-:G: `pbeesley-arm`_
-:M: György Szing <gyorgy.szing@arm.com>
-:G: `gyuri-szing`_
+:M: Manish Pandey <manish.pandey2@arm.com>
+:G: `manish-pandey-arm`_
+:M: Mark Dykes <mark.dykes@arm.com>
+:G: `mardyk01`_
+:M: Olivier Deprez <olivier.deprez@arm.com>
+:G: `odeprez`_
+:M: Bipin Ravi <bipin.ravi@arm.com>
+:G: `bipinravi-arm`_
+:M: Joanna Farley <joanna.farley@arm.com>
+:G: `joannafarley-arm`_
 
 Allwinner ARMv8 platform port
 -----------------------------
@@ -45,7 +51,6 @@ Amlogic Meson S905x (GXL) platform port
 :M: Remi Pommarel <repk@triplefau.lt>
 :G: `remi-triplefault`_
 :F: docs/plat/meson-gxl.rst
-:F: drivers/amlogic/gxl
 :F: plat/amlogic/gxl/
 
 Amlogic Meson S905X2 (G12A) platform port
@@ -53,8 +58,14 @@ Amlogic Meson S905X2 (G12A) platform port
 :M: Carlo Caione <ccaione@baylibre.com>
 :G: `carlocaione`_
 :F: docs/plat/meson-g12a.rst
-:F: drivers/amlogic/g12a
 :F: plat/amlogic/g12a/
+
+Amlogic Meson A113D (AXG) platform port
+-----------------------------------------
+:M: Carlo Caione <ccaione@baylibre.com>
+:G: `carlocaione`_
+:F: docs/plat/meson-axg.rst
+:F: plat/amlogic/axg/
 
 Armv7-A architecture port
 -------------------------
@@ -136,7 +147,7 @@ Marvell platform ports and SoC drivers
 --------------------------------------
 :M: Konstantin Porotchkin <kostap@marvell.com>
 :G: `kostapr`_
-:F: docs/marvell/
+:F: docs/plat/marvell/
 :F: plat/marvell/
 :F: drivers/marvell/
 :F: tools/marvell/
@@ -181,14 +192,14 @@ NXP i.MX8M platform port
 ------------------------
 :M: Jacky Bai <ping.bai@nxp.com>
 :G: `JackyBai`_
-:F: doc/plat/imx8m.rst
+:F: docs/plat/imx8m.rst
 :F: plat/imx/imx8m/
 
 OP-TEE dispatcher
 -----------------
 :M: Jens Wiklander <jens.wiklander@linaro.org>
 :G: `jenswi-linaro`_
-:F: docs/spd/optee-dispatcher.rst
+:F: docs/components/spd/optee-dispatcher.rst
 :F: services/spd/opteed/
 
 QEMU platform port
@@ -203,7 +214,18 @@ Raspberry Pi 3 platform port
 :M: Ying-Chun Liu (PaulLiu) <paul.liu@linaro.org>
 :G: `grandpaul`_
 :F: docs/plat/rpi3.rst
-:F: plat/rpi3/
+:F: plat/rpi/rpi3/
+:F: plat/rpi/common/
+:F: drivers/rpi3/
+:F: include/drivers/rpi3/
+
+Raspberry Pi 4 platform port
+----------------------------
+:M: Andre Przywara <andre.przywara@arm.com>
+:G: `Andre-ARM`_
+:F: docs/plat/rpi4.rst
+:F: plat/rpi/rpi4/
+:F: plat/rpi/common/
 :F: drivers/rpi3/
 :F: include/drivers/rpi3/
 
@@ -257,8 +279,8 @@ TLK/Trusty secure payloads
 --------------------------
 :M: Varun Wadekar <vwadekar@nvidia.com>
 :G: `vwadekar`_
-:F: docs/spd/tlk-dispatcher.rst
-:F: docs/spd/trusty-dispatcher.rst
+:F: docs/components/spd/tlk-dispatcher.rst
+:F: docs/components/spd/trusty-dispatcher.rst
 :F: include/bl32/payloads/tlk.h
 :F: services/spd/tlkd/
 :F: services/spd/trusty/
@@ -287,7 +309,6 @@ Xilinx platform port
 .. _etienne-lms: https://github.com/etienne-lms
 .. _glneo: https://github.com/glneo
 .. _grandpaul: https://github.com/grandpaul
-.. _gyuri-szing: https://github.com/gyuri-szing
 .. _hzhuang1: https://github.com/hzhuang1
 .. _JackyBai: https://github.com/JackyBai
 .. _jenswi-linaro: https://github.com/jenswi-linaro
@@ -300,7 +321,6 @@ Xilinx platform port
 .. _mtk09422: https://github.com/mtk09422
 .. _niej: https://github.com/niej
 .. _npoushin: https://github.com/npoushin
-.. _pbeesley-arm: https://github.com/pbeesley-arm
 .. _qoriq-open-source: https://github.com/qoriq-open-source
 .. _remi-triplefault: https://github.com/repk
 .. _rockchip-linux: https://github.com/rockchip-linux
@@ -314,3 +334,8 @@ Xilinx platform port
 .. _TonyXie06: https://github.com/TonyXie06
 .. _vwadekar: https://github.com/vwadekar
 .. _Yann-lms: https://github.com/Yann-lms
+.. _manish-pandey-arm: https://github.com/manish-pandey-arm
+.. _mardyk01: https://github.com/mardyk01
+.. _odeprez: https://github.com/odeprez
+.. _bipinravi-arm: https://github.com/bipinravi-arm
+.. _joannafarley-arm: https://github.com/joannafarley-arm

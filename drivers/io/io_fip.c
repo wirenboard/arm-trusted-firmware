@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2014-2020, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -46,6 +46,7 @@ typedef struct {
  */
 typedef struct {
 	uintptr_t dev_spec;
+	uint16_t plat_toc_flag;
 } fip_dev_state_t;
 
 static const uuid_t uuid_null;
@@ -220,6 +221,11 @@ static int fip_dev_init(io_dev_info_t *dev_info, const uintptr_t init_params)
 	uintptr_t backend_handle;
 	fip_toc_header_t header;
 	size_t bytes_read;
+	fip_dev_state_t *state;
+
+	assert(dev_info != NULL);
+
+	state = (fip_dev_state_t *)dev_info->info;
 
 	/* Obtain a reference to the image by querying the platform layer */
 	result = plat_get_image_source(image_id, &backend_dev_handle,
@@ -248,6 +254,11 @@ static int fip_dev_init(io_dev_info_t *dev_info, const uintptr_t init_params)
 			result = -ENOENT;
 		} else {
 			VERBOSE("FIP header looks OK.\n");
+			/*
+			 * Store 16-bit Platform ToC flags field which occupies
+			 * bits [32-47] in fip header.
+			 */
+			state->plat_toc_flag = (header.flags >> 32) & 0xffff;
 		}
 	}
 
@@ -304,7 +315,8 @@ static int fip_file_open(io_dev_info_t *dev_info, const uintptr_t spec,
 	}
 
 	/* Seek past the FIP header into the Table of Contents */
-	result = io_seek(backend_handle, IO_SEEK_SET, sizeof(fip_toc_header_t));
+	result = io_seek(backend_handle, IO_SEEK_SET,
+			 (signed long long)sizeof(fip_toc_header_t));
 	if (result != 0) {
 		WARN("fip_file_open: failed to seek\n");
 		result = -ENOENT;
@@ -389,7 +401,8 @@ static int fip_file_read(io_entity_t *entity, uintptr_t buffer, size_t length,
 
 	/* Seek to the position in the FIP where the payload lives */
 	file_offset = fp->entry.offset_address + fp->file_pos;
-	result = io_seek(backend_handle, IO_SEEK_SET, file_offset);
+	result = io_seek(backend_handle, IO_SEEK_SET,
+			 (signed long long)file_offset);
 	if (result != 0) {
 		WARN("fip_file_read: failed to seek\n");
 		result = -ENOENT;
@@ -450,4 +463,18 @@ int register_io_dev_fip(const io_dev_connector_t **dev_con)
 		*dev_con = &fip_dev_connector;
 
 	return result;
+}
+
+/* Function to retrieve plat_toc_flags, previously saved in FIP dev */
+int fip_dev_get_plat_toc_flag(io_dev_info_t *dev_info, uint16_t *plat_toc_flag)
+{
+	fip_dev_state_t *state;
+
+	assert(dev_info != NULL);
+
+	state = (fip_dev_state_t *)dev_info->info;
+
+	*plat_toc_flag =  state->plat_toc_flag;
+
+	return 0;
 }

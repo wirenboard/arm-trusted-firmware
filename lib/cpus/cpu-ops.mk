@@ -1,5 +1,6 @@
 #
-# Copyright (c) 2014-2019, ARM Limited and Contributors. All rights reserved.
+# Copyright (c) 2014-2020, ARM Limited and Contributors. All rights reserved.
+# Copyright (c) 2020, NVIDIA Corporation. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -16,9 +17,21 @@ A53_DISABLE_NON_TEMPORAL_HINT	?=1
 # It is enabled by default.
 A57_DISABLE_NON_TEMPORAL_HINT	?=1
 
+# Flag to enable higher performance non-cacheable load forwarding.
+# It is disabled by default.
+A57_ENABLE_NONCACHEABLE_LOAD_FWD	?= 0
+
 WORKAROUND_CVE_2017_5715	?=1
 WORKAROUND_CVE_2018_3639	?=1
 DYNAMIC_WORKAROUND_CVE_2018_3639	?=0
+
+# Flag to indicate internal or external Last level cache
+# By default internal
+NEOVERSE_N1_EXTERNAL_LLC	?=0
+
+# Process A57_ENABLE_NONCACHEABLE_LOAD_FWD flag
+$(eval $(call assert_boolean,A57_ENABLE_NONCACHEABLE_LOAD_FWD))
+$(eval $(call add_define,A57_ENABLE_NONCACHEABLE_LOAD_FWD))
 
 # Process SKIP_A57_L1_FLUSH_PWR_DWN flag
 $(eval $(call assert_boolean,SKIP_A57_L1_FLUSH_PWR_DWN))
@@ -42,6 +55,9 @@ $(eval $(call add_define,WORKAROUND_CVE_2018_3639))
 
 $(eval $(call assert_boolean,DYNAMIC_WORKAROUND_CVE_2018_3639))
 $(eval $(call add_define,DYNAMIC_WORKAROUND_CVE_2018_3639))
+
+$(eval $(call assert_boolean,NEOVERSE_N1_EXTERNAL_LLC))
+$(eval $(call add_define,NEOVERSE_N1_EXTERNAL_LLC))
 
 ifneq (${DYNAMIC_WORKAROUND_CVE_2018_3639},0)
     ifeq (${WORKAROUND_CVE_2018_3639},0)
@@ -234,9 +250,13 @@ ERRATA_A76_1275112	?=0
 # only to revision <= r3p0 of the Cortex A76 cpu.
 ERRATA_A76_1286807	?=0
 
+# Flag to apply erratum 1688305 workaround during reset. This erratum applies
+# to revisions r0p0 - r1p0 of the Hercules cpu.
+ERRATA_HERCULES_1688305	?=0
+
 # Flag to apply T32 CLREX workaround during reset. This erratum applies
 # only to r0p0 and r1p0 of the Neoverse N1 cpu.
-ERRATA_N1_1043202	?=1
+ERRATA_N1_1043202	?=0
 
 # Flag to apply erratum 1073348 workaround during reset. This erratum applies
 # only to revision r0p0 and r1p0 of the Neoverse N1 cpu.
@@ -276,7 +296,7 @@ ERRATA_N1_1275112	?=0
 
 # Flag to apply erratum 1315703 workaround during reset. This erratum applies
 # to revisions before r3p1 of the Neoverse N1 cpu.
-ERRATA_N1_1315703	?=1
+ERRATA_N1_1315703	?=0
 
 # Flag to apply erratum 1542419 workaround during reset. This erratum applies
 # to revisions r3p0 - r4p0 of the Neoverse N1 cpu.
@@ -466,6 +486,10 @@ $(eval $(call add_define,ERRATA_A76_1275112))
 # Process ERRATA_A76_1286807 flag
 $(eval $(call assert_boolean,ERRATA_A76_1286807))
 $(eval $(call add_define,ERRATA_A76_1286807))
+
+# Process ERRATA_HERCULES_1688305 flag
+$(eval $(call assert_boolean,ERRATA_HERCULES_1688305))
+$(eval $(call add_define,ERRATA_HERCULES_1688305))
 
 # Process ERRATA_N1_1043202 flag
 $(eval $(call assert_boolean,ERRATA_N1_1043202))

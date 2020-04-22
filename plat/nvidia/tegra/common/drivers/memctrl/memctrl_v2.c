@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2017, ARM Limited and Contributors. All rights reserved.
- * Copyright (c) 2019, NVIDIA Corporation. All rights reserved.
+ * Copyright (c) 2019-2020, NVIDIA Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -21,21 +21,11 @@
 #include <smmu.h>
 #include <tegra_def.h>
 #include <tegra_platform.h>
+#include <tegra_private.h>
 
 /* Video Memory base and size (live values) */
 static uint64_t video_mem_base;
 static uint64_t video_mem_size_mb;
-
-/*
- * The following platform setup functions are weakly defined. They
- * provide typical implementations that will be overridden by a SoC.
- */
-#pragma weak plat_memctrl_tzdram_setup
-
-void plat_memctrl_tzdram_setup(uint64_t phys_base, uint64_t size_in_bytes)
-{
-	; /* do nothing */
-}
 
 /*
  * Init Memory controller during boot.
@@ -169,69 +159,59 @@ void tegra_memctrl_tzdram_setup(uint64_t phys_base, uint32_t size_in_bytes)
  */
 void tegra_memctrl_tzram_setup(uint64_t phys_base, uint32_t size_in_bytes)
 {
-	uint32_t index;
-	uint32_t total_128kb_blocks = size_in_bytes >> 17;
-	uint32_t residual_4kb_blocks = (size_in_bytes & (uint32_t)0x1FFFF) >> 12;
-	uint32_t val;
+	; /* do nothing */
+}
 
-	INFO("Configuring TrustZone SRAM Memory Carveout\n");
+/*
+ * Save MC settings before "System Suspend" to TZDRAM
+ */
+void tegra_mc_save_context(uint64_t mc_ctx_addr)
+{
+	const tegra_mc_settings_t *plat_mc_settings = tegra_get_mc_settings();
+	uint32_t i, num_entries = 0;
+	mc_regs_t *mc_ctx_regs;
+	const plat_params_from_bl2_t *params_from_bl2 = bl31_get_plat_params();
+	uint64_t tzdram_base = params_from_bl2->tzdram_base;
+	uint64_t tzdram_end = tzdram_base + params_from_bl2->tzdram_size;
+
+	assert((mc_ctx_addr >= tzdram_base) && (mc_ctx_addr <= tzdram_end));
+
+	/* get MC context table */
+	mc_ctx_regs = plat_mc_settings->get_mc_system_suspend_ctx();
+	assert(mc_ctx_regs != NULL);
 
 	/*
-	 * Reset the access configuration registers to restrict access
-	 * to the TZRAM aperture
+	 * mc_ctx_regs[0].val contains the size of the context table minus
+	 * the last entry. Sanity check the table size before we start with
+	 * the context save operation.
 	 */
-	for (index = MC_TZRAM_CLIENT_ACCESS0_CFG0;
-	     index < ((uint32_t)MC_TZRAM_CARVEOUT_CFG + (uint32_t)MC_GSC_CONFIG_REGS_SIZE);
-	     index += 4U) {
-		tegra_mc_write_32(index, 0);
+	while (mc_ctx_regs[num_entries].reg != 0xFFFFFFFFU) {
+		num_entries++;
 	}
 
-	/*
-	 * Enable CPU access configuration registers to access the TZRAM aperture
-	 */
-	if (!tegra_chipid_is_t186()) {
-		val = tegra_mc_read_32(MC_TZRAM_CLIENT_ACCESS1_CFG0);
-		val |= TZRAM_ALLOW_MPCORER | TZRAM_ALLOW_MPCOREW;
-		tegra_mc_write_32(MC_TZRAM_CLIENT_ACCESS1_CFG0, val);
+	/* panic if the sizes do not match */
+	if (num_entries != mc_ctx_regs[0].val) {
+		ERROR("MC context size mismatch!");
+		panic();
 	}
 
-	/*
-	 * Set the TZRAM base. TZRAM base must be 4k aligned, at least.
-	 */
-	assert((phys_base & (uint64_t)0xFFF) == 0U);
-	tegra_mc_write_32(MC_TZRAM_BASE_LO, (uint32_t)phys_base);
-	tegra_mc_write_32(MC_TZRAM_BASE_HI,
-		(uint32_t)(phys_base >> 32) & MC_GSC_BASE_HI_MASK);
-
-	/*
-	 * Set the TZRAM size
-	 *
-	 * total size = (number of 128KB blocks) + (number of remaining 4KB
-	 * blocks)
-	 *
-	 */
-	val = (residual_4kb_blocks << MC_GSC_SIZE_RANGE_4KB_SHIFT) |
-	      total_128kb_blocks;
-	tegra_mc_write_32(MC_TZRAM_SIZE, val);
-
-	/*
-	 * Lock the configuration settings by disabling TZ-only lock
-	 * and locking the configuration against any future changes
-	 * at all.
-	 */
-	val = tegra_mc_read_32(MC_TZRAM_CARVEOUT_CFG);
-	val &= (uint32_t)~MC_GSC_ENABLE_TZ_LOCK_BIT;
-	val |= MC_GSC_LOCK_CFG_SETTINGS_BIT;
-	if (!tegra_chipid_is_t186()) {
-		val |= MC_GSC_ENABLE_CPU_SECURE_BIT;
+	/* save MC register values */
+	for (i = 1U; i < num_entries; i++) {
+		mc_ctx_regs[i].val = mmio_read_32(mc_ctx_regs[i].reg);
 	}
-	tegra_mc_write_32(MC_TZRAM_CARVEOUT_CFG, val);
 
-	/*
-	 * MCE propagates the security configuration values across the
-	 * CCPLEX.
-	 */
-	mce_update_gsc_tzram();
+	/* increment by 1 to take care of the last entry */
+	num_entries++;
+
+	/* Save MC config settings */
+	(void)memcpy((void *)mc_ctx_addr, mc_ctx_regs,
+			sizeof(mc_regs_t) * num_entries);
+
+	/* save the MC table address */
+	mmio_write_32(TEGRA_SCRATCH_BASE + SCRATCH_MC_TABLE_ADDR_LO,
+		(uint32_t)mc_ctx_addr);
+	mmio_write_32(TEGRA_SCRATCH_BASE + SCRATCH_MC_TABLE_ADDR_HI,
+		(uint32_t)(mc_ctx_addr >> 32));
 }
 
 static void tegra_lock_videomem_nonoverlap(uint64_t phys_base,
@@ -306,7 +286,8 @@ static void tegra_clear_videomem(uintptr_t non_overlap_area_start,
 	ret = mmap_add_dynamic_region(non_overlap_area_start, /* PA */
 				non_overlap_area_start, /* VA */
 				non_overlap_area_size, /* size */
-				MT_NS | MT_RW | MT_EXECUTE_NEVER); /* attrs */
+				MT_NS | MT_RW | MT_EXECUTE_NEVER |
+				MT_NON_CACHEABLE); /* attrs */
 	assert(ret == 0);
 
 	zero_normalmem((void *)non_overlap_area_start, non_overlap_area_size);

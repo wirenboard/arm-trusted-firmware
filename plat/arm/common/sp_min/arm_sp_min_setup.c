@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2016-2020, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -11,7 +11,6 @@
 #include <bl32/sp_min/platform_sp_min.h>
 #include <common/bl_common.h>
 #include <common/debug.h>
-#include <drivers/arm/pl011.h>
 #include <drivers/console.h>
 #include <lib/mmio.h>
 #include <plat/arm/common/plat_arm.h>
@@ -168,6 +167,10 @@ void arm_sp_min_plat_runtime_setup(void)
 {
 	/* Initialize the runtime console */
 	arm_console_runtime_init();
+
+#if PLAT_RO_XLAT_TABLES
+	arm_xlat_make_tables_readonly();
+#endif
 }
 
 /*******************************************************************************
@@ -214,7 +217,7 @@ void sp_min_plat_runtime_setup(void)
  * Perform the very early platform specific architectural setup here. At the
  * moment this only initializes the MMU
  ******************************************************************************/
-void sp_min_plat_arch_setup(void)
+void arm_sp_min_plat_arch_setup(void)
 {
 	const mmap_region_t bl_regions[] = {
 		MAP_BL_SP_MIN_TOTAL,
@@ -228,4 +231,9 @@ void sp_min_plat_arch_setup(void)
 	setup_page_tables(bl_regions, plat_arm_get_mmap());
 
 	enable_mmu_svc_mon(0);
+}
+
+void sp_min_plat_arch_setup(void)
+{
+	arm_sp_min_plat_arch_setup();
 }

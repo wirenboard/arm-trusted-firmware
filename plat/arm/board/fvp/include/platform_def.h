@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2014-2020, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -17,11 +17,12 @@
 #include "../fvp_def.h"
 
 /* Required platform porting definitions */
-#define PLATFORM_CORE_COUNT \
-	(FVP_CLUSTER_COUNT * FVP_MAX_CPUS_PER_CLUSTER * FVP_MAX_PE_PER_CPU)
+#define PLATFORM_CORE_COUNT  (U(FVP_CLUSTER_COUNT) * \
+			      U(FVP_MAX_CPUS_PER_CLUSTER) * \
+			      U(FVP_MAX_PE_PER_CPU))
 
-#define PLAT_NUM_PWR_DOMAINS		(FVP_CLUSTER_COUNT + \
-					PLATFORM_CORE_COUNT) + 1
+#define PLAT_NUM_PWR_DOMAINS (U(FVP_CLUSTER_COUNT) + \
+			      PLATFORM_CORE_COUNT + U(1))
 
 #define PLAT_MAX_PWR_LVL		ARM_PWR_LVL2
 
@@ -32,7 +33,7 @@
 /*
  * Required ARM standard platform porting definitions
  */
-#define PLAT_ARM_CLUSTER_COUNT		FVP_CLUSTER_COUNT
+#define PLAT_ARM_CLUSTER_COUNT		U(FVP_CLUSTER_COUNT)
 
 #define PLAT_ARM_TRUSTED_SRAM_SIZE	UL(0x00040000)	/* 256 KB */
 
@@ -51,6 +52,13 @@
 #define PLAT_ARM_DRAM2_BASE		ULL(0x880000000)
 #define PLAT_ARM_DRAM2_SIZE		UL(0x80000000)
 
+#define PLAT_HW_CONFIG_DTB_BASE		ULL(0x82000000)
+#define PLAT_HW_CONFIG_DTB_SIZE		ULL(0x8000)
+
+#define ARM_DTB_DRAM_NS			MAP_REGION_FLAT(		\
+					PLAT_HW_CONFIG_DTB_BASE,	\
+					PLAT_HW_CONFIG_DTB_SIZE,	\
+					MT_MEMORY | MT_RO | MT_NS)
 /*
  * Load address of BL33 for this platform port
  */
@@ -61,18 +69,22 @@
  * plat_arm_mmap array defined for each BL stage.
  */
 #if defined(IMAGE_BL31)
-# if ENABLE_SPM
-#  define PLAT_ARM_MMAP_ENTRIES		9
+# if SPM_MM
+#  define PLAT_ARM_MMAP_ENTRIES		10
 #  define MAX_XLAT_TABLES		9
 #  define PLAT_SP_IMAGE_MMAP_REGIONS	30
 #  define PLAT_SP_IMAGE_MAX_XLAT_TABLES	10
 # else
-#  define PLAT_ARM_MMAP_ENTRIES		8
-#  define MAX_XLAT_TABLES		5
+#  define PLAT_ARM_MMAP_ENTRIES		9
+#  if USE_DEBUGFS
+#   define MAX_XLAT_TABLES		8
+#  else
+#   define MAX_XLAT_TABLES		7
+#  endif
 # endif
 #elif defined(IMAGE_BL32)
-# define PLAT_ARM_MMAP_ENTRIES		8
-# define MAX_XLAT_TABLES		5
+# define PLAT_ARM_MMAP_ENTRIES		9
+# define MAX_XLAT_TABLES		6
 #elif !USE_ROMLIB
 # define PLAT_ARM_MMAP_ENTRIES		11
 # define MAX_XLAT_TABLES		5
@@ -94,9 +106,11 @@
 #if USE_ROMLIB
 #define PLAT_ARM_MAX_ROMLIB_RW_SIZE	UL(0x1000)
 #define PLAT_ARM_MAX_ROMLIB_RO_SIZE	UL(0xe000)
+#define FVP_BL2_ROMLIB_OPTIMIZATION UL(0x6000)
 #else
 #define PLAT_ARM_MAX_ROMLIB_RW_SIZE	UL(0)
 #define PLAT_ARM_MAX_ROMLIB_RO_SIZE	UL(0)
+#define FVP_BL2_ROMLIB_OPTIMIZATION UL(0)
 #endif
 
 /*
@@ -104,21 +118,23 @@
  * little space for growth.
  */
 #if TRUSTED_BOARD_BOOT
-# define PLAT_ARM_MAX_BL2_SIZE		UL(0x1D000)
+# define PLAT_ARM_MAX_BL2_SIZE	(UL(0x1D000) - FVP_BL2_ROMLIB_OPTIMIZATION)
 #else
-# define PLAT_ARM_MAX_BL2_SIZE		UL(0x11000)
+# define PLAT_ARM_MAX_BL2_SIZE	(UL(0x12000) - FVP_BL2_ROMLIB_OPTIMIZATION)
 #endif
 
+#if RESET_TO_BL31
+/* Size of Trusted SRAM - the first 4KB of shared memory */
+#define PLAT_ARM_MAX_BL31_SIZE		(PLAT_ARM_TRUSTED_SRAM_SIZE - \
+					 ARM_SHARED_RAM_SIZE)
+#else
 /*
  * Since BL31 NOBITS overlays BL2 and BL1-RW, PLAT_ARM_MAX_BL31_SIZE is
  * calculated using the current BL31 PROGBITS debug size plus the sizes of
  * BL2 and BL1-RW
  */
-#if ENABLE_SPM && !SPM_MM
-#define PLAT_ARM_MAX_BL31_SIZE		UL(0x60000)
-#else
-#define PLAT_ARM_MAX_BL31_SIZE		UL(0x3B000)
-#endif
+#define PLAT_ARM_MAX_BL31_SIZE		UL(0x3E000)
+#endif /* RESET_TO_BL31 */
 
 #ifndef __aarch64__
 /*
@@ -136,13 +152,13 @@
 # if TRUSTED_BOARD_BOOT
 #  define PLATFORM_STACK_SIZE		UL(0x1000)
 # else
-#  define PLATFORM_STACK_SIZE		UL(0x440)
+#  define PLATFORM_STACK_SIZE		UL(0x500)
 # endif
 #elif defined(IMAGE_BL2)
 # if TRUSTED_BOARD_BOOT
 #  define PLATFORM_STACK_SIZE		UL(0x1000)
 # else
-#  define PLATFORM_STACK_SIZE		UL(0x400)
+#  define PLATFORM_STACK_SIZE		UL(0x440)
 # endif
 #elif defined(IMAGE_BL2U)
 # define PLATFORM_STACK_SIZE		UL(0x400)

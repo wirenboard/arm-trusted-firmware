@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2020, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -35,6 +35,7 @@
 		cpu_on = <0xc4000003>;
 		sys_poweroff = <0x84000008>;
 		sys_reset = <0x84000009>;
+		max-pwr-lvl = <2>;
 	};
 
 	cpus {
@@ -191,6 +192,6 @@
 			 <4 0 0 0x0c000000 0x04000000>,
 			 <5 0 0 0x10000000 0x04000000>;
 
-		/include/ "fvp-foundation-motherboard.dtsi"
+		#include "fvp-foundation-motherboard.dtsi"
 	};
 };

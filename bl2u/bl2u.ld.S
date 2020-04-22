@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2015-2018, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2015-2020, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include <platform_def.h>
 
+#include <common/bl_common.ld.h>
 #include <lib/xlat_tables/xlat_tables_defs.h>
 
 OUTPUT_FORMAT(PLATFORM_LINKER_FORMAT)
@@ -27,7 +28,7 @@ SECTIONS
     .text . : {
         __TEXT_START__ = .;
         *bl2u_entrypoint.o(.text*)
-        *(.text*)
+        *(SORT_BY_ALIGNMENT(.text*))
         *(.vectors)
         . = ALIGN(PAGE_SIZE);
         __TEXT_END__ = .;
@@ -44,7 +45,10 @@ SECTIONS
 
     .rodata . : {
         __RODATA_START__ = .;
-        *(.rodata*)
+        *(SORT_BY_ALIGNMENT(.rodata*))
+
+	RODATA_COMMON
+
         . = ALIGN(PAGE_SIZE);
         __RODATA_END__ = .;
     } >RAM
@@ -52,8 +56,10 @@ SECTIONS
     ro . : {
         __RO_START__ = .;
         *bl2u_entrypoint.o(.text*)
-        *(.text*)
-        *(.rodata*)
+        *(SORT_BY_ALIGNMENT(.text*))
+        *(SORT_BY_ALIGNMENT(.rodata*))
+
+	RODATA_COMMON
 
         *(.vectors)
         __RO_END_UNALIGNED__ = .;
@@ -80,7 +86,7 @@ SECTIONS
      */
     .data . : {
         __DATA_START__ = .;
-        *(.data*)
+        *(SORT_BY_ALIGNMENT(.data*))
         __DATA_END__ = .;
     } >RAM
 
@@ -90,27 +96,8 @@ SECTIONS
         __STACKS_END__ = .;
     } >RAM
 
-    /*
-     * The .bss section gets initialised to 0 at runtime.
-     * Its base address should be 16-byte aligned for better performance of the
-     * zero-initialization code.
-     */
-    .bss : ALIGN(16) {
-        __BSS_START__ = .;
-        *(SORT_BY_ALIGNMENT(.bss*))
-        *(COMMON)
-        __BSS_END__ = .;
-    } >RAM
-
-    /*
-     * The xlat_table section is for full, aligned page tables (4K).
-     * Removing them from .bss avoids forcing 4K alignment on
-     * the .bss section. The tables are initialized to zero by the translation
-     * tables library.
-     */
-    xlat_table (NOLOAD) : {
-        *(xlat_table)
-    } >RAM
+    BSS_SECTION >RAM
+    XLAT_TABLE_SECTION >RAM
 
 #if USE_COHERENT_MEM
     /*
