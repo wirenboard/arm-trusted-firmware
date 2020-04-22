@@ -4,12 +4,17 @@ Source: https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git/
 
 Files: *
 Copyright:
- 2013-2019, Arm Limited and Contributors.
+ 2013-2020, Arm Limited and Contributors.
 License: BSD-3-clause
 
 Files: debian/*
 Copyright: 2018 Adam Borowski <kilobyte@angband.pl>
- 2018 Vagrant Cascadian <vagrant@debian.org>
+ 2018-2020 Vagrant Cascadian <vagrant@debian.org>
+License: BSD-3-clause
+
+Files: drivers/brcm/*
+Copyright:
+ 2016 - 2020, Broadcom
 License: BSD-3-clause
 
 Files: drivers/imx/uart/*
@@ -24,7 +29,7 @@ License: BSD-3-clause
 
 Files: drivers/renesas/*
 Copyright: 
- 2015-2019, Renesas Electronics Corporation.
+ 2015-2020, Renesas Electronics Corporation.
 License: BSD-3-clause
 
 Files:
@@ -38,14 +43,10 @@ Files:
  drivers/st/clk/stm32mp1_clk.c
  drivers/st/ddr/stm32mp1_ddr.c
  drivers/st/ddr/stm32mp1_ram.c
-Copyright: 2018-2019, STMicroelectronics
+ drivers/st/fmc/stm32_fmc2_nand.c
+ drivers/st/spi/stm32_qspi.c
+Copyright: 2018-2020, STMicroelectronics
 License: GPL-2+ or BSD-3-clause
-
-Files:
- drivers/staging/renesas/*
-Copyright:
- 2015-2019, Renesas Electronics Corporation. All rights reserved.
-License: BSD-3-Clause
 
 Files: fdts/stm32*
 Copyright:
@@ -79,6 +80,8 @@ License: BSD-3-clause
 Files:
  include/drivers/st/stm32mp1_ddr.h
  include/drivers/st/stm32mp1_ddr_regs.h
+ include/drivers/st/stm32_fmc2_nand.h
+ include/drivers/st/stm32_qspi.h
 Copyright:
  2017-2019, STMicroelectronics
 License: GPL-2+ or BSD-3-clause
@@ -152,9 +155,10 @@ Copyright:
   Linaro 2018-2019 Limited and Contributors.
 License: BSD-3-clause
 
-Files: services/spd/opteed/teesmc_opteed.h
+Files: services/spd/*
 Copyright:
- 2014, ARM Limited and Contributors. 
+ 2013-2020, ARM Limited and Contributors.
+ 2020, NVIDIA Corporation.
  2014, Linaro Limited. 
 License: BSD-3-clause
 
