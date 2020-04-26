@@ -62,7 +62,7 @@ License: GPL-2+ or BSD-3-clause
 
 Files: include/drivers/marvell/*
 Copyright:
-  2017-2018 Marvell International Ltd.
+  2016-2018 Marvell International Ltd.
 License: BSD-3-clause
 
 Files: include/drivers/mentor/mi2cv.h
@@ -74,7 +74,7 @@ License: BSD-3-Clause
 Files: include/drivers/st/*
 Copyright:
  2015-2018, ARM Limited and Contributors
- 2015-2018, STMicroelectronics
+ 2015-2019, STMicroelectronics
 License: BSD-3-clause
 
 Files:
@@ -119,7 +119,7 @@ License: BSD-3-clause
 
 Files: plat/allwinner/*
 Copyright:
- 2017-2019, ARM Limited and Contributors. 
+ 2017-2020, ARM Limited and Contributors.
  2018, Andre Przywara <osp@andrep.de>
  2018, Icenowy Zheng <icenowy@aosc.io>
 License: BSD-3-clause
@@ -127,7 +127,7 @@ License: BSD-3-clause
 Files: plat/marvell/*
  include/plat/marvell/*
 Copyright:
- 2016-2018 Marvell International Ltd.
+ 2016-2019 Marvell International Ltd.
  2016-2018, ARM Limited and Contributors.
  2019 Repk repk@triplefau.lt
 License: BSD-3-clause
@@ -135,24 +135,27 @@ License: BSD-3-clause
 Files: plat/ti/*
 Copyright:
  2018 Texas Instruments Incorporated
- 2017-2018, ARM Limited and Contributors. 
+ 2017-2020, ARM Limited and Contributors.
 License: BSD-3-clause
 
 Files: plat/renesas/*
 Copyright:
- 2013-2018, ARM Limited and Contributors. 
- 2015-2019, Renesas Electronics Corporation. 
+ 2013-2020, ARM Limited and Contributors.
+ 2015-2020, Renesas Electronics Corporation.
 License: BSD-3-clause
 
 Files: plat/st/*
 Copyright:
- 2015-2019, ARM Limited and Contributors. 
- 2017-2019, STMicroelectronics
+ 2015-2020, ARM Limited and Contributors.
+ 2014-2020, STMicroelectronics
 License: BSD-3-clause
 
-Files: plat/imx/imx7/common/imx7_helpers.S
+Files: plat/imx/*
 Copyright:
-  Linaro 2018-2019 Limited and Contributors.
+ 2018-2019 Linaro Limited and Contributors.
+ 2016 Freescale Semiconductor, Inc.
+ 2015-2020 ARM Limited and Contributors. All rights reserved.
+ 2017-2019 NXP. All rights reserved.
 License: BSD-3-clause
 
 Files: services/spd/*
