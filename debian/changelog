@@ -1,3 +1,11 @@
+arm-trusted-firmware (2.3-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/copyright: Update for new upstream version.
+  * debian/upstream: Add upstream signing key.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Sun, 26 Apr 2020 10:34:37 -0700
+
 arm-trusted-firmware (2.2-3) unstable; urgency=medium
 
   [ Vagrant Cascadian ]
