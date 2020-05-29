@@ -1,0 +1,2 @@
+tools/fiptool/fiptool /usr/bin/
+tools/cert_create/cert_create /usr/bin/
