@@ -1,6 +1,12 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: arm-trusted-firmware
 Source: https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git/
+Files-Excluded:
+ plat/rockchip/rk3368/drivers/ddr/rk3368_ddr_reg_resume_V1.05.bin
+ plat/rockchip/rk3399/drivers/dp/hdcp.bin
+ plat/arm/board/common/protpk/arm_protpk_rsa_sha256.bin
+ plat/arm/board/common/rotpk/arm_rotpk_rsa_sha256.bin
+ plat/arm/board/common/rotpk/arm_rotpk_ecdsa_sha256.bin
 
 Files: *
 Copyright:
