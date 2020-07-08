@@ -1,3 +1,11 @@
+arm-trusted-firmware (2.3+dfsg-1) unstable; urgency=medium
+
+  * Remove binary files with unknown licensing (Closes: #961697).
+  * Update debian/copyright.
+  * Update debian/watch.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Wed, 08 Jul 2020 08:26:49 -0700
+
 arm-trusted-firmware (2.3-1) unstable; urgency=medium
 
   * New upstream release.
