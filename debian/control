@@ -20,5 +20,4 @@ Description: "secure world" software for ARM SoCs
  privilege that is hidden from the normal OS, and has complete
  control over the system.  It provides both initialization during
  early boot stages (before u-boot or EFI) and system monitor
- functionality once the machine is booted up.  This is an equivalent
- of Intel ME on x86.
+ functionality once the machine is booted up.
