@@ -1,3 +1,15 @@
+arm-trusted-firmware (2.3+dfsg-2) experimental; urgency=medium
+
+  * debian/control: arm-trusted-firmware: Remove description comparing to
+    Intel ME. Thanks to Pali Rohár.
+  * debian/control: Update to debhelper-compat 13.
+  * debian/rules: Make builds verbose by default, respecting
+    DEB_BUILD_OPTIONS=terse.
+  * Add arm-trusted-firmware-tools (Closes: #931397). Thanks to Ying-Chun
+    Liu (PaulLiu).
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Sat, 10 Oct 2020 19:22:41 -0700
+
 arm-trusted-firmware (2.3+dfsg-1) unstable; urgency=medium
 
   * Remove binary files with unknown licensing (Closes: #961697).
