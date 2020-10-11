@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Maintainer: Vagrant Cascadian <vagrant@debian.org>
 Standards-Version: 4.5.0
-Build-Depends: debhelper-compat (= 12),
+Build-Depends: debhelper-compat (= 13),
  gcc-arm-none-eabi,
  binutils-arm-none-eabi,
 Rules-Requires-Root: no
