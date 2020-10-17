@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 export DH_VERBOSE=1
-export TF_CFLAGS += -fno-pie
+export TF_CFLAGS += -fno-pie -ffile-prefix-map=$(CURDIR)=.
 
 # Enable verbose build by default, disable when terse is specified.
 ifneq (,$(filter terse,$(DEB_BUILD_OPTIONS)))
