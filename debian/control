@@ -4,8 +4,8 @@ Priority: optional
 Maintainer: Vagrant Cascadian <vagrant@debian.org>
 Standards-Version: 4.5.0
 Build-Depends: debhelper-compat (= 13),
- gcc-arm-none-eabi,
- binutils-arm-none-eabi,
+ gcc-arm-none-eabi [arm64],
+ binutils-arm-none-eabi [arm64],
  libssl-dev,
 Rules-Requires-Root: no
 Homepage: https://www.trustedfirmware.org/
