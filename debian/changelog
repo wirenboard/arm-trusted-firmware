@@ -1,3 +1,16 @@
+arm-trusted-firmware (2.3+dfsg-3) unstable; urgency=medium
+
+  * Only build firmware on arm64.
+  * Pass empty CFLAGS and LDFLAGS to firmware build
+  * Pass CFLAGS and CPPFLAGS to fiptool and cert_create.
+  * Drop hardening options that no longer cause issues for the firmware
+    build.
+  * Drop --debug flag from make invocation.
+  * Use -ffile-prefix-map in TF_CFLAGS for reproducible builds.
+  * Drop -fno-pie from TF_CFLAGS as it is handled upstream.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Sat, 17 Oct 2020 22:17:48 -0700
+
 arm-trusted-firmware (2.3+dfsg-2) experimental; urgency=medium
 
   * debian/control: arm-trusted-firmware: Remove description comparing to
