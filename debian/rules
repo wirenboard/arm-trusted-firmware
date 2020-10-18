@@ -1,8 +1,6 @@
 #!/usr/bin/make -f
 export DH_VERBOSE=1
 export DEB_BUILD_MAINT_OPTIONS=hardening=-relro,-stackprotector
-export DEB_CFLAGS_MAINT_SET =
-export DEB_LDFLAGS_MAINT_SET =
 export TF_CFLAGS += -fno-pie
 
 # Enable verbose build by default, disable when terse is specified.
@@ -22,7 +20,7 @@ override_dh_auto_build:
 ifeq ($(DEB_HOST_ARCH),arm64)
 	# Always set CROSS_COMPILE, which also works for native builds.
 	grep -v '^#' debian/targets | while read plat targets ; do \
-		CROSS_COMPILE=aarch64-linux-gnu- make --debug=v V=$(VERBOSE) DEBUG=1 PLAT=$$plat bl31 ; \
+		CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= make --debug=v V=$(VERBOSE) DEBUG=1 PLAT=$$plat bl31 ; \
 	done
 endif
 
