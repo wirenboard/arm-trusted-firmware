@@ -14,8 +14,8 @@ endif
 	dh $@
 
 override_dh_auto_build:
-	make DEBUG=1 V=$(VERBOSE) fiptool
-	make DEBUG=1 V=$(VERBOSE) -C tools/cert_create
+	make DEBUG=1 V=$(VERBOSE) HOSTCCFLAGS="$(CFLAGS) $(CPPFLAGS)" -C tools/fiptool
+	make DEBUG=1 V=$(VERBOSE) HOSTCCFLAGS="$(CFLAGS) $(CPPFLAGS) -std=c99 -DUSE_TBBR_DEFS=1" -C tools/cert_create
 # Only build firmware on arm64.
 ifeq ($(DEB_HOST_ARCH),arm64)
 	# Always set CROSS_COMPILE, which also works for native builds.
