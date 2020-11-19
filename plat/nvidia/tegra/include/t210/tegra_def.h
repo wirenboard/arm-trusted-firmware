@@ -11,6 +11,11 @@
 #include <lib/utils_def.h>
 
 /*******************************************************************************
+ * Platform BL31 specific defines.
+ ******************************************************************************/
+#define BL31_SIZE			U(0x40000)
+
+/*******************************************************************************
  * Power down state IDs
  ******************************************************************************/
 #define PSTATE_ID_CORE_POWERDN		U(7)
@@ -240,6 +245,8 @@
 #define MC_VIDEO_PROTECT_BASE_HI	U(0x978)
 #define MC_VIDEO_PROTECT_BASE_LO	U(0x648)
 #define MC_VIDEO_PROTECT_SIZE_MB	U(0x64c)
+#define MC_VIDEO_PROTECT_REG_CTRL	U(0x650)
+#define MC_VIDEO_PROTECT_WRITE_ACCESS_ENABLED	U(3)
 
 /* SMMU configuration registers*/
 #define MC_SMMU_PPCS_ASID_0		0x270U

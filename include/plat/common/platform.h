@@ -111,7 +111,7 @@ uintptr_t plat_get_my_stack(void);
 void plat_report_exception(unsigned int exception_type);
 int plat_crash_console_init(void);
 int plat_crash_console_putc(int c);
-int plat_crash_console_flush(void);
+void plat_crash_console_flush(void);
 void plat_error_handler(int err) __dead2;
 void plat_panic_handler(void) __dead2;
 const char *plat_log_get_prefix(unsigned int log_level);
@@ -132,6 +132,7 @@ struct meminfo *bl1_plat_sec_mem_layout(void);
 
 /* SDEI platform functions */
 #if SDEI_SUPPORT
+void plat_sdei_setup(void);
 int plat_sdei_validate_entry_point(uintptr_t ep, unsigned int client_mode);
 void plat_sdei_handle_masked_trigger(uint64_t mpidr, unsigned int intr);
 #endif
@@ -174,6 +175,14 @@ __dead2 void bl1_plat_fwu_done(void *client_cookie, void *reserved);
 int bl1_plat_handle_pre_image_load(unsigned int image_id);
 int bl1_plat_handle_post_image_load(unsigned int image_id);
 
+#if MEASURED_BOOT
+/*
+ * Calculates and writes BL2 hash data to the platform's defined location.
+ * For ARM platforms the data are written to TB_FW_CONFIG DTB.
+ */
+void bl1_plat_set_bl2_hash(const image_desc_t *image_desc);
+#endif
+
 /*******************************************************************************
  * Mandatory BL2 functions
  ******************************************************************************/
@@ -189,11 +198,13 @@ struct meminfo *bl2_plat_sec_mem_layout(void);
 int bl2_plat_handle_pre_image_load(unsigned int image_id);
 int bl2_plat_handle_post_image_load(unsigned int image_id);
 
-
 /*******************************************************************************
  * Optional BL2 functions (may be overridden)
  ******************************************************************************/
-
+#if MEASURED_BOOT
+/* Read TCG_DIGEST_SIZE bytes of BL2 hash data */
+void bl2_plat_get_hash(void *data);
+#endif
 
 /*******************************************************************************
  * Mandatory BL2 at EL3 functions: Must be implemented if BL2_AT_EL3 image is
@@ -202,7 +213,6 @@ int bl2_plat_handle_post_image_load(unsigned int image_id);
 void bl2_el3_early_platform_setup(u_register_t arg0, u_register_t arg1,
 				  u_register_t arg2, u_register_t arg3);
 void bl2_el3_plat_arch_setup(void);
-
 
 /*******************************************************************************
  * Optional BL2 at EL3 functions (may be overridden)
@@ -289,9 +299,8 @@ int plat_spm_sp_rd_load(struct sp_res_desc *rd, const void *ptr, size_t size);
 int plat_spm_sp_get_next_address(void **sp_base, size_t *sp_size,
 				 void **rd_base, size_t *rd_size);
 #if defined(SPD_spmd)
-int plat_spm_core_manifest_load(spmc_manifest_sect_attribute_t *manifest,
-				const void *ptr,
-				size_t size);
+int plat_spm_core_manifest_load(spmc_manifest_attribute_t *manifest,
+				const void *pm_addr);
 #endif
 /*******************************************************************************
  * Mandatory BL image load functions(may be overridden).
@@ -331,5 +340,10 @@ int32_t plat_get_soc_version(void);
  * Optional function to get SOC revision
  */
 int32_t plat_get_soc_revision(void);
+
+/*
+ * Optional function to check for SMCCC function availability for platform
+ */
+int32_t plat_is_smccc_feature_available(u_register_t fid);
 
 #endif /* PLATFORM_H */

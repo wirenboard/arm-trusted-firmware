@@ -21,7 +21,18 @@
  */
 #define IMG_FLAG_AUTHENTICATED		(1 << 0)
 
-
+#if COT_DESC_IN_DTB && !IMAGE_BL1
+/*
+ * Authentication image descriptor
+ */
+typedef struct auth_img_desc_s {
+	unsigned int img_id;
+	img_type_t img_type;
+	const struct auth_img_desc_s *parent;
+	auth_method_desc_t *img_auth_methods;
+	auth_param_desc_t *authenticated_data;
+} auth_img_desc_t;
+#else
 /*
  * Authentication image descriptor
  */
@@ -32,6 +43,7 @@ typedef struct auth_img_desc_s {
 	const auth_method_desc_t *const img_auth_methods;
 	const auth_param_desc_t *const authenticated_data;
 } auth_img_desc_t;
+#endif /* COT_DESC_IN_DTB && !IMAGE_BL1 */
 
 /* Public functions */
 void auth_mod_init(void);
@@ -49,6 +61,29 @@ int auth_mod_verify_img(unsigned int img_id,
 extern const auth_img_desc_t *const *const cot_desc_ptr;
 extern const size_t cot_desc_size;
 extern unsigned int auth_img_flags[MAX_NUMBER_IDS];
+
+#if defined(SPD_spmd)
+
+#define DEFINE_SIP_SP_PKG(n)		DEFINE_SP_PKG(n, sip_sp_content_cert)
+#define DEFINE_PLAT_SP_PKG(n)		DEFINE_SP_PKG(n, plat_sp_content_cert)
+
+#define DEFINE_SP_PKG(n, cert) \
+	static const auth_img_desc_t sp_pkg##n = { \
+		.img_id = SP_PKG##n##_ID, \
+		.img_type = IMG_RAW, \
+		.parent = &cert, \
+		.img_auth_methods = (const auth_method_desc_t[AUTH_METHOD_NUM]) { \
+			[0] = { \
+				.type = AUTH_METHOD_HASH, \
+				.param.hash = { \
+					.data = &raw_data, \
+					.hash = &sp_pkg##n##_hash \
+				} \
+			} \
+		} \
+	}
+
+#endif
 
 #endif /* TRUSTED_BOARD_BOOT */
 

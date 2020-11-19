@@ -83,6 +83,10 @@ Each of the Boot Loader stages may be dynamically configured if required by the
 platform. The Boot Loader stage may optionally specify a firmware
 configuration file and/or hardware configuration file as listed below:
 
+-  FW_CONFIG - The firmware configuration file. Holds properties shared across
+   all BLx images.
+   An example is the "dtb-registry" node, which contains the information about
+   the other device tree configurations (load-address, size, image_id).
 -  HW_CONFIG - The hardware configuration file. Can be shared by all Boot Loader
    stages and also by the Normal World Rich OS.
 -  TB_FW_CONFIG - Trusted Boot Firmware configuration file. Shared between BL1
@@ -109,8 +113,8 @@ convention:
    the generic hardware configuration is passed the next available argument.
    For example,
 
-   -  If TB_FW_CONFIG is loaded by BL1, then its address is passed in ``arg0``
-      to BL2.
+   -  FW_CONFIG is loaded by BL1, then its address is passed in ``arg0`` to BL2.
+   -  TB_FW_CONFIG address is retrieved by BL2 from FW_CONFIG device tree.
    -  If HW_CONFIG is loaded by BL1, then its address is passed in ``arg2`` to
       BL2. Note, ``arg1`` is already used for meminfo_t.
    -  If SOC_FW_CONFIG is loaded by BL2, then its address is passed in ``arg1``
@@ -365,7 +369,7 @@ Architectural initialization
 
 For AArch64, BL2 performs the minimal architectural initialization required
 for subsequent stages of TF-A and normal world software. EL1 and EL0 are given
-access to Floating Point and Advanced SIMD registers by clearing the
+access to Floating Point and Advanced SIMD registers by setting the
 ``CPACR.FPEN`` bits.
 
 For AArch32, the minimal architectural initialization required for subsequent
@@ -953,6 +957,8 @@ Function ID call type and OEN onto a specific service handler in the
 
 |Image 1|
 
+.. _handling-an-smc:
+
 Handling an SMC
 ~~~~~~~~~~~~~~~
 
@@ -984,7 +990,7 @@ before restoring the stack and CPU state and returning from the original SMC.
 Exception Handling Framework
 ----------------------------
 
-Please refer to the `Exception Handling Framework`_ document.
+Please refer to the :ref:`Exception Handling Framework` document.
 
 Power State Coordination Interface
 ----------------------------------
@@ -1295,6 +1301,8 @@ invocations of the reset handling code, this should be detected at runtime.
 In other words, the reset handler should be able to detect whether an action has
 already been performed and act as appropriate. Possible courses of actions are,
 e.g. skip the action the second time, or undo/redo it.
+
+.. _configuring-secure-interrupts:
 
 Configuring secure interrupts
 -----------------------------
@@ -1732,7 +1740,7 @@ CONFIG section in memory layouts shown below contains:
 ``bl2_mem_params_descs`` contains parameters passed from BL2 to next the
 BL image during boot.
 
-``fw_configs`` includes soc_fw_config, tos_fw_config and tb_fw_config.
+``fw_configs`` includes soc_fw_config, tos_fw_config, tb_fw_config and fw_config.
 
 **FVP with TSP in Trusted SRAM with firmware configs :**
 (These diagrams only cover the AArch64 case)
@@ -1757,7 +1765,7 @@ BL image during boot.
                |          |  <<<<<<<<<<<<<  | BL31 PROGBITS  |
                |          |  <<<<<<<<<<<<<  |----------------|
                |          |  <<<<<<<<<<<<<  |     BL32       |
-    0x04002000 +----------+                 +----------------+
+    0x04003000 +----------+                 +----------------+
                |  CONFIG  |
     0x04001000 +----------+
                |  Shared  |
@@ -1794,7 +1802,7 @@ BL image during boot.
                |--------------|  <<<<<<<<<<<<<  |----------------|
                |              |  <<<<<<<<<<<<<  | BL31 PROGBITS  |
                |              |                 +----------------+
-               +--------------+
+    0x04003000 +--------------+
                |    CONFIG    |
     0x04001000 +--------------+
                |    Shared    |
@@ -1828,7 +1836,7 @@ BL image during boot.
                |----------|  <<<<<<<<<<<<<  |----------------|
                |          |  <<<<<<<<<<<<<  | BL31 PROGBITS  |
                |          |                 +----------------+
-    0x04002000 +----------+
+    0x04003000 +----------+
                |  CONFIG  |
     0x04001000 +----------+
                |  Shared  |

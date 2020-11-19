@@ -80,7 +80,7 @@ static inline void _op(uint64_t v)			\
 #define DEFINE_SYSOP_TYPE_FUNC(_op, _type)		\
 static inline void _op ## _type(void)			\
 {							\
-	__asm__ (#_op " " #_type);			\
+	__asm__ (#_op " " #_type : : : "memory");			\
 }
 
 /* Define function for system instruction with register parameter */
@@ -358,6 +358,7 @@ void __dead2 smc(uint64_t x0, uint64_t x1, uint64_t x2, uint64_t x3,
 DEFINE_SYSREG_READ_FUNC(midr_el1)
 DEFINE_SYSREG_READ_FUNC(mpidr_el1)
 DEFINE_SYSREG_READ_FUNC(id_aa64mmfr0_el1)
+DEFINE_SYSREG_READ_FUNC(id_aa64mmfr1_el1)
 
 DEFINE_SYSREG_RW_FUNCS(scr_el3)
 DEFINE_SYSREG_RW_FUNCS(hcr_el2)
@@ -481,7 +482,8 @@ DEFINE_RENAME_SYSREG_WRITE_FUNC(icc_eoir1_el1, ICC_EOIR1_EL1)
 DEFINE_RENAME_SYSREG_WRITE_FUNC(icc_sgi0r_el1, ICC_SGI0R_EL1)
 DEFINE_RENAME_SYSREG_RW_FUNCS(icc_sgi1r, ICC_SGI1R)
 
-DEFINE_RENAME_SYSREG_RW_FUNCS(amcgcr_el0, AMCGCR_EL0)
+DEFINE_RENAME_SYSREG_READ_FUNC(amcfgr_el0, AMCFGR_EL0)
+DEFINE_RENAME_SYSREG_READ_FUNC(amcgcr_el0, AMCGCR_EL0)
 DEFINE_RENAME_SYSREG_RW_FUNCS(amcntenclr0_el0, AMCNTENCLR0_EL0)
 DEFINE_RENAME_SYSREG_RW_FUNCS(amcntenset0_el0, AMCNTENSET0_EL0)
 DEFINE_RENAME_SYSREG_RW_FUNCS(amcntenclr1_el0, AMCNTENCLR1_EL0)
@@ -519,6 +521,9 @@ DEFINE_RENAME_SYSREG_RW_FUNCS(tfsre0_el1, TFSRE0_EL1)
 DEFINE_RENAME_SYSREG_RW_FUNCS(tfsr_el1, TFSR_EL1)
 DEFINE_RENAME_SYSREG_RW_FUNCS(rgsr_el1, RGSR_EL1)
 DEFINE_RENAME_SYSREG_RW_FUNCS(gcr_el1, GCR_EL1)
+
+/* DynamIQ Shared Unit power management */
+DEFINE_RENAME_SYSREG_RW_FUNCS(clusterpwrdn_el1, CLUSTERPWRDN_EL1)
 
 #define IS_IN_EL(x) \
 	(GET_EL(read_CurrentEl()) == MODE_EL##x)
@@ -581,5 +586,28 @@ static inline uint64_t el_implemented(unsigned int el)
 
 #define read_cpacr()		read_cpacr_el1()
 #define write_cpacr(_v)		write_cpacr_el1(_v)
+
+#define read_clusterpwrdn()	read_clusterpwrdn_el1()
+#define write_clusterpwrdn(_v)	write_clusterpwrdn_el1(_v)
+
+#if ERRATA_SPECULATIVE_AT
+/*
+ * Assuming SCTLR.M bit is already enabled
+ * 1. Enable page table walk by clearing TCR_EL1.EPDx bits
+ * 2. Execute AT instruction for lower EL1/0
+ * 3. Disable page table walk by setting TCR_EL1.EPDx bits
+ */
+#define AT(_at_inst, _va)	\
+{	\
+	assert((read_sctlr_el1() & SCTLR_M_BIT) != 0ULL);	\
+	write_tcr_el1(read_tcr_el1() & ~(TCR_EPD0_BIT | TCR_EPD1_BIT));	\
+	isb();	\
+	_at_inst(_va);	\
+	write_tcr_el1(read_tcr_el1() | (TCR_EPD0_BIT | TCR_EPD1_BIT));	\
+	isb();	\
+}
+#else
+#define AT(_at_inst, _va)	_at_inst(_va);
+#endif
 
 #endif /* ARCH_HELPERS_H */

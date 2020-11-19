@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019, ARM Limited and Contributors. All rights reserved.
- * Copyright (c) 2019, Intel Corporation. All rights reserved.
+ * Copyright (c) 2019-2020, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019-2020, Intel Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -38,6 +38,8 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 				u_register_t arg2, u_register_t arg3)
 {
 	static console_t console;
+
+	mmio_write_64(PLAT_SEC_ENTRY, PLAT_SEC_WARM_ENTRY);
 
 	console_16550_register(PLAT_UART0_BASE, PLAT_UART_CLOCK, PLAT_BAUDRATE,
 		&console);
@@ -99,6 +101,8 @@ static const gicv2_driver_data_t plat_gicv2_gic_data = {
  ******************************************************************************/
 void bl31_platform_setup(void)
 {
+	socfpga_delay_timer_init();
+
 	/* Initialize the gic cpu and distributor interfaces */
 	gicv2_driver_init(&plat_gicv2_gic_data);
 	gicv2_distif_init();

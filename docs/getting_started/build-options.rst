@@ -88,6 +88,7 @@ Common build options
 -  1: Enables all types of branch protection features
 -  2: Return address signing to its standard level
 -  3: Extend the signing to include leaf functions
+-  4: Turn on branch target identification mechanism
 
    The table below summarizes ``BRANCH_PROTECTION`` values, GCC compilation options
    and resulting PAuth/BTI features.
@@ -103,6 +104,8 @@ Common build options
    +-------+--------------+-------+-----+
    |   3   | pac-ret+leaf |   Y   |  N  |
    +-------+--------------+-------+-----+
+   |   4   |     bti      |   N   |  Y  |
+   +-------+--------------+-------+-----+
 
    This option defaults to 0 and this is an experimental feature.
    Note that Pointer Authentication is enabled for Non-secure world
@@ -115,6 +118,8 @@ Common build options
 
 -  ``BUILD_STRING``: Input string for VERSION_STRING, which allows the TF-A
    build to be uniquely identified. Defaults to the current git commit id.
+
+-  ``BUILD_BASE``: Output directory for the build. Defaults to ``./build``
 
 -  ``CFLAGS``: Extra user options appended on the compiler's command line in
    addition to the options set by the build system.
@@ -155,6 +160,10 @@ Common build options
 -  ``CTX_INCLUDE_FPREGS``: Boolean option that, when set to 1, will cause the FP
    registers to be included when saving and restoring the CPU context. Default
    is 0.
+
+-  ``CTX_INCLUDE_NEVE_REGS``: Boolean option that, when set to 1, will cause the
+   Armv8.4-NV registers to be saved/restored when entering/exiting an EL2
+   execution context. Default value is 0.
 
 -  ``CTX_INCLUDE_PAUTH_REGS``: Boolean option that, when set to 1, enables
    Pointer Authentication for Secure world. This will cause the ARMv8.3-PAuth
@@ -295,6 +304,10 @@ Common build options
    handled at EL3, and a panic will result. This is supported only for AArch64
    builds.
 
+-  ``EVENT_LOG_LEVEL``: Chooses the log level to use for Measured Boot when
+   ``MEASURED_BOOT`` is enabled. For a list of valid values, see ``LOG_LEVEL``.
+   Default value is 40 (LOG_LEVEL_INFO).
+
 -  ``FAULT_INJECTION_SUPPORT``: ARMv8.4 extensions introduced support for fault
    injection from lower ELs, and this build option enables lower ELs to use
    Error Records accessed via System Registers to inject faults. This is
@@ -343,15 +356,13 @@ Common build options
 -  ``GICV2_G0_FOR_EL3``: Unlike GICv3, the GICv2 architecture doesn't have
    inherent support for specific EL3 type interrupts. Setting this build option
    to ``1`` assumes GICv2 *Group 0* interrupts are expected to target EL3, both
-   by `platform abstraction layer`__ and `Interrupt Management Framework`__.
+   by :ref:`platform abstraction layer<platform Interrupt Controller API>` and
+   :ref:`Interrupt Management Framework<Interrupt Management Framework>`.
    This allows GICv2 platforms to enable features requiring EL3 interrupt type.
    This also means that all GICv2 Group 0 interrupts are delivered to EL3, and
    the Secure Payload interrupts needs to be synchronously handed over to Secure
    EL1 for handling. The default value of this option is ``0``, which means the
    Group 0 interrupts are assumed to be handled by Secure EL1.
-
-   .. __: platform-interrupt-controller-API.rst
-   .. __: interrupt-framework-design.rst
 
 -  ``HANDLE_EA_EL3_FIRST``: When set to ``1``, External Aborts and SError
    Interrupts will be always trapped in EL3 i.e. in BL31 at runtime. When set to
@@ -645,6 +656,24 @@ Common build options
    configuration device tree, instead of static structure in the code base.
    This is currently an experimental feature.
 
+-  ``COT_DESC_IN_DTB``: This flag determines whether to create COT descriptors
+   at runtime using fconf. If this flag is enabled, COT descriptors are
+   statically captured in tb_fw_config file in the form of device tree nodes
+   and properties. Currently, COT descriptors used by BL2 are moved to the
+   device tree and COT descriptors used by BL1 are retained in the code
+   base statically. This is currently an experimental feature.
+
+-  ``SDEI_IN_FCONF``: This flag determines whether to configure SDEI setup in
+   runtime using firmware configuration framework. The platform specific SDEI
+   shared and private events configuration is retrieved from device tree rather
+   than static C structures at compile time. This is currently an experimental
+   feature and is only supported if SDEI_SUPPORT build flag is enabled.
+
+-  ``SEC_INT_DESC_IN_FCONF``: This flag determines whether to configure Group 0
+   and Group1 secure interrupts using the firmware configuration framework. The
+   platform specific secure interrupt property descriptor is retrieved from
+   device tree in runtime rather than depending on static C structure at compile
+   time. This is currently an experimental feature.
 
 -  ``USE_ROMLIB``: This flag determines whether library at ROM will be used.
    This feature creates a library of functions to be placed in ROM and thus
@@ -673,6 +702,49 @@ Common build options
    default value of this flag is ``no``. Note this option must be enabled only
    for ARM architecture greater than Armv8.5-A.
 
+-  ``ERRATA_SPECULATIVE_AT``: This flag determines whether to enable ``AT``
+   speculative errata workaround or not. It accepts 2 values: ``1`` and ``0``.
+   The default value of this flag is ``0``.
+
+   ``AT`` speculative errata workaround disables stage1 page table walk for
+   lower ELs (EL1 and EL0) in EL3 so that ``AT`` speculative fetch at any point
+   produces either the correct result or failure without TLB allocation.
+
+   This boolean option enables errata for all below CPUs.
+
+   +---------+--------------+-------------------------+
+   | Errata  |      CPU     |     Workaround Define   |
+   +=========+==============+=========================+
+   | 1165522 |  Cortex-A76  |  ``ERRATA_A76_1165522`` |
+   +---------+--------------+-------------------------+
+   | 1319367 |  Cortex-A72  |  ``ERRATA_A72_1319367`` |
+   +---------+--------------+-------------------------+
+   | 1319537 |  Cortex-A57  |  ``ERRATA_A57_1319537`` |
+   +---------+--------------+-------------------------+
+   | 1530923 |  Cortex-A55  |  ``ERRATA_A55_1530923`` |
+   +---------+--------------+-------------------------+
+   | 1530924 |  Cortex-A53  |  ``ERRATA_A53_1530924`` |
+   +---------+--------------+-------------------------+
+
+   .. note::
+      This option is enabled by build only if platform sets any of above defines
+      mentioned in ’Workaround Define' column in the table.
+      If this option is enabled for the EL3 software then EL2 software also must
+      implement this workaround due to the behaviour of the errata mentioned
+      in new SDEN document which will get published soon.
+
+- ``RAS_TRAP_LOWER_EL_ERR_ACCESS``: This flag enables/disables the SCR_EL3.TERR
+  bit, to trap access to the RAS ERR and RAS ERX registers from lower ELs.
+  This flag is disabled by default.
+
+- ``OPENSSL_DIR``: This flag is used to provide the installed openssl directory
+  path on the host machine which is used to build certificate generation and
+  firmware encryption tool.
+
+- ``USE_SP804_TIMER``: Use the SP804 timer instead of the Generic Timer for
+  functions that wait for an arbitrary time length (udelay and mdelay). The
+  default value is 0.
+
 GICv3 driver options
 --------------------
 
@@ -683,8 +755,10 @@ GICv3 driver files are included using directive:
 The driver can be configured with the following options set in the platform
 makefile:
 
--  ``GICV3_IMPL``: Selects between GIC-500 and GIC-600 variants of GICv3.
-   This option can take values GIC500 and GIC600 with default set to GIC500.
+-  ``GICV3_SUPPORT_GIC600``: Add support for the GIC-600 variants of GICv3.
+   Enabling this option will add runtime detection support for the
+   GIC-600, so is safe to select even for a GIC500 implementation.
+   This option defaults to 0.
 
 -  ``GICV3_IMPL_GIC600_MULTICHIP``: Selects GIC-600 variant with multichip
    functionality. This option defaults to 0

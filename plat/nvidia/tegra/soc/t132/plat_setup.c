@@ -6,9 +6,11 @@
  */
 
 #include <arch_helpers.h>
+#include <assert.h>
 #include <common/bl_common.h>
 #include <drivers/console.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
+#include <memctrl.h>
 #include <plat/common/platform.h>
 #include <tegra_def.h>
 #include <tegra_platform.h>
@@ -144,7 +146,16 @@ plat_params_from_bl2_t *plat_get_bl31_plat_params(void)
  ******************************************************************************/
 void plat_early_platform_setup(void)
 {
-	; /* do nothing */
+	plat_params_from_bl2_t *plat_params = bl31_get_plat_params();
+
+	/* Verify chip id is t132 */
+	assert(tegra_chipid_is_t132());
+
+	/*
+	 * Do initial security configuration to allow DRAM/device access.
+	 */
+	tegra_memctrl_tzdram_setup(plat_params->tzdram_base,
+			(uint32_t)plat_params->tzdram_size);
 }
 
 /*******************************************************************************
@@ -161,4 +172,30 @@ void plat_late_platform_setup(void)
 bool plat_supports_system_suspend(void)
 {
 	return true;
+}
+
+/*******************************************************************************
+ * Platform specific runtime setup.
+ ******************************************************************************/
+void plat_runtime_setup(void)
+{
+	/*
+	 * During cold boot, it is observed that the arbitration
+	 * bit is set in the Memory controller leading to false
+	 * error interrupts in the non-secure world. To avoid
+	 * this, clean the interrupt status register before
+	 * booting into the non-secure world
+	 */
+	tegra_memctrl_clear_pending_interrupts();
+
+	/*
+	 * During boot, USB3 and flash media (SDMMC/SATA) devices need
+	 * access to IRAM. Because these clients connect to the MC and
+	 * do not have a direct path to the IRAM, the MC implements AHB
+	 * redirection during boot to allow path to IRAM. In this mode
+	 * accesses to a programmed memory address aperture are directed
+	 * to the AHB bus, allowing access to the IRAM. This mode must be
+	 * disabled before we jump to the non-secure world.
+	 */
+	tegra_memctrl_disable_ahb_redirection();
 }

@@ -130,6 +130,10 @@ ERRATA_A53_843419	?=0
 # of by the rich OS.
 ERRATA_A53_855873	?=0
 
+# Flag to apply erratum 1530924 workaround during reset. This erratum applies
+# to all revisions of Cortex A53 cpu.
+ERRATA_A53_1530924	?=0
+
 # Flag to apply erratum 768277 workaround during reset. This erratum applies
 # only to revision r0p0 of the Cortex A55 cpu.
 ERRATA_A55_768277	?=0
@@ -153,6 +157,10 @@ ERRATA_A55_903758	?=0
 # Flag to apply erratum 1221012 workaround during reset. This erratum applies
 # only to revision <= r1p0 of the Cortex A55 cpu.
 ERRATA_A55_1221012	?=0
+
+# Flag to apply erratum 1530923 workaround during reset. This erratum applies
+# to all revisions of Cortex A55 cpu.
+ERRATA_A55_1530923	?=0
 
 # Flag to apply erratum 806969 workaround during reset. This erratum applies
 # only to revision r0p0 of the Cortex A57 cpu.
@@ -198,9 +206,17 @@ ERRATA_A57_833471	?=0
 # only to revision <= r1p3 of the Cortex A57 cpu.
 ERRATA_A57_859972	?=0
 
+# Flag to apply erratum 1319537 workaround during reset. This erratum applies
+# to all revisions of Cortex A57 cpu.
+ERRATA_A57_1319537	?=0
+
 # Flag to apply erratum 855971 workaround during reset. This erratum applies
 # only to revision <= r0p3 of the Cortex A72 cpu.
 ERRATA_A72_859971	?=0
+
+# Flag to apply erratum 1319367 workaround during reset. This erratum applies
+# to all revisions of Cortex A72 cpu.
+ERRATA_A72_1319367	?=0
 
 # Flag to apply erratum 852427 workaround during reset. This erratum applies
 # only to revision r0p0 of the Cortex A73 cpu.
@@ -250,9 +266,37 @@ ERRATA_A76_1275112	?=0
 # only to revision <= r3p0 of the Cortex A76 cpu.
 ERRATA_A76_1286807	?=0
 
+# Flag to apply erratum 1791580 workaround during reset. This erratum applies
+# only to revision <= r4p0 of the Cortex A76 cpu.
+ERRATA_A76_1791580	?=0
+
+# Flag to apply erratum 1800710 workaround during reset. This erratum applies
+# only to revision <= r4p0 of the Cortex A76 cpu.
+ERRATA_A76_1800710	?=0
+
+# Flag to apply erratum 1165522 workaround during reset. This erratum applies
+# to all revisions of Cortex A76 cpu.
+ERRATA_A76_1165522	?=0
+
+# Flag to apply erratum 1868343 workaround during reset. This erratum applies
+# only to revision <= r4p0 of the Cortex A76 cpu.
+ERRATA_A76_1868343	?=0
+
+# Flag to apply erratum 1508412 workaround during reset. This erratum applies
+# only to revision <= r1p0 of the Cortex A77 cpu.
+ERRATA_A77_1508412	?=0
+
+# Flag to apply erratum 1800714 workaround during reset. This erratum applies
+# only to revision <= r1p1 of the Cortex A77 cpu.
+ERRATA_A77_1800714	?=0
+
+# Flag to apply erratum 1925769 workaround during reset. This erratum applies
+# only to revision <= r1p1 of the Cortex A77 cpu.
+ERRATA_A77_1925769	?=0
+
 # Flag to apply erratum 1688305 workaround during reset. This erratum applies
-# to revisions r0p0 - r1p0 of the Hercules cpu.
-ERRATA_HERCULES_1688305	?=0
+# to revisions r0p0 - r1p0 of the A78 cpu.
+ERRATA_A78_1688305	?=0
 
 # Flag to apply T32 CLREX workaround during reset. This erratum applies
 # only to r0p0 and r1p0 of the Neoverse N1 cpu.
@@ -301,6 +345,10 @@ ERRATA_N1_1315703	?=0
 # Flag to apply erratum 1542419 workaround during reset. This erratum applies
 # to revisions r3p0 - r4p0 of the Neoverse N1 cpu.
 ERRATA_N1_1542419	?=0
+
+# Flag to apply erratum 1868343 workaround during reset. This erratum applies
+# to revision <= r4p0 of the Neoverse N1 cpu.
+ERRATA_N1_1868343	?=0
 
 # Flag to apply DSU erratum 798953. This erratum applies to DSUs revision r0p0.
 # Applying the workaround results in higher DSU power consumption on idle.
@@ -367,6 +415,10 @@ $(eval $(call add_define,ERRATA_A53_843419))
 $(eval $(call assert_boolean,ERRATA_A53_855873))
 $(eval $(call add_define,ERRATA_A53_855873))
 
+# Process ERRATA_A53_1530924 flag
+$(eval $(call assert_boolean,ERRATA_A53_1530924))
+$(eval $(call add_define,ERRATA_A53_1530924))
+
 # Process ERRATA_A55_768277 flag
 $(eval $(call assert_boolean,ERRATA_A55_768277))
 $(eval $(call add_define,ERRATA_A55_768277))
@@ -390,6 +442,10 @@ $(eval $(call add_define,ERRATA_A55_903758))
 # Process ERRATA_A55_1221012 flag
 $(eval $(call assert_boolean,ERRATA_A55_1221012))
 $(eval $(call add_define,ERRATA_A55_1221012))
+
+# Process ERRATA_A55_1530923 flag
+$(eval $(call assert_boolean,ERRATA_A55_1530923))
+$(eval $(call add_define,ERRATA_A55_1530923))
 
 # Process ERRATA_A57_806969 flag
 $(eval $(call assert_boolean,ERRATA_A57_806969))
@@ -435,9 +491,17 @@ $(eval $(call add_define,ERRATA_A57_833471))
 $(eval $(call assert_boolean,ERRATA_A57_859972))
 $(eval $(call add_define,ERRATA_A57_859972))
 
+# Process ERRATA_A57_1319537 flag
+$(eval $(call assert_boolean,ERRATA_A57_1319537))
+$(eval $(call add_define,ERRATA_A57_1319537))
+
 # Process ERRATA_A72_859971 flag
 $(eval $(call assert_boolean,ERRATA_A72_859971))
 $(eval $(call add_define,ERRATA_A72_859971))
+
+# Process ERRATA_A72_1319367 flag
+$(eval $(call assert_boolean,ERRATA_A72_1319367))
+$(eval $(call add_define,ERRATA_A72_1319367))
 
 # Process ERRATA_A73_852427 flag
 $(eval $(call assert_boolean,ERRATA_A73_852427))
@@ -487,9 +551,37 @@ $(eval $(call add_define,ERRATA_A76_1275112))
 $(eval $(call assert_boolean,ERRATA_A76_1286807))
 $(eval $(call add_define,ERRATA_A76_1286807))
 
-# Process ERRATA_HERCULES_1688305 flag
-$(eval $(call assert_boolean,ERRATA_HERCULES_1688305))
-$(eval $(call add_define,ERRATA_HERCULES_1688305))
+# Process ERRATA_A76_1791580 flag
+$(eval $(call assert_boolean,ERRATA_A76_1791580))
+$(eval $(call add_define,ERRATA_A76_1791580))
+
+# Process ERRATA_A76_1800710 flag
+$(eval $(call assert_boolean,ERRATA_A76_1800710))
+$(eval $(call add_define,ERRATA_A76_1800710))
+
+# Process ERRATA_A76_1165522 flag
+$(eval $(call assert_boolean,ERRATA_A76_1165522))
+$(eval $(call add_define,ERRATA_A76_1165522))
+
+# Process ERRATA_A76_1868343 flag
+$(eval $(call assert_boolean,ERRATA_A76_1868343))
+$(eval $(call add_define,ERRATA_A76_1868343))
+
+# Process ERRATA_A77_1508412 flag
+$(eval $(call assert_boolean,ERRATA_A77_1508412))
+$(eval $(call add_define,ERRATA_A77_1508412))
+
+# Process ERRATA_A77_1800714 flag
+$(eval $(call assert_boolean,ERRATA_A77_1800714))
+$(eval $(call add_define,ERRATA_A77_1800714))
+
+# Process ERRATA_A77_1925769 flag
+$(eval $(call assert_boolean,ERRATA_A77_1925769))
+$(eval $(call add_define,ERRATA_A77_1925769))
+
+# Process ERRATA_A78_1688305 flag
+$(eval $(call assert_boolean,ERRATA_A78_1688305))
+$(eval $(call add_define,ERRATA_A78_1688305))
 
 # Process ERRATA_N1_1043202 flag
 $(eval $(call assert_boolean,ERRATA_N1_1043202))
@@ -539,6 +631,10 @@ $(eval $(call add_define,ERRATA_N1_1315703))
 $(eval $(call assert_boolean,ERRATA_N1_1542419))
 $(eval $(call add_define,ERRATA_N1_1542419))
 
+# Process ERRATA_N1_1868343 flag
+$(eval $(call assert_boolean,ERRATA_N1_1868343))
+$(eval $(call add_define,ERRATA_N1_1868343))
+
 # Process ERRATA_DSU_798953 flag
 $(eval $(call assert_boolean,ERRATA_DSU_798953))
 $(eval $(call add_define,ERRATA_DSU_798953))
@@ -555,4 +651,11 @@ endif
 ifneq (${ERRATA_A53_835769},0)
 TF_CFLAGS_aarch64	+= -mfix-cortex-a53-835769
 TF_LDFLAGS_aarch64	+= --fix-cortex-a53-835769
+endif
+
+ifneq ($(filter 1,${ERRATA_A53_1530924} ${ERRATA_A55_1530923}	\
+	${ERRATA_A57_1319537} ${ERRATA_A72_1319367} ${ERRATA_A76_1165522}),)
+ERRATA_SPECULATIVE_AT	:= 1
+else
+ERRATA_SPECULATIVE_AT	:= 0
 endif

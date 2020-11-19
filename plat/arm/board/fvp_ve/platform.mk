@@ -6,15 +6,15 @@
 
 ifdef ARM_CORTEX_A5
 # Use the SP804 timer instead of the generic one
-FVP_VE_USE_SP804_TIMER	:= 1
-$(eval $(call add_define,FVP_VE_USE_SP804_TIMER))
+USE_SP804_TIMER	:= 1
 BL2_SOURCES		+=	drivers/arm/sp804/sp804_delay_timer.c
 endif
 
-FVP_VE_GIC_SOURCES		:=	drivers/arm/gic/common/gic_common.c	\
-				drivers/arm/gic/v2/gicv2_main.c		\
-				drivers/arm/gic/v2/gicv2_helpers.c	\
-				plat/common/plat_gicv2.c		\
+# Include GICv2 driver files
+include drivers/arm/gic/v2/gicv2.mk
+
+FVP_VE_GIC_SOURCES	:=	${GICV2_SOURCES}		\
+				plat/common/plat_gicv2.c	\
 				plat/arm/common/arm_gicv2.c
 
 FVP_VE_SECURITY_SOURCES	:=	plat/arm/board/fvp_ve/fvp_ve_security.c
@@ -74,18 +74,22 @@ BL2_SOURCES		+=	plat/arm/board/fvp_ve/fvp_ve_bl2_setup.c		\
 # Add the FDT_SOURCES and options for Dynamic Config (only for Unix env)
 ifdef UNIX_MK
 
-FDT_SOURCES		+=	plat/arm/board/fvp_ve/fdts/fvp_ve_fw_config.dts
+FDT_SOURCES		+=	plat/arm/board/fvp_ve/fdts/fvp_ve_fw_config.dts	\
+				plat/arm/board/fvp_ve/fdts/fvp_ve_tb_fw_config.dts
 
-FVP_TB_FW_CONFIG	:=	${BUILD_PLAT}/fdts/fvp_ve_fw_config.dtb
+FVP_FW_CONFIG		:=	${BUILD_PLAT}/fdts/fvp_ve_fw_config.dtb
+FVP_TB_FW_CONFIG	:=	${BUILD_PLAT}/fdts/fvp_ve_tb_fw_config.dtb
 
+# Add the FW_CONFIG to FIP and specify the same to certtool
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_FW_CONFIG},--fw-config,${FVP_FW_CONFIG}))
 # Add the TB_FW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${FVP_TB_FW_CONFIG},--tb-fw-config))
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_TB_FW_CONFIG},--tb-fw-config,${FVP_TB_FW_CONFIG}))
 
 FDT_SOURCES		+=	${FVP_HW_CONFIG_DTS}
 $(eval FVP_HW_CONFIG	:=	${BUILD_PLAT}/$(patsubst %.dts,%.dtb, \
 	fdts/$(notdir ${FVP_HW_CONFIG_DTS})))
 # Add the HW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${FVP_HW_CONFIG},--hw-config))
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_HW_CONFIG},--hw-config,${FVP_HW_CONFIG}))
 endif
 
 NEED_BL32 := yes

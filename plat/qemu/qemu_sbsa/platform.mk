@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, Linaro Limited and Contributors. All rights reserved.
+# Copyright (c) 2019-2020, Linaro Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -7,6 +7,12 @@
 CRASH_REPORTING	:=	1
 
 include lib/libfdt/libfdt.mk
+
+ifeq (${SPM_MM},1)
+NEED_BL32		:=	yes
+EL3_EXCEPTION_HANDLING	:=	1
+GICV2_G0_FOR_EL3	:=	1
+endif
 
 # Enable new version of image loading on QEMU platforms
 LOAD_IMAGE_V2		:=	1
@@ -41,9 +47,7 @@ BL1_SOURCES		+=	drivers/io/io_semihosting.c			\
 				${PLAT_QEMU_COMMON_PATH}/${ARCH}/plat_helpers.S	\
 				${PLAT_QEMU_COMMON_PATH}/qemu_bl1_setup.c
 
-BL1_SOURCES		+=	lib/cpus/aarch64/aem_generic.S			\
-				lib/cpus/aarch64/cortex_a53.S			\
-				lib/cpus/aarch64/cortex_a57.S
+BL1_SOURCES		+=	lib/cpus/aarch64/cortex_a57.S
 
 BL2_SOURCES		+=	drivers/io/io_semihosting.c			\
 				drivers/io/io_storage.c				\
@@ -69,9 +73,7 @@ QEMU_GIC_SOURCES	:=	${GICV3_SOURCES}				\
 				plat/common/plat_gicv3.c			\
 				${PLAT_QEMU_COMMON_PATH}/qemu_gicv3.c
 
-BL31_SOURCES		+=	lib/cpus/aarch64/aem_generic.S			\
-				lib/cpus/aarch64/cortex_a53.S			\
-				lib/cpus/aarch64/cortex_a57.S			\
+BL31_SOURCES		+=	lib/cpus/aarch64/cortex_a57.S			\
 				lib/semihosting/semihosting.c			\
 				lib/semihosting/${ARCH}/semihosting_call.S	\
 				plat/common/plat_psci_common.c			\
@@ -80,6 +82,9 @@ BL31_SOURCES		+=	lib/cpus/aarch64/aem_generic.S			\
 				${PLAT_QEMU_COMMON_PATH}/aarch64/plat_helpers.S	\
 				${PLAT_QEMU_COMMON_PATH}/qemu_bl31_setup.c	\
 				${QEMU_GIC_SOURCES}
+ifeq (${SPM_MM},1)
+	BL31_SOURCES		+=	${PLAT_QEMU_COMMON_PATH}/qemu_spm.c
+endif
 
 SEPARATE_CODE_AND_RODATA	:= 1
 ENABLE_STACK_PROTECTOR		:= 0

@@ -35,17 +35,21 @@ BL2_SOURCES		+=	${RDE1EDGE_BASE}/rde1edge_trusted_boot.c
 endif
 
 # Add the FDT_SOURCES and options for Dynamic Config
-FDT_SOURCES		+=	${RDE1EDGE_BASE}/fdts/${PLAT}_fw_config.dts
-TB_FW_CONFIG		:=	${BUILD_PLAT}/fdts/${PLAT}_fw_config.dtb
+FDT_SOURCES		+=	${RDE1EDGE_BASE}/fdts/${PLAT}_fw_config.dts	\
+				${RDE1EDGE_BASE}/fdts/${PLAT}_tb_fw_config.dts
+FW_CONFIG		:=	${BUILD_PLAT}/fdts/${PLAT}_fw_config.dtb
+TB_FW_CONFIG		:=	${BUILD_PLAT}/fdts/${PLAT}_tb_fw_config.dtb
 
+# Add the FW_CONFIG to FIP and specify the same to certtool
+$(eval $(call TOOL_ADD_PAYLOAD,${FW_CONFIG},--fw-config,${FW_CONFIG}))
 # Add the TB_FW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${TB_FW_CONFIG},--tb-fw-config))
+$(eval $(call TOOL_ADD_PAYLOAD,${TB_FW_CONFIG},--tb-fw-config,${TB_FW_CONFIG}))
 
 FDT_SOURCES		+=	${RDE1EDGE_BASE}/fdts/${PLAT}_nt_fw_config.dts
 NT_FW_CONFIG		:=	${BUILD_PLAT}/fdts/${PLAT}_nt_fw_config.dtb
 
 # Add the NT_FW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${NT_FW_CONFIG},--nt-fw-config))
+$(eval $(call TOOL_ADD_PAYLOAD,${NT_FW_CONFIG},--nt-fw-config,${NT_FW_CONFIG}))
 
 ifneq ($(CSS_SGI_CHIP_COUNT),1)
  $(error  "Chip count for RDE1Edge should be 1, currently set to \

@@ -9,6 +9,7 @@
 #include <platform_def.h>
 
 #include <common/debug.h>
+#include <common/fdt_wrappers.h>
 #include <drivers/delay_timer.h>
 #include <drivers/spi_mem.h>
 #include <drivers/st/stm32_gpio.h>
@@ -16,6 +17,9 @@
 #include <drivers/st/stm32mp_reset.h>
 #include <lib/mmio.h>
 #include <lib/utils_def.h>
+
+/* Timeout for device interface reset */
+#define TIMEOUT_US_1_MS			1000U
 
 /* QUADSPI registers */
 #define QSPI_CR			0x00U
@@ -465,13 +469,13 @@ int stm32_qspi_init(void)
 		return -FDT_ERR_NOTFOUND;
 	}
 
-	ret = fdt_get_reg_props_by_name(qspi_node, "qspi",
+	ret = fdt_get_reg_props_by_name(fdt, qspi_node, "qspi",
 					&stm32_qspi.reg_base, &size);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = fdt_get_reg_props_by_name(qspi_node, "qspi_mm",
+	ret = fdt_get_reg_props_by_name(fdt, qspi_node, "qspi_mm",
 					&stm32_qspi.mm_base,
 					&stm32_qspi.mm_size);
 	if (ret != 0) {
@@ -491,8 +495,14 @@ int stm32_qspi_init(void)
 
 	stm32mp_clk_enable(stm32_qspi.clock_id);
 
-	stm32mp_reset_assert(stm32_qspi.reset_id);
-	stm32mp_reset_deassert(stm32_qspi.reset_id);
+	ret = stm32mp_reset_assert(stm32_qspi.reset_id, TIMEOUT_US_1_MS);
+	if (ret != 0) {
+		panic();
+	}
+	ret = stm32mp_reset_deassert(stm32_qspi.reset_id, TIMEOUT_US_1_MS);
+	if (ret != 0) {
+		panic();
+	}
 
 	mmio_write_32(qspi_base() + QSPI_CR, QSPI_CR_SSHIFT);
 	mmio_write_32(qspi_base() + QSPI_DCR, QSPI_DCR_FSIZE_MASK);

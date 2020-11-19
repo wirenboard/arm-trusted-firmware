@@ -43,6 +43,15 @@
 #define PLAT_ARM_TRUSTED_DRAM_BASE	UL(0x06000000)
 #define PLAT_ARM_TRUSTED_DRAM_SIZE	UL(0x02000000)	/* 32 MB */
 
+/*
+ * Max size of SPMC is 2MB for fvp. With SPMD enabled this value corresponds to
+ * max size of BL32 image.
+ */
+#if defined(SPD_spmd)
+#define PLAT_ARM_SPMC_BASE		PLAT_ARM_TRUSTED_DRAM_BASE
+#define PLAT_ARM_SPMC_SIZE		UL(0x200000)  /* 2 MB */
+#endif
+
 /* virtual address used by dynamic mem_protect for chunk_base */
 #define PLAT_ARM_MEM_PROTEC_VA_FRAME	UL(0xc0000000)
 
@@ -118,9 +127,13 @@
  * little space for growth.
  */
 #if TRUSTED_BOARD_BOOT
-# define PLAT_ARM_MAX_BL2_SIZE	(UL(0x1D000) - FVP_BL2_ROMLIB_OPTIMIZATION)
+#if COT_DESC_IN_DTB
+# define PLAT_ARM_MAX_BL2_SIZE	(UL(0x1E000) - FVP_BL2_ROMLIB_OPTIMIZATION)
 #else
-# define PLAT_ARM_MAX_BL2_SIZE	(UL(0x12000) - FVP_BL2_ROMLIB_OPTIMIZATION)
+# define PLAT_ARM_MAX_BL2_SIZE	(UL(0x1D000) - FVP_BL2_ROMLIB_OPTIMIZATION)
+#endif
+#else
+# define PLAT_ARM_MAX_BL2_SIZE	(UL(0x13000) - FVP_BL2_ROMLIB_OPTIMIZATION)
 #endif
 
 #if RESET_TO_BL31
@@ -133,7 +146,7 @@
  * calculated using the current BL31 PROGBITS debug size plus the sizes of
  * BL2 and BL1-RW
  */
-#define PLAT_ARM_MAX_BL31_SIZE		UL(0x3E000)
+#define PLAT_ARM_MAX_BL31_SIZE		UL(0x3D000)
 #endif /* RESET_TO_BL31 */
 
 #ifndef __aarch64__
@@ -243,8 +256,8 @@
 
 /*
  * GIC related constants to cater for both GICv2 and GICv3 instances of an
- * FVP. They could be overriden at runtime in case the FVP implements the legacy
- * VE memory map.
+ * FVP. They could be overridden at runtime in case the FVP implements the
+ * legacy VE memory map.
  */
 #define PLAT_ARM_GICD_BASE		BASE_GICD_BASE
 #define PLAT_ARM_GICR_BASE		BASE_GICR_BASE
@@ -264,8 +277,13 @@
 
 #define PLAT_ARM_G0_IRQ_PROPS(grp)	ARM_G0_IRQ_PROPS(grp)
 
+#if SDEI_IN_FCONF
+#define PLAT_SDEI_DP_EVENT_MAX_CNT	ARM_SDEI_DP_EVENT_MAX_CNT
+#define PLAT_SDEI_DS_EVENT_MAX_CNT	ARM_SDEI_DS_EVENT_MAX_CNT
+#else
 #define PLAT_ARM_PRIVATE_SDEI_EVENTS	ARM_SDEI_PRIVATE_EVENTS
 #define PLAT_ARM_SHARED_SDEI_EVENTS	ARM_SDEI_SHARED_EVENTS
+#endif
 
 #define PLAT_ARM_SP_IMAGE_STACK_BASE	(PLAT_SP_IMAGE_NS_BUF_BASE +	\
 					 PLAT_SP_IMAGE_NS_BUF_SIZE)

@@ -337,44 +337,6 @@ func check_errata_1262888
 	b	cpu_rev_var_ls
 endfunc check_errata_1262888
 
-	/* --------------------------------------------------
-	 * Errata Workaround for Cortex A76 Errata #1275112
-	 * and Errata #1262606.
-	 * This applies only to revision <= r3p0 of Cortex A76.
-	 * Inputs:
-	 * x0: variant[4:7] and revision[0:3] of current cpu.
-	 * Shall clobber: x0-x17
-	 * --------------------------------------------------
-	 */
-func errata_a76_1275112_1262606_wa
-	/*
-	 * Compare x0 against revision r3p0
-	 */
-	mov	x17, x30
-	/*
-	 * Since both errata #1275112 and #1262606 have the same check, we can
-	 * invoke any one of them for the check here.
-	 */
-	bl	check_errata_1275112
-	cbz	x0, 1f
-	mrs	x1, CORTEX_A76_CPUACTLR_EL1
-	orr	x1, x1, CORTEX_A76_CPUACTLR_EL1_BIT_13
-	msr	CORTEX_A76_CPUACTLR_EL1, x1
-	isb
-1:
-	ret	x17
-endfunc errata_a76_1275112_1262606_wa
-
-func check_errata_1262606
-	mov	x1, #0x30
-	b	cpu_rev_var_ls
-endfunc check_errata_1262606
-
-func check_errata_1275112
-	mov	x1, #0x30
-	b	cpu_rev_var_ls
-endfunc check_errata_1275112
-
 	/* ---------------------------------------------------
 	 * Errata Workaround for Cortex A76 Errata #1286807.
 	 * This applies only to revision <= r3p0 of Cortex A76.
@@ -392,6 +354,111 @@ func check_errata_1286807
 #endif
 endfunc check_errata_1286807
 
+	/* --------------------------------------------------
+	 * Errata workaround for Cortex A76 Errata #1791580.
+	 * This applies to revisions <= r4p0 of Cortex A76.
+	 * Inputs:
+	 * x0: variant[4:7] and revision[0:3] of current cpu.
+	 * Shall clobber: x0-x17
+	 * --------------------------------------------------
+	 */
+func errata_a76_1791580_wa
+	/* Compare x0 against revision r4p0 */
+	mov	x17, x30
+	bl	check_errata_1791580
+	cbz	x0, 1f
+	mrs	x1, CORTEX_A76_CPUACTLR2_EL1
+	orr	x1, x1, CORTEX_A76_CPUACTLR2_EL1_BIT_2
+	msr	CORTEX_A76_CPUACTLR2_EL1, x1
+	isb
+1:
+	ret	x17
+endfunc errata_a76_1791580_wa
+
+func check_errata_1791580
+	/* Applies to everything <=r4p0. */
+	mov	x1, #0x40
+	b	cpu_rev_var_ls
+endfunc check_errata_1791580
+
+	/* --------------------------------------------------
+	 * Errata Workaround for Cortex A76 Errata #1800710.
+	 * This applies to revision <= r4p0 of Cortex A76.
+	 * Inputs:
+	 * x0: variant[4:7] and revision[0:3] of current cpu.
+	 * Shall clobber: x0-x17
+	 * --------------------------------------------------
+	 */
+func errata_a76_1800710_wa
+	/* Compare x0 against revision <= r4p0 */
+	mov	x17, x30
+	bl	check_errata_1800710
+	cbz	x0, 1f
+
+	/* Disable allocation of splintered pages in the L2 TLB */
+	mrs	x1, CORTEX_A76_CPUECTLR_EL1
+	orr	x1, x1, CORTEX_A76_CPUECTLR_EL1_BIT_53
+	msr	CORTEX_A76_CPUECTLR_EL1, x1
+	isb
+1:
+	ret	x17
+endfunc errata_a76_1800710_wa
+
+func check_errata_1800710
+	/* Applies to everything <= r4p0 */
+	mov	x1, #0x40
+	b	cpu_rev_var_ls
+endfunc check_errata_1800710
+
+	/* --------------------------------------------------
+	 * Errata Workaround for Cortex A76 Errata #1262606,
+	 * #1275112, and #1868343.  #1262606 and #1275112
+	 * apply to revisions <= r3p0 and #1868343 applies to
+	 * revisions <= r4p0.
+	 * Inputs:
+	 * x0: variant[4:7] and revision[0:3] of current cpu.
+	 * Shall clobber: x0-x17
+	 * --------------------------------------------------
+	 */
+
+func errata_a76_1262606_1275112_1868343_wa
+	mov	x17, x30
+
+/* Check for <= r3p0 cases and branch if check passes. */
+#if ERRATA_A76_1262606 || ERRATA_A76_1275112
+	bl	check_errata_1262606
+	cbnz	x0, 1f
+#endif
+
+/* Check for <= r4p0 cases and branch if check fails. */
+#if ERRATA_A76_1868343
+	bl	check_errata_1868343
+	cbz	x0, 2f
+#endif
+1:
+	mrs	x1, CORTEX_A76_CPUACTLR_EL1
+	orr	x1, x1, #CORTEX_A76_CPUACTLR_EL1_BIT_13
+	msr	CORTEX_A76_CPUACTLR_EL1, x1
+	isb
+2:
+	ret	x17
+endfunc errata_a76_1262606_1275112_1868343_wa
+
+func check_errata_1262606
+	mov	x1, #0x30
+	b	cpu_rev_var_ls
+endfunc check_errata_1262606
+
+func check_errata_1275112
+	mov	x1, #0x30
+	b	cpu_rev_var_ls
+endfunc check_errata_1275112
+
+func check_errata_1868343
+	mov	x1, #0x40
+	b	cpu_rev_var_ls
+endfunc check_errata_1868343
+
 func check_errata_cve_2018_3639
 #if WORKAROUND_CVE_2018_3639
 	mov	x0, #ERRATA_APPLIES
@@ -408,6 +475,23 @@ func cortex_a76_disable_wa_cve_2018_3639
 	isb
 	ret
 endfunc cortex_a76_disable_wa_cve_2018_3639
+
+	/* --------------------------------------------------------------
+	 * Errata Workaround for Cortex A76 Errata #1165522.
+	 * This applies only to revisions <= r3p0 of Cortex A76.
+	 * Due to the nature of the errata it is applied unconditionally
+	 * when built in, report it as applicable in this case
+	 * --------------------------------------------------------------
+	 */
+func check_errata_1165522
+#if ERRATA_A76_1165522
+	mov	x0, #ERRATA_APPLIES
+	ret
+#else
+	mov	x1, #0x30
+	b	cpu_rev_var_ls
+#endif
+endfunc check_errata_1165522
 
 	/* -------------------------------------------------
 	 * The CPU Ops reset function for Cortex-A76.
@@ -439,14 +523,24 @@ func cortex_a76_reset_func
 	bl	errata_a76_1257314_wa
 #endif
 
-#if ERRATA_A76_1262606 || ERRATA_A76_1275112
+#if ERRATA_A76_1262606 || ERRATA_A76_1275112 || ERRATA_A76_1868343
 	mov	x0, x18
-	bl	errata_a76_1275112_1262606_wa
+	bl	errata_a76_1262606_1275112_1868343_wa
 #endif
 
 #if ERRATA_A76_1262888
 	mov	x0, x18
 	bl	errata_a76_1262888_wa
+#endif
+
+#if ERRATA_A76_1791580
+	mov	x0, x18
+	bl	errata_a76_1791580_wa
+#endif
+
+#if ERRATA_A76_1800710
+	mov	x0, x18
+	bl	errata_a76_1800710_wa
 #endif
 
 #if WORKAROUND_CVE_2018_3639
@@ -529,6 +623,10 @@ func cortex_a76_errata_report
 	report_errata ERRATA_A76_1262888, cortex_a76, 1262888
 	report_errata ERRATA_A76_1275112, cortex_a76, 1275112
 	report_errata ERRATA_A76_1286807, cortex_a76, 1286807
+	report_errata ERRATA_A76_1791580, cortex_a76, 1791580
+	report_errata ERRATA_A76_1800710, cortex_a76, 1800710
+	report_errata ERRATA_A76_1165522, cortex_a76, 1165522
+	report_errata ERRATA_A76_1868343, cortex_a76, 1868343
 	report_errata WORKAROUND_CVE_2018_3639, cortex_a76, cve_2018_3639
 	report_errata ERRATA_DSU_798953, cortex_a76, dsu_798953
 	report_errata ERRATA_DSU_936184, cortex_a76, dsu_936184

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020, ARM Limited and Contributors. All rights reserved.
+# Copyright (c) 2016-2020, ARM Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -61,6 +61,11 @@ CTX_INCLUDE_FPREGS		:= 0
 # must be set to 1 if the platform wants to use this feature in the Secure
 # world. It is not needed to use it in the Non-secure world.
 CTX_INCLUDE_PAUTH_REGS		:= 0
+
+# Include Nested virtualization control (Armv8.4-NV) registers in cpu context.
+# This must be set to 1 if architecture implements Nested Virtualization
+# Extension and platform wants to use this feature in the Secure world
+CTX_INCLUDE_NEVE_REGS		:= 0
 
 # Debug build
 DEBUG				:= 0
@@ -150,12 +155,21 @@ GICV2_G0_FOR_EL3		:= 0
 # by lower ELs.
 HANDLE_EA_EL3_FIRST		:= 0
 
+# Secure hash algorithm flag, accepts 3 values: sha256, sha384 and sha512.
+# The default value is sha256.
+HASH_ALG			:= sha256
+
 # Whether system coherency is managed in hardware, without explicit software
 # operations.
 HW_ASSISTED_COHERENCY		:= 0
 
 # Set the default algorithm for the generation of Trusted Board Boot keys
 KEY_ALG				:= rsa
+
+# Set the default key size in case KEY_ALG is rsa
+ifeq ($(KEY_ALG),rsa)
+KEY_SIZE			:= 2048
+endif
 
 # Option to build TF with Measured Boot support
 MEASURED_BOOT			:= 0
@@ -223,7 +237,13 @@ USE_COHERENT_MEM		:= 1
 USE_DEBUGFS			:= 0
 
 # Build option to fconf based io
-ARM_IO_IN_DTB		:= 0
+ARM_IO_IN_DTB			:= 0
+
+# Build option to support SDEI through fconf
+SDEI_IN_FCONF			:= 0
+
+# Build option to support Secure Interrupt descriptors through fconf
+SEC_INT_DESC_IN_FCONF		:= 0
 
 # Build option to choose whether Trusted Firmware uses library at ROM
 USE_ROMLIB			:= 0
@@ -293,3 +313,18 @@ CTX_INCLUDE_EL2_REGS		:= 0
 # than Armv8.5-A
 # By default it is set to "no"
 SUPPORT_STACK_MEMTAG		:= no
+
+# Select workaround for AT speculative behaviour.
+ERRATA_SPECULATIVE_AT           := 0
+
+# Trap RAS error record access from lower EL
+RAS_TRAP_LOWER_EL_ERR_ACCESS	:= 0
+
+# Build option to create cot descriptors using fconf
+COT_DESC_IN_DTB			:= 0
+
+# Build option to provide openssl directory path
+OPENSSL_DIR			:= /usr
+
+# Build option to use the SP804 timer instead of the generic one
+USE_SP804_TIMER			:= 0

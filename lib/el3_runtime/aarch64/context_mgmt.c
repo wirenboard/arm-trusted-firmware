@@ -22,6 +22,7 @@
 #include <lib/extensions/mpam.h>
 #include <lib/extensions/spe.h>
 #include <lib/extensions/sve.h>
+#include <lib/extensions/twed.h>
 #include <lib/utils.h>
 
 
@@ -107,6 +108,14 @@ void cm_setup_context(cpu_context_t *ctx, const entry_point_info_t *ep)
 	if (EP_GET_ST(ep->h.attr) != 0U)
 		scr_el3 |= SCR_ST_BIT;
 
+#if RAS_TRAP_LOWER_EL_ERR_ACCESS
+	/*
+	 * SCR_EL3.TERR: Trap Error record accesses. Accesses to the RAS ERR
+	 * and RAS ERX registers from EL1 and EL2 are trapped to EL3.
+	 */
+	scr_el3 |= SCR_TERR_BIT;
+#endif
+
 #if !HANDLE_EA_EL3_FIRST
 	/*
 	 * SCR_EL3.EA: Do not route External Abort and SError Interrupt External
@@ -172,11 +181,26 @@ void cm_setup_context(cpu_context_t *ctx, const entry_point_info_t *ep)
 	 * SCR_EL3.HCE: Enable HVC instructions if next execution state is
 	 * AArch64 and next EL is EL2, or if next execution state is AArch32 and
 	 * next mode is Hyp.
+	 * SCR_EL3.FGTEn: Enable Fine Grained Virtualization Traps under the
+	 * same conditions as HVC instructions and when the processor supports
+	 * ARMv8.6-FGT.
+	 * SCR_EL3.ECVEn: Enable Enhanced Counter Virtualization (ECV)
+	 * CNTPOFF_EL2 register under the same conditions as HVC instructions
+	 * and when the processor supports ECV.
 	 */
 	if (((GET_RW(ep->spsr) == MODE_RW_64) && (GET_EL(ep->spsr) == MODE_EL2))
 	    || ((GET_RW(ep->spsr) != MODE_RW_64)
 		&& (GET_M32(ep->spsr) == MODE32_hyp))) {
 		scr_el3 |= SCR_HCE_BIT;
+
+		if (is_armv8_6_fgt_present()) {
+			scr_el3 |= SCR_FGTEN_BIT;
+		}
+
+		if (get_armv8_6_ecv_support()
+		    == ID_AA64MMFR0_EL1_ECV_SELF_SYNCH) {
+			scr_el3 |= SCR_ECVEN_BIT;
+		}
 	}
 
 	/* Enable S-EL2 if the next EL is EL2 and security state is secure */
@@ -228,6 +252,24 @@ void cm_setup_context(cpu_context_t *ctx, const entry_point_info_t *ep)
 	 */
 	sctlr_elx |= SCTLR_IESB_BIT;
 #endif
+
+	/* Enable WFE trap delay in SCR_EL3 if supported and configured */
+	if (is_armv8_6_twed_present()) {
+		uint32_t delay = plat_arm_set_twedel_scr_el3();
+
+		if (delay != TWED_DISABLED) {
+			/* Make sure delay value fits */
+			assert((delay & ~SCR_TWEDEL_MASK) == 0U);
+
+			/* Set delay in SCR_EL3 */
+			scr_el3 &= ~(SCR_TWEDEL_MASK << SCR_TWEDEL_SHIFT);
+			scr_el3 |= ((delay & SCR_TWEDEL_MASK)
+					<< SCR_TWEDEL_SHIFT);
+
+			/* Enable WFE delay */
+			scr_el3 |= SCR_TWEDEn_BIT;
+		}
+	}
 
 	/*
 	 * Store the initialised SCTLR_EL1 value in the cpu_context - SCTLR_EL2
@@ -543,7 +585,7 @@ void cm_el2_sysregs_context_save(uint32_t security_state)
 	 * S-EL2 context if S-EL2 is enabled.
 	 */
 	if ((security_state == NON_SECURE) ||
-	    ((scr_el3 & SCR_EEL2_BIT) != 0U)) {
+	    ((security_state == SECURE) && ((scr_el3 & SCR_EEL2_BIT) != 0U))) {
 		cpu_context_t *ctx;
 
 		ctx = cm_get_context(security_state);
@@ -565,7 +607,7 @@ void cm_el2_sysregs_context_restore(uint32_t security_state)
 	 * S-EL2 context if S-EL2 is enabled.
 	 */
 	if ((security_state == NON_SECURE) ||
-	    ((scr_el3 & SCR_EEL2_BIT) != 0U)) {
+	    ((security_state == SECURE) && ((scr_el3 & SCR_EEL2_BIT) != 0U))) {
 		cpu_context_t *ctx;
 
 		ctx = cm_get_context(security_state);
@@ -668,7 +710,7 @@ void cm_write_scr_el3_bit(uint32_t security_state,
 	assert(ctx != NULL);
 
 	/* Ensure that the bit position is a valid one */
-	assert(((1U << bit_pos) & SCR_VALID_BIT_MASK) != 0U);
+	assert(((1UL << bit_pos) & SCR_VALID_BIT_MASK) != 0U);
 
 	/* Ensure that the 'value' is only a bit wide */
 	assert(value <= 1U);
@@ -679,7 +721,7 @@ void cm_write_scr_el3_bit(uint32_t security_state,
 	 */
 	state = get_el3state_ctx(ctx);
 	scr_el3 = read_ctx_reg(state, CTX_SCR_EL3);
-	scr_el3 &= ~(1U << bit_pos);
+	scr_el3 &= ~(1UL << bit_pos);
 	scr_el3 |= (u_register_t)value << bit_pos;
 	write_ctx_reg(state, CTX_SCR_EL3, scr_el3);
 }

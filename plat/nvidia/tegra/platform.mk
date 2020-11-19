@@ -33,9 +33,6 @@ SEPARATE_CODE_AND_RODATA :=	1
 # do not use coherent memory
 USE_COHERENT_MEM	:=	0
 
-# do not enable SVE
-ENABLE_SVE_FOR_NS	:=	0
-
 # enable D-cache early during CPU warmboot
 WARMBOOT_ENABLE_DCACHE_EARLY := 1
 
@@ -49,26 +46,36 @@ ENABLE_TEGRA_WDT_LEGACY_FIQ_HANDLING	?= 0
 # Flag to allow relocation of BL32 image to TZDRAM during boot
 RELOCATE_BL32_IMAGE		?= 0
 
+# Enable stack protection
+ENABLE_STACK_PROTECTOR		:=	strong
+
+# Enable SDEI
+SDEI_SUPPORT			:= 1
+
+# modify BUILD_PLAT to point to SoC specific build directory
+BUILD_PLAT	:=	${BUILD_BASE}/${PLAT}/${TARGET_SOC}/${BUILD_TYPE}
+
 include plat/nvidia/tegra/common/tegra_common.mk
 include ${SOC_DIR}/platform_${TARGET_SOC}.mk
 
 $(eval $(call add_define,ENABLE_TEGRA_WDT_LEGACY_FIQ_HANDLING))
 $(eval $(call add_define,RELOCATE_BL32_IMAGE))
 
-# modify BUILD_PLAT to point to SoC specific build directory
-BUILD_PLAT	:=	${BUILD_BASE}/${PLAT}/${TARGET_SOC}/${BUILD_TYPE}
-
 # platform cflags (enable signed comparisons, disable stdlib)
-TF_CFLAGS	+= -Wsign-compare -nostdlib
+TF_CFLAGS	+= -nostdlib
 
 # override with necessary libc files for the Tegra platform
 override LIBC_SRCS :=	$(addprefix lib/libc/,		\
+			aarch64/setjmp.S		\
 			assert.c			\
+			memchr.c			\
+			memcmp.c			\
 			memcpy.c			\
 			memmove.c			\
 			memset.c			\
 			printf.c			\
 			putchar.c			\
+			strrchr.c			\
 			strlen.c			\
 			snprintf.c)
 

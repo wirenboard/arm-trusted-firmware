@@ -17,7 +17,6 @@
 #include <bl31/bl31.h>
 #include <common/bl_common.h>
 #include <common/debug.h>
-#include <cortex_a53.h>
 #include <cortex_a57.h>
 #include <denver.h>
 #include <drivers/console.h>
@@ -28,6 +27,7 @@
 
 #include <memctrl.h>
 #include <profiler.h>
+#include <smmu.h>
 #include <tegra_def.h>
 #include <tegra_platform.h>
 #include <tegra_private.h>
@@ -180,21 +180,6 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	plat_early_platform_setup();
 
 	/*
-	 * Do initial security configuration to allow DRAM/device access.
-	 */
-	tegra_memctrl_tzdram_setup(plat_bl31_params_from_bl2.tzdram_base,
-			(uint32_t)plat_bl31_params_from_bl2.tzdram_size);
-
-#if RELOCATE_BL32_IMAGE
-	/*
-	 * The previous bootloader might not have placed the BL32 image
-	 * inside the TZDRAM. Platform handler to allow relocation of BL32
-	 * image to TZDRAM memory. This behavior might change per platform.
-	 */
-	plat_relocate_bl32_image(arg_from_bl2->bl32_image_info);
-#endif
-
-	/*
 	 * Add timestamp for platform early setup exit.
 	 */
 	boot_profiler_add_record("[TF] early setup exit");
@@ -248,12 +233,6 @@ void bl31_platform_setup(void)
 	tegra_memctrl_setup();
 
 	/*
-	 * Set up the TZRAM memory aperture to allow only secure world
-	 * access
-	 */
-	tegra_memctrl_tzram_setup(TEGRA_TZRAM_BASE, TEGRA_TZRAM_SIZE);
-
-	/*
 	 * Late setup handler to allow platforms to performs additional
 	 * functionality.
 	 * This handler gets called with MMU enabled.
@@ -274,24 +253,9 @@ void bl31_platform_setup(void)
 void bl31_plat_runtime_setup(void)
 {
 	/*
-	 * During cold boot, it is observed that the arbitration
-	 * bit is set in the Memory controller leading to false
-	 * error interrupts in the non-secure world. To avoid
-	 * this, clean the interrupt status register before
-	 * booting into the non-secure world
+	 * Platform specific runtime setup
 	 */
-	tegra_memctrl_clear_pending_interrupts();
-
-	/*
-	 * During boot, USB3 and flash media (SDMMC/SATA) devices need
-	 * access to IRAM. Because these clients connect to the MC and
-	 * do not have a direct path to the IRAM, the MC implements AHB
-	 * redirection during boot to allow path to IRAM. In this mode
-	 * accesses to a programmed memory address aperture are directed
-	 * to the AHB bus, allowing access to the IRAM. This mode must be
-	 * disabled before we jump to the non-secure world.
-	 */
-	tegra_memctrl_disable_ahb_redirection();
+	plat_runtime_setup();
 
 	/*
 	 * Add final timestamp before exiting BL31.
@@ -367,7 +331,15 @@ void bl31_plat_arch_setup(void)
 int32_t bl31_check_ns_address(uint64_t base, uint64_t size_in_bytes)
 {
 	uint64_t end = base + size_in_bytes - U(1);
-	int32_t ret = 0;
+
+	/*
+	 * Sanity check the input values
+	 */
+	if ((base == 0U) || (size_in_bytes == 0U)) {
+		ERROR("NS address 0x%llx (%lld bytes) is invalid\n",
+			base, size_in_bytes);
+		return -EINVAL;
+	}
 
 	/*
 	 * Check if the NS DRAM address is valid
@@ -376,7 +348,7 @@ int32_t bl31_check_ns_address(uint64_t base, uint64_t size_in_bytes)
 	    (end > TEGRA_DRAM_END)) {
 
 		ERROR("NS address 0x%llx is out-of-bounds!\n", base);
-		ret = -EFAULT;
+		return -EFAULT;
 	}
 
 	/*
@@ -385,9 +357,9 @@ int32_t bl31_check_ns_address(uint64_t base, uint64_t size_in_bytes)
 	 */
 	if ((base < (uint64_t)TZDRAM_END) && (end > tegra_bl31_phys_base)) {
 		ERROR("NS address 0x%llx overlaps TZDRAM!\n", base);
-		ret = -ENOTSUP;
+		return -ENOTSUP;
 	}
 
 	/* valid NS address */
-	return ret;
+	return 0;
 }

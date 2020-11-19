@@ -4,12 +4,15 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <assert.h>
+#include <errno.h>
+
 #include <arch.h>
 #include <arch_helpers.h>
 #include <common/debug.h>
 #include <denver.h>
-#include <errno.h>
 #include <lib/mmio.h>
+
 #include <mce_private.h>
 #include <platform_def.h>
 #include <t194_nvg.h>
@@ -211,6 +214,15 @@ void nvg_enable_strict_checking_mode(void)
 
 	nvg_set_request_data((uint64_t)TEGRA_NVG_CHANNEL_SECURITY_CONFIG, params);
 }
+
+void nvg_verify_strict_checking_mode(void)
+{
+	uint64_t params = (uint64_t)(STRICT_CHECKING_ENABLED_SET |
+				     STRICT_CHECKING_LOCKED_SET);
+
+	nvg_set_request((uint64_t)TEGRA_NVG_CHANNEL_SECURITY_CONFIG);
+	assert(params == (uint64_t)nvg_get_result());
+}
 #endif
 
 /*
@@ -235,4 +247,16 @@ void nvg_system_shutdown(void)
 	/* issue command for shutdown */
 	nvg_set_request_data((uint64_t)TEGRA_NVG_CHANNEL_SHUTDOWN,
 			     (uint64_t)TEGRA_NVG_SHUTDOWN);
+}
+
+/*
+ * Request to clear CCPLEX->HSM correctable error signal.
+ * NVGDATA[1]: A write of 1 clears the CCPLEX->HSM correctable error signal,
+ *             A write of 0 has no effect.
+ */
+void nvg_clear_hsm_corr_status(void)
+{
+	nvg_hsm_error_ctrl_channel_t status = { .bits = { .corr = 1U, }, };
+
+	nvg_set_request_data((uint64_t)TEGRA_NVG_CHANNEL_HSM_ERROR_CTRL, status.flat);
 }

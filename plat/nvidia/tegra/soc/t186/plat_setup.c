@@ -26,6 +26,8 @@
 #include <plat/common/platform.h>
 
 #include <mce.h>
+#include <memctrl.h>
+#include <smmu.h>
 #include <tegra_def.h>
 #include <tegra_platform.h>
 #include <tegra_private.h>
@@ -185,9 +187,19 @@ void plat_early_platform_setup(void)
 {
 	uint64_t impl, val;
 	const plat_params_from_bl2_t *plat_params = bl31_get_plat_params();
+	const struct tegra_bl31_params *arg_from_bl2 = plat_get_bl31_params();
+
+	/* Verify chip id is t186 */
+	assert(tegra_chipid_is_t186());
 
 	/* sanity check MCE firmware compatibility */
 	mce_verify_firmware_version();
+
+	/*
+	 * Do initial security configuration to allow DRAM/device access.
+	 */
+	tegra_memctrl_tzdram_setup(plat_params->tzdram_base,
+			(uint32_t)plat_params->tzdram_size);
 
 	impl = (read_midr() >> MIDR_IMPL_SHIFT) & (uint64_t)MIDR_IMPL_MASK;
 
@@ -202,6 +214,13 @@ void plat_early_platform_setup(void)
 		val |= CORTEX_A57_L2_ECC_PARITY_PROTECTION_BIT;
 		write_l2ctlr_el1(val);
 	}
+
+	/*
+	 * The previous bootloader might not have placed the BL32 image
+	 * inside the TZDRAM. Platform handler to allow relocation of BL32
+	 * image to TZDRAM memory. This behavior might change per platform.
+	 */
+	plat_relocate_bl32_image(arg_from_bl2->bl32_image_info);
 }
 
 /*******************************************************************************
@@ -214,6 +233,8 @@ void plat_late_platform_setup(void)
 
 /* Secure IRQs for Tegra186 */
 static const interrupt_prop_t tegra186_interrupt_props[] = {
+	INTR_PROP_DESC(TEGRA_SDEI_SGI_PRIVATE, PLAT_SDEI_CRITICAL_PRI,
+			GICV2_INTR_GROUP0, GIC_INTR_CFG_EDGE),
 	INTR_PROP_DESC(TEGRA186_TOP_WDT_IRQ, PLAT_TEGRA_WDT_PRIO,
 			GICV2_INTR_GROUP0, GIC_INTR_CFG_EDGE),
 	INTR_PROP_DESC(TEGRA186_AON_WDT_IRQ, PLAT_TEGRA_WDT_PRIO,
@@ -342,4 +363,35 @@ void plat_relocate_bl32_image(const image_info_t *bl32_img_info)
 bool plat_supports_system_suspend(void)
 {
 	return true;
+}
+/*******************************************************************************
+ * Platform specific runtime setup.
+ ******************************************************************************/
+void plat_runtime_setup(void)
+{
+	/*
+	 * During cold boot, it is observed that the arbitration
+	 * bit is set in the Memory controller leading to false
+	 * error interrupts in the non-secure world. To avoid
+	 * this, clean the interrupt status register before
+	 * booting into the non-secure world
+	 */
+	tegra_memctrl_clear_pending_interrupts();
+
+	/*
+	 * During boot, USB3 and flash media (SDMMC/SATA) devices need
+	 * access to IRAM. Because these clients connect to the MC and
+	 * do not have a direct path to the IRAM, the MC implements AHB
+	 * redirection during boot to allow path to IRAM. In this mode
+	 * accesses to a programmed memory address aperture are directed
+	 * to the AHB bus, allowing access to the IRAM. This mode must be
+	 * disabled before we jump to the non-secure world.
+	 */
+	tegra_memctrl_disable_ahb_redirection();
+
+	/*
+	 * Verify the integrity of the previously configured SMMU(s)
+	 * settings
+	 */
+	tegra_smmu_verify();
 }

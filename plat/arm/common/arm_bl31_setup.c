@@ -28,10 +28,10 @@ static entry_point_info_t bl33_image_ep_info;
 
 #if !RESET_TO_BL31
 /*
- * Check that BL31_BASE is above ARM_TB_FW_CONFIG_LIMIT. The reserved page
+ * Check that BL31_BASE is above ARM_FW_CONFIG_LIMIT. The reserved page
  * is required for SOC_FW_CONFIG/TOS_FW_CONFIG passed from BL2.
  */
-CASSERT(BL31_BASE >= ARM_TB_FW_CONFIG_LIMIT, assert_bl31_base_overflows);
+CASSERT(BL31_BASE >= ARM_FW_CONFIG_LIMIT, assert_bl31_base_overflows);
 #endif
 
 /* Weak definitions may be overridden in specific ARM standard platform */
@@ -46,7 +46,13 @@ CASSERT(BL31_BASE >= ARM_TB_FW_CONFIG_LIMIT, assert_bl31_base_overflows);
 					MT_MEMORY | MT_RW | MT_SECURE)
 #if RECLAIM_INIT_CODE
 IMPORT_SYM(unsigned long, __INIT_CODE_START__, BL_INIT_CODE_BASE);
-IMPORT_SYM(unsigned long, __INIT_CODE_END__, BL_INIT_CODE_END);
+IMPORT_SYM(unsigned long, __INIT_CODE_END__, BL_CODE_END_UNALIGNED);
+IMPORT_SYM(unsigned long, __STACKS_END__, BL_STACKS_END_UNALIGNED);
+
+#define	BL_INIT_CODE_END	((BL_CODE_END_UNALIGNED + PAGE_SIZE - 1) & \
+					~(PAGE_SIZE - 1))
+#define	BL_STACKS_END		((BL_STACKS_END_UNALIGNED + PAGE_SIZE - 1) & \
+					~(PAGE_SIZE - 1))
 
 #define MAP_BL_INIT_CODE	MAP_REGION_FLAT(			\
 					BL_INIT_CODE_BASE,		\
@@ -114,6 +120,18 @@ void __init arm_bl31_early_platform_setup(void *from_bl2, uintptr_t soc_fw_confi
 	SET_SECURITY_STATE(bl32_image_ep_info.h.attr, SECURE);
 	bl32_image_ep_info.pc = BL32_BASE;
 	bl32_image_ep_info.spsr = arm_get_spsr_for_bl32_entry();
+
+#if defined(SPD_spmd)
+	/* SPM (hafnium in secure world) expects SPM Core manifest base address
+	 * in x0, which in !RESET_TO_BL31 case loaded after base of non shared
+	 * SRAM(after 4KB offset of SRAM). But in RESET_TO_BL31 case all non
+	 * shared SRAM is allocated to BL31, so to avoid overwriting of manifest
+	 * keep it in the last page.
+	 */
+	bl32_image_ep_info.args.arg0 = ARM_TRUSTED_SRAM_BASE +
+				PLAT_ARM_TRUSTED_SRAM_SIZE - PAGE_SIZE;
+#endif
+
 # endif /* BL32_BASE */
 
 	/* Populate entry point information for BL33 */
@@ -129,6 +147,14 @@ void __init arm_bl31_early_platform_setup(void *from_bl2, uintptr_t soc_fw_confi
 
 	bl33_image_ep_info.spsr = arm_get_spsr_for_bl33_entry();
 	SET_SECURITY_STATE(bl33_image_ep_info.h.attr, NON_SECURE);
+
+#if defined(SPD_spmd) && !(ARM_LINUX_KERNEL_AS_BL33)
+	/*
+	 * Hafnium in normal world expects its manifest address in x0, which
+	 * is loaded at base of DRAM.
+	 */
+	bl33_image_ep_info.args.arg0 = (u_register_t)ARM_DRAM1_BASE;
+#endif
 
 # if ARM_LINUX_KERNEL_AS_BL33
 	/*
@@ -268,14 +294,39 @@ void arm_bl31_plat_runtime_setup(void)
 
 #if RECLAIM_INIT_CODE
 /*
- * Zero out and make RW memory used to store image boot time code so it can
- * be reclaimed during runtime
+ * Make memory for image boot time code RW to reclaim it as stack for the
+ * secondary cores, or RO where it cannot be reclaimed:
+ *
+ *            |-------- INIT SECTION --------|
+ *  -----------------------------------------
+ * |  CORE 0  |  CORE 1  |  CORE 2  | EXTRA  |
+ * |  STACK   |  STACK   |  STACK   | SPACE  |
+ *  -----------------------------------------
+ *             <-------------------> <------>
+ *                MAKE RW AND XN       MAKE
+ *                  FOR STACKS       RO AND XN
  */
 void arm_free_init_memory(void)
 {
-	int ret = xlat_change_mem_attributes(BL_INIT_CODE_BASE,
+	int ret = 0;
+
+	if (BL_STACKS_END < BL_INIT_CODE_END) {
+		/* Reclaim some of the init section as stack if possible. */
+		if (BL_INIT_CODE_BASE < BL_STACKS_END) {
+			ret |= xlat_change_mem_attributes(BL_INIT_CODE_BASE,
+					BL_STACKS_END - BL_INIT_CODE_BASE,
+					MT_RW_DATA);
+		}
+		/* Make the rest of the init section read-only. */
+		ret |= xlat_change_mem_attributes(BL_STACKS_END,
+				BL_INIT_CODE_END - BL_STACKS_END,
+				MT_RO_DATA);
+	} else {
+		/* The stacks cover the init section, so reclaim it all. */
+		ret |= xlat_change_mem_attributes(BL_INIT_CODE_BASE,
 				BL_INIT_CODE_END - BL_INIT_CODE_BASE,
 				MT_RW_DATA);
+	}
 
 	if (ret != 0) {
 		ERROR("Could not reclaim initialization code");

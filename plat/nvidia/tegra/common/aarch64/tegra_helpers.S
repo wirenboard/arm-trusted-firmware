@@ -4,12 +4,13 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+
 #include <arch.h>
 #include <asm_macros.S>
 #include <assert_macros.S>
-#include <cpu_macros.S>
-#include <cortex_a53.h>
 #include <cortex_a57.h>
+#include <cpu_macros.S>
+
 #include <platform_def.h>
 #include <tegra_def.h>
 #include <tegra_platform.h>
@@ -167,23 +168,6 @@ func plat_get_my_entrypoint
 endfunc plat_get_my_entrypoint
 
 	/* -----------------------------------------------------
-	 * int platform_get_core_pos(int mpidr);
-	 *
-	 * result: CorePos = (ClusterId * cpus per cluster) +
-	 *                   CoreId
-	 * -----------------------------------------------------
-	 */
-func platform_get_core_pos
-	and	x1, x0, #MPIDR_CPU_MASK
-	and	x0, x0, #MPIDR_CLUSTER_MASK
-	lsr	x0, x0, #MPIDR_AFFINITY_BITS
-	mov	x2, #PLATFORM_MAX_CPUS_PER_CLUSTER
-	mul	x0, x0, x2
-	add	x0, x1, x0
-	ret
-endfunc platform_get_core_pos
-
-	/* -----------------------------------------------------
 	 * void plat_secondary_cold_boot_setup (void);
 	 *
 	 * This function performs any platform specific actions
@@ -231,7 +215,8 @@ func plat_reset_handler
 	 */
 	mov	x0, x17
 	mov	x1, x18
-	mov	x2, #BL31_SIZE
+	adr	x2, __RELA_END__
+	sub	x2, x2, x18
 _loop16:
 	cmp	x2, #16
 	b.lo	_loop1

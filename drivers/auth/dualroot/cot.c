@@ -13,47 +13,10 @@
 #include <tools_share/dualroot_oid.h>
 
 /*
- * TODO: Remove dependency on mbedTLS. The chain of trust should be agnostic of
- * the specific cryptographic library in use.
-*/
-/*
- * Maximum key and hash sizes (in DER format).
- *
- * Both RSA and ECDSA keys may be used at the same time. In this case, the key
- * buffers must be big enough to hold either. As RSA keys are bigger than ECDSA
- * ones for all key sizes we support, they impose the minimum size of these
- * buffers.
- */
-#if TF_MBEDTLS_USE_RSA
-#if TF_MBEDTLS_KEY_SIZE == 1024
-#define PK_DER_LEN			162
-#elif TF_MBEDTLS_KEY_SIZE == 2048
-#define PK_DER_LEN			294
-#elif TF_MBEDTLS_KEY_SIZE == 3072
-#define PK_DER_LEN			422
-#elif TF_MBEDTLS_KEY_SIZE == 4096
-#define PK_DER_LEN			550
-#else
-#error "Invalid value for TF_MBEDTLS_KEY_SIZE"
-#endif
-#else /* Only using ECDSA keys. */
-#define PK_DER_LEN			91
-#endif
-
-#if TF_MBEDTLS_HASH_ALG_ID == TF_MBEDTLS_SHA256
-#define HASH_DER_LEN			51
-#elif TF_MBEDTLS_HASH_ALG_ID == TF_MBEDTLS_SHA384
-#define HASH_DER_LEN			67
-#elif TF_MBEDTLS_HASH_ALG_ID == TF_MBEDTLS_SHA512
-#define HASH_DER_LEN			83
-#else
-#error "Invalid value for TF_MBEDTLS_HASH_ALG_ID"
-#endif
-
-/*
  * Allocate static buffers to store the authentication parameters extracted from
  * the certificates.
  */
+static unsigned char fw_config_hash_buf[HASH_DER_LEN];
 static unsigned char tb_fw_hash_buf[HASH_DER_LEN];
 static unsigned char tb_fw_config_hash_buf[HASH_DER_LEN];
 static unsigned char hw_config_hash_buf[HASH_DER_LEN];
@@ -68,6 +31,9 @@ static unsigned char tos_fw_extra2_hash_buf[HASH_DER_LEN];
 static unsigned char soc_fw_config_hash_buf[HASH_DER_LEN];
 static unsigned char tos_fw_config_hash_buf[HASH_DER_LEN];
 static unsigned char nt_fw_config_hash_buf[HASH_DER_LEN];
+#if defined(SPD_spmd)
+static unsigned char sp_pkg_hash_buf[MAX_SP_IDS][HASH_DER_LEN];
+#endif /* SPD_spmd */
 
 static unsigned char trusted_world_pk_buf[PK_DER_LEN];
 static unsigned char content_pk_buf[PK_DER_LEN];
@@ -93,6 +59,8 @@ static auth_param_type_desc_t tb_fw_config_hash = AUTH_PARAM_TYPE_DESC(
 		AUTH_PARAM_HASH, TRUSTED_BOOT_FW_CONFIG_HASH_OID);
 static auth_param_type_desc_t hw_config_hash = AUTH_PARAM_TYPE_DESC(
 		AUTH_PARAM_HASH, HW_CONFIG_HASH_OID);
+static auth_param_type_desc_t fw_config_hash = AUTH_PARAM_TYPE_DESC(
+		AUTH_PARAM_HASH, FW_CONFIG_HASH_OID);
 #ifdef IMAGE_BL1
 static auth_param_type_desc_t scp_bl2u_hash = AUTH_PARAM_TYPE_DESC(
 		AUTH_PARAM_HASH, SCP_FWU_CFG_HASH_OID);
@@ -135,6 +103,24 @@ static auth_param_type_desc_t nt_world_bl_hash = AUTH_PARAM_TYPE_DESC(
 		AUTH_PARAM_HASH, NON_TRUSTED_WORLD_BOOTLOADER_HASH_OID);
 static auth_param_type_desc_t nt_fw_config_hash = AUTH_PARAM_TYPE_DESC(
 		AUTH_PARAM_HASH, NON_TRUSTED_FW_CONFIG_HASH_OID);
+#if defined(SPD_spmd)
+static auth_param_type_desc_t sp_pkg1_hash = AUTH_PARAM_TYPE_DESC(
+		AUTH_PARAM_HASH, SP_PKG1_HASH_OID);
+static auth_param_type_desc_t sp_pkg2_hash = AUTH_PARAM_TYPE_DESC(
+		AUTH_PARAM_HASH, SP_PKG2_HASH_OID);
+static auth_param_type_desc_t sp_pkg3_hash = AUTH_PARAM_TYPE_DESC(
+		AUTH_PARAM_HASH, SP_PKG3_HASH_OID);
+static auth_param_type_desc_t sp_pkg4_hash = AUTH_PARAM_TYPE_DESC(
+		AUTH_PARAM_HASH, SP_PKG4_HASH_OID);
+static auth_param_type_desc_t sp_pkg5_hash = AUTH_PARAM_TYPE_DESC(
+		AUTH_PARAM_HASH, SP_PKG5_HASH_OID);
+static auth_param_type_desc_t sp_pkg6_hash = AUTH_PARAM_TYPE_DESC(
+		AUTH_PARAM_HASH, SP_PKG6_HASH_OID);
+static auth_param_type_desc_t sp_pkg7_hash = AUTH_PARAM_TYPE_DESC(
+		AUTH_PARAM_HASH, SP_PKG7_HASH_OID);
+static auth_param_type_desc_t sp_pkg8_hash = AUTH_PARAM_TYPE_DESC(
+		AUTH_PARAM_HASH, SP_PKG8_HASH_OID);
+#endif /* SPD_spmd */
 #endif /* IMAGE_BL2 */
 
 
@@ -180,6 +166,13 @@ static const auth_img_desc_t trusted_boot_fw_cert = {
 			.type_desc = &hw_config_hash,
 			.data = {
 				.ptr = (void *)hw_config_hash_buf,
+				.len = (unsigned int)HASH_DER_LEN
+			}
+		},
+		[3] = {
+			.type_desc = &fw_config_hash,
+			.data = {
+				.ptr = (void *)fw_config_hash_buf,
 				.len = (unsigned int)HASH_DER_LEN
 			}
 		}
@@ -235,6 +228,22 @@ static const auth_img_desc_t tb_fw_config = {
 		}
 	}
 };
+
+static const auth_img_desc_t fw_config = {
+	.img_id = FW_CONFIG_ID,
+	.img_type = IMG_RAW,
+	.parent = &trusted_boot_fw_cert,
+	.img_auth_methods = (const auth_method_desc_t[AUTH_METHOD_NUM]) {
+		[0] = {
+			.type = AUTH_METHOD_HASH,
+			.param.hash = {
+				.data = &raw_data,
+				.hash = &fw_config_hash
+			}
+		}
+	}
+};
+
 #endif /* IMAGE_BL1 */
 
 #ifdef IMAGE_BL2
@@ -680,6 +689,129 @@ static const auth_img_desc_t nt_fw_config = {
 	}
 };
 
+/*
+ * Secure Partitions
+ */
+#if defined(SPD_spmd)
+static const auth_img_desc_t sip_sp_content_cert = {
+	.img_id = SIP_SP_CONTENT_CERT_ID,
+	.img_type = IMG_CERT,
+	.parent = &trusted_key_cert,
+	.img_auth_methods = (const auth_method_desc_t[AUTH_METHOD_NUM]) {
+		[0] = {
+			.type = AUTH_METHOD_SIG,
+			.param.sig = {
+				.pk = &trusted_world_pk,
+				.sig = &sig,
+				.alg = &sig_alg,
+				.data = &raw_data
+			}
+		},
+		[1] = {
+			.type = AUTH_METHOD_NV_CTR,
+			.param.nv_ctr = {
+				.cert_nv_ctr = &trusted_nv_ctr,
+				.plat_nv_ctr = &trusted_nv_ctr
+			}
+		}
+	},
+	.authenticated_data = (const auth_param_desc_t[COT_MAX_VERIFIED_PARAMS]) {
+		[0] = {
+			.type_desc = &sp_pkg1_hash,
+			.data = {
+				.ptr = (void *)sp_pkg_hash_buf[0],
+				.len = (unsigned int)HASH_DER_LEN
+			}
+		},
+		[1] = {
+			.type_desc = &sp_pkg2_hash,
+			.data = {
+				.ptr = (void *)sp_pkg_hash_buf[1],
+				.len = (unsigned int)HASH_DER_LEN
+			}
+		},
+		[2] = {
+			.type_desc = &sp_pkg3_hash,
+			.data = {
+				.ptr = (void *)sp_pkg_hash_buf[2],
+				.len = (unsigned int)HASH_DER_LEN
+			}
+		},
+		[3] = {
+			.type_desc = &sp_pkg4_hash,
+			.data = {
+				.ptr = (void *)sp_pkg_hash_buf[3],
+				.len = (unsigned int)HASH_DER_LEN
+			}
+		}
+	}
+};
+
+DEFINE_SIP_SP_PKG(1);
+DEFINE_SIP_SP_PKG(2);
+DEFINE_SIP_SP_PKG(3);
+DEFINE_SIP_SP_PKG(4);
+
+static const auth_img_desc_t plat_sp_content_cert = {
+	.img_id = PLAT_SP_CONTENT_CERT_ID,
+	.img_type = IMG_CERT,
+	.parent = NULL,
+	.img_auth_methods = (const auth_method_desc_t[AUTH_METHOD_NUM]) {
+		[0] = {
+			.type = AUTH_METHOD_SIG,
+			.param.sig = {
+				.pk = &prot_pk,
+				.sig = &sig,
+				.alg = &sig_alg,
+				.data = &raw_data
+			}
+		},
+		[1] = {
+			.type = AUTH_METHOD_NV_CTR,
+			.param.nv_ctr = {
+				.cert_nv_ctr = &non_trusted_nv_ctr,
+				.plat_nv_ctr = &non_trusted_nv_ctr
+			}
+		}
+	},
+	.authenticated_data = (const auth_param_desc_t[COT_MAX_VERIFIED_PARAMS]) {
+		[0] = {
+			.type_desc = &sp_pkg5_hash,
+			.data = {
+				.ptr = (void *)sp_pkg_hash_buf[4],
+				.len = (unsigned int)HASH_DER_LEN
+			}
+		},
+		[1] = {
+			.type_desc = &sp_pkg6_hash,
+			.data = {
+				.ptr = (void *)sp_pkg_hash_buf[5],
+				.len = (unsigned int)HASH_DER_LEN
+			}
+		},
+		[2] = {
+			.type_desc = &sp_pkg7_hash,
+			.data = {
+				.ptr = (void *)sp_pkg_hash_buf[6],
+				.len = (unsigned int)HASH_DER_LEN
+			}
+		},
+		[3] = {
+			.type_desc = &sp_pkg8_hash,
+			.data = {
+				.ptr = (void *)sp_pkg_hash_buf[7],
+				.len = (unsigned int)HASH_DER_LEN
+			}
+		}
+	}
+};
+
+DEFINE_PLAT_SP_PKG(5);
+DEFINE_PLAT_SP_PKG(6);
+DEFINE_PLAT_SP_PKG(7);
+DEFINE_PLAT_SP_PKG(8);
+#endif /* SPD_spmd */
+
 #else  /* IMAGE_BL2 */
 
 /* FWU auth descriptor */
@@ -781,6 +913,7 @@ static const auth_img_desc_t * const cot_desc[] = {
 	[BL2_IMAGE_ID]				=	&bl2_image,
 	[HW_CONFIG_ID]				=	&hw_config,
 	[TB_FW_CONFIG_ID]			=	&tb_fw_config,
+	[FW_CONFIG_ID]				=	&fw_config,
 	[FWU_CERT_ID]				=	&fwu_cert,
 	[SCP_BL2U_IMAGE_ID]			=	&scp_bl2u_image,
 	[BL2U_IMAGE_ID]				=	&bl2u_image,
@@ -807,6 +940,18 @@ static const auth_img_desc_t * const cot_desc[] = {
 	[NON_TRUSTED_FW_CONTENT_CERT_ID]	=	&non_trusted_fw_content_cert,
 	[BL33_IMAGE_ID]				=	&bl33_image,
 	[NT_FW_CONFIG_ID]			=	&nt_fw_config,
+#if defined(SPD_spmd)
+	[SIP_SP_CONTENT_CERT_ID]		=	&sip_sp_content_cert,
+	[PLAT_SP_CONTENT_CERT_ID]		=	&plat_sp_content_cert,
+	[SP_PKG1_ID]				=	&sp_pkg1,
+	[SP_PKG2_ID]				=	&sp_pkg2,
+	[SP_PKG3_ID]				=	&sp_pkg3,
+	[SP_PKG4_ID]				=	&sp_pkg4,
+	[SP_PKG5_ID]				=	&sp_pkg5,
+	[SP_PKG6_ID]				=	&sp_pkg6,
+	[SP_PKG7_ID]				=	&sp_pkg7,
+	[SP_PKG8_ID]				=       &sp_pkg8,
+#endif
 };
 #endif
 

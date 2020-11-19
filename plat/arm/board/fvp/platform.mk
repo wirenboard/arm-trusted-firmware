@@ -7,9 +7,6 @@
 # Use the GICv3 driver on the FVP by default
 FVP_USE_GIC_DRIVER	:= FVP_GICV3
 
-# Use the SP804 timer instead of the generic one
-FVP_USE_SP804_TIMER	:= 0
-
 # Default cluster count for FVP
 FVP_CLUSTER_COUNT	:= 2
 
@@ -20,9 +17,6 @@ FVP_MAX_CPUS_PER_CLUSTER	:= 4
 FVP_MAX_PE_PER_CPU	:= 1
 
 FVP_DT_PREFIX		:= fvp-base-gicv3-psci
-
-$(eval $(call assert_boolean,FVP_USE_SP804_TIMER))
-$(eval $(call add_define,FVP_USE_SP804_TIMER))
 
 # The FVP platform depends on this macro to build with correct GIC driver.
 $(eval $(call add_define,FVP_USE_GIC_DRIVER))
@@ -49,13 +43,10 @@ endif
 $(eval $(call add_define,FVP_INTERCONNECT_DRIVER))
 
 # Choose the GIC sources depending upon the how the FVP will be invoked
-ifeq (${FVP_USE_GIC_DRIVER},$(filter ${FVP_USE_GIC_DRIVER},FVP_GICV3 FVP_GIC600))
+ifeq (${FVP_USE_GIC_DRIVER}, FVP_GICV3)
 
-	# GIC500 is the default option in case GICV3_IMPL is not set
-	ifeq (${FVP_USE_GIC_DRIVER}, FVP_GIC600)
-		GICV3_IMPL	:=	GIC600
-	endif
-
+# The GIC model (GIC-600 or GIC-500) will be detected at runtime
+GICV3_SUPPORT_GIC600		:=	1
 GICV3_OVERRIDE_DISTIF_PWR_OPS	:=	1
 
 # Include GICv3 driver files
@@ -65,19 +56,20 @@ FVP_GIC_SOURCES		:=	${GICV3_SOURCES}			\
 				plat/common/plat_gicv3.c		\
 				plat/arm/common/arm_gicv3.c
 
+	ifeq ($(filter 1,${BL2_AT_EL3} ${RESET_TO_BL31} ${RESET_TO_SP_MIN}),)
+		FVP_GIC_SOURCES += plat/arm/board/fvp/fvp_gicv3.c
+	endif
+
 else ifeq (${FVP_USE_GIC_DRIVER}, FVP_GICV2)
 
 # No GICv4 extension
 GIC_ENABLE_V4_EXTN	:=	0
 $(eval $(call add_define,GIC_ENABLE_V4_EXTN))
 
-# No support for extended PPI and SPI range
-GIC_EXT_INTID		:=	0
-$(eval $(call add_define,GIC_EXT_INTID))
+# Include GICv2 driver files
+include drivers/arm/gic/v2/gicv2.mk
 
-FVP_GIC_SOURCES		:=	drivers/arm/gic/common/gic_common.c	\
-				drivers/arm/gic/v2/gicv2_main.c		\
-				drivers/arm/gic/v2/gicv2_helpers.c	\
+FVP_GIC_SOURCES		:=	${GICV2_SOURCES}			\
 				plat/common/plat_gicv2.c		\
 				plat/arm/common/arm_gicv2.c
 
@@ -125,11 +117,11 @@ else
 		FVP_CPU_LIBS	+=	lib/cpus/aarch64/cortex_a76.S		\
 					lib/cpus/aarch64/cortex_a76ae.S		\
 					lib/cpus/aarch64/cortex_a77.S		\
+					lib/cpus/aarch64/cortex_a78.S		\
 					lib/cpus/aarch64/neoverse_n1.S		\
 					lib/cpus/aarch64/neoverse_e1.S		\
-					lib/cpus/aarch64/neoverse_zeus.S	\
-					lib/cpus/aarch64/cortex_hercules.S	\
-					lib/cpus/aarch64/cortex_hercules_ae.S	\
+					lib/cpus/aarch64/neoverse_v1.S		\
+					lib/cpus/aarch64/cortex_a78_ae.S	\
 					lib/cpus/aarch64/cortex_klein.S	        \
 					lib/cpus/aarch64/cortex_matterhorn.S	\
 					lib/cpus/aarch64/cortex_a65.S		\
@@ -157,7 +149,7 @@ BL1_SOURCES		+=	drivers/arm/smmu/smmu_v3.c			\
 				${FVP_CPU_LIBS}					\
 				${FVP_INTERCONNECT_SOURCES}
 
-ifeq (${FVP_USE_SP804_TIMER},1)
+ifeq (${USE_SP804_TIMER},1)
 BL1_SOURCES		+=	drivers/arm/sp804/sp804_delay_timer.c
 else
 BL1_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c
@@ -176,6 +168,9 @@ BL2_SOURCES		+=	drivers/arm/sp805/sp805.c			\
 				${FVP_SECURITY_SOURCES}
 
 
+ifeq (${COT_DESC_IN_DTB},1)
+BL2_SOURCES		+=	plat/arm/common/fconf/fconf_nv_cntr_getter.c
+endif
 
 ifeq (${BL2_AT_EL3},1)
 BL2_SOURCES		+=	plat/arm/board/fvp/${ARCH}/fvp_helpers.S	\
@@ -184,14 +179,14 @@ BL2_SOURCES		+=	plat/arm/board/fvp/${ARCH}/fvp_helpers.S	\
 				${FVP_INTERCONNECT_SOURCES}
 endif
 
-ifeq (${FVP_USE_SP804_TIMER},1)
+ifeq (${USE_SP804_TIMER},1)
 BL2_SOURCES		+=	drivers/arm/sp804/sp804_delay_timer.c
 endif
 
 BL2U_SOURCES		+=	plat/arm/board/fvp/fvp_bl2u_setup.c		\
 				${FVP_SECURITY_SOURCES}
 
-ifeq (${FVP_USE_SP804_TIMER},1)
+ifeq (${USE_SP804_TIMER},1)
 BL2U_SOURCES		+=	drivers/arm/sp804/sp804_delay_timer.c
 endif
 
@@ -201,6 +196,7 @@ BL31_SOURCES		+=	drivers/arm/fvp/fvp_pwrc.c			\
 				drivers/cfi/v2m/v2m_flash.c			\
 				lib/utils/mem_region.c				\
 				plat/arm/board/fvp/fvp_bl31_setup.c		\
+				plat/arm/board/fvp/fvp_console.c		\
 				plat/arm/board/fvp/fvp_pm.c			\
 				plat/arm/board/fvp/fvp_topology.c		\
 				plat/arm/board/fvp/aarch64/fvp_helpers.S	\
@@ -215,10 +211,16 @@ BL31_SOURCES		+=	drivers/arm/fvp/fvp_pwrc.c			\
 ifeq ($(filter 1,${BL2_AT_EL3} ${RESET_TO_BL31}),)
 BL31_SOURCES		+=	common/fdt_wrappers.c				\
 				lib/fconf/fconf.c				\
+				lib/fconf/fconf_dyn_cfg_getter.c		\
 				plat/arm/board/fvp/fconf/fconf_hw_config_getter.c
+
+ifeq (${SEC_INT_DESC_IN_FCONF},1)
+BL31_SOURCES		+=	plat/arm/common/fconf/fconf_sec_intr_config.c
 endif
 
-ifeq (${FVP_USE_SP804_TIMER},1)
+endif
+
+ifeq (${USE_SP804_TIMER},1)
 BL31_SOURCES		+=	drivers/arm/sp804/sp804_delay_timer.c
 else
 BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c
@@ -229,11 +231,13 @@ ifdef UNIX_MK
 FVP_HW_CONFIG_DTS	:=	fdts/${FVP_DT_PREFIX}.dts
 FDT_SOURCES		+=	$(addprefix plat/arm/board/fvp/fdts/,	\
 					${PLAT}_fw_config.dts		\
+					${PLAT}_tb_fw_config.dts	\
 					${PLAT}_soc_fw_config.dts	\
 					${PLAT}_nt_fw_config.dts	\
 				)
 
-FVP_TB_FW_CONFIG	:=	${BUILD_PLAT}/fdts/${PLAT}_fw_config.dtb
+FVP_FW_CONFIG		:=	${BUILD_PLAT}/fdts/${PLAT}_fw_config.dtb
+FVP_TB_FW_CONFIG	:=	${BUILD_PLAT}/fdts/${PLAT}_tb_fw_config.dtb
 FVP_SOC_FW_CONFIG	:=	${BUILD_PLAT}/fdts/${PLAT}_soc_fw_config.dtb
 FVP_NT_FW_CONFIG	:=	${BUILD_PLAT}/fdts/${PLAT}_nt_fw_config.dtb
 
@@ -242,29 +246,36 @@ FDT_SOURCES		+=	plat/arm/board/fvp/fdts/${PLAT}_tsp_fw_config.dts
 FVP_TOS_FW_CONFIG	:=	${BUILD_PLAT}/fdts/${PLAT}_tsp_fw_config.dtb
 
 # Add the TOS_FW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${FVP_TOS_FW_CONFIG},--tos-fw-config))
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_TOS_FW_CONFIG},--tos-fw-config,${FVP_TOS_FW_CONFIG}))
 endif
 
 ifeq (${SPD},spmd)
-FDT_SOURCES		+=	plat/arm/board/fvp/fdts/${PLAT}_spmc_manifest.dts
-FVP_TOS_FW_CONFIG	:=	${BUILD_PLAT}/fdts/${PLAT}_spmc_manifest.dtb
 
-# Add the TOS_FW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${FVP_TOS_FW_CONFIG},--tos-fw-config))
+ifeq ($(ARM_SPMC_MANIFEST_DTS),)
+ARM_SPMC_MANIFEST_DTS	:=	plat/arm/board/fvp/fdts/${PLAT}_spmc_manifest.dts
 endif
 
+FDT_SOURCES		+=	${ARM_SPMC_MANIFEST_DTS}
+FVP_TOS_FW_CONFIG	:=	${BUILD_PLAT}/fdts/$(notdir $(basename ${ARM_SPMC_MANIFEST_DTS})).dtb
+
+# Add the TOS_FW_CONFIG to FIP and specify the same to certtool
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_TOS_FW_CONFIG},--tos-fw-config,${FVP_TOS_FW_CONFIG}))
+endif
+
+# Add the FW_CONFIG to FIP and specify the same to certtool
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_FW_CONFIG},--fw-config,${FVP_FW_CONFIG}))
 # Add the TB_FW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${FVP_TB_FW_CONFIG},--tb-fw-config))
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_TB_FW_CONFIG},--tb-fw-config,${FVP_TB_FW_CONFIG}))
 # Add the SOC_FW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${FVP_SOC_FW_CONFIG},--soc-fw-config))
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_SOC_FW_CONFIG},--soc-fw-config,${FVP_SOC_FW_CONFIG}))
 # Add the NT_FW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${FVP_NT_FW_CONFIG},--nt-fw-config))
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_NT_FW_CONFIG},--nt-fw-config,${FVP_NT_FW_CONFIG}))
 
 FDT_SOURCES		+=	${FVP_HW_CONFIG_DTS}
 $(eval FVP_HW_CONFIG	:=	${BUILD_PLAT}/$(patsubst %.dts,%.dtb,$(FVP_HW_CONFIG_DTS)))
 
 # Add the HW_CONFIG to FIP and specify the same to certtool
-$(eval $(call TOOL_ADD_PAYLOAD,${FVP_HW_CONFIG},--hw-config))
+$(eval $(call TOOL_ADD_PAYLOAD,${FVP_HW_CONFIG},--hw-config,${FVP_HW_CONFIG}))
 endif
 
 # Enable Activity Monitor Unit extensions by default
@@ -345,6 +356,11 @@ include plat/arm/common/arm_common.mk
 ifeq (${TRUSTED_BOARD_BOOT}, 1)
 BL1_SOURCES		+=	plat/arm/board/fvp/fvp_trusted_boot.c
 BL2_SOURCES		+=	plat/arm/board/fvp/fvp_trusted_boot.c
+
+ifeq (${MEASURED_BOOT},1)
+BL2_SOURCES		+=	plat/arm/board/fvp/fvp_measured_boot.c
+endif
+
 # FVP being a development platform, enable capability to disable Authentication
 # dynamically if TRUSTED_BOARD_BOOT is set.
 DYN_DISABLE_AUTH	:=	1

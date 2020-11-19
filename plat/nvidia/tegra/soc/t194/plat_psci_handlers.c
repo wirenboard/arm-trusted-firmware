@@ -73,17 +73,14 @@ int32_t tegra_soc_validate_power_state(uint32_t power_state,
 	switch (state_id) {
 	case PSTATE_ID_CORE_IDLE:
 
+		if (psci_get_pstate_type(power_state) != PSTATE_TYPE_STANDBY) {
+			ret = PSCI_E_INVALID_PARAMS;
+			break;
+		}
+
 		/* Core idle request */
 		req_state->pwr_domain_state[MPIDR_AFFLVL0] = PLAT_MAX_RET_STATE;
 		req_state->pwr_domain_state[MPIDR_AFFLVL1] = PSCI_LOCAL_STATE_RUN;
-		break;
-
-	case PSTATE_ID_CORE_POWERDN:
-
-		/* Core powerdown request */
-		req_state->pwr_domain_state[MPIDR_AFFLVL0] = state_id;
-		req_state->pwr_domain_state[MPIDR_AFFLVL1] = state_id;
-
 		break;
 
 	default:
@@ -117,7 +114,7 @@ int32_t tegra_soc_cpu_standby(plat_local_state_t cpu_state)
 int32_t tegra_soc_pwr_domain_suspend(const psci_power_state_t *target_state)
 {
 	const plat_local_state_t *pwr_domain_state;
-	uint8_t stateid_afflvl0, stateid_afflvl2;
+	uint8_t stateid_afflvl2;
 	plat_params_from_bl2_t *params_from_bl2 = bl31_get_plat_params();
 	uint64_t mc_ctx_base;
 	uint32_t val;
@@ -128,25 +125,14 @@ int32_t tegra_soc_pwr_domain_suspend(const psci_power_state_t *target_state)
 		.system_state_force = 1U,
 		.update_wake_mask = 1U,
 	};
-	uint32_t cpu = plat_my_core_pos();
 	int32_t ret = 0;
 
 	/* get the state ID */
 	pwr_domain_state = target_state->pwr_domain_state;
-	stateid_afflvl0 = pwr_domain_state[MPIDR_AFFLVL0] &
-		TEGRA194_STATE_ID_MASK;
 	stateid_afflvl2 = pwr_domain_state[PLAT_MAX_PWR_LVL] &
 		TEGRA194_STATE_ID_MASK;
 
-	if (stateid_afflvl0 == PSTATE_ID_CORE_POWERDN) {
-
-		/* Enter CPU powerdown */
-		(void)mce_command_handler((uint64_t)MCE_CMD_ENTER_CSTATE,
-					  (uint64_t)TEGRA_NVG_CORE_C7,
-					  t19x_percpu_data[cpu].wake_time,
-					  0U);
-
-	} else if (stateid_afflvl2 == PSTATE_ID_SOC_POWERDN) {
+	if (stateid_afflvl2 == PSTATE_ID_SOC_POWERDN) {
 
 		/* save 'Secure Boot' Processor Feature Config Register */
 		val = mmio_read_32(TEGRA_MISC_BASE + MISCREG_PFCFG);
@@ -187,8 +173,6 @@ int32_t tegra_soc_pwr_domain_suspend(const psci_power_state_t *target_state)
 
 		/* set system suspend state for house-keeping */
 		tegra194_set_system_suspend_entry();
-	} else {
-		; /* do nothing */
 	}
 
 	return PSCI_E_SUCCESS;
@@ -225,15 +209,6 @@ static plat_local_state_t tegra_get_afflvl1_pwr_state(const plat_local_state_t *
 	uint32_t core_pos = (uint32_t)read_mpidr() & (uint32_t)MPIDR_CPU_MASK;
 	plat_local_state_t target = states[core_pos];
 	mce_cstate_info_t cstate_info = { 0 };
-
-	/* CPU suspend */
-	if (target == PSTATE_ID_CORE_POWERDN) {
-
-		/* Program default wake mask */
-		cstate_info.wake_mask = TEGRA194_CORE_WAKE_MASK;
-		cstate_info.update_wake_mask = 1;
-		mce_update_cstate_info(&cstate_info);
-	}
 
 	/* CPU off */
 	if (target == PLAT_MAX_OFF_STATE) {
@@ -443,16 +418,28 @@ int32_t tegra_soc_pwr_domain_on_finish(const psci_power_state_t *target_state)
 
 			mmio_write_32(TEGRA_XUSB_PADCTL_BASE +
 				XUSB_PADCTL_HOST_AXI_STREAMID_PF_0, TEGRA_SID_XUSB_HOST);
+			assert(mmio_read_32(TEGRA_XUSB_PADCTL_BASE +
+				XUSB_PADCTL_HOST_AXI_STREAMID_PF_0) == TEGRA_SID_XUSB_HOST);
 			mmio_write_32(TEGRA_XUSB_PADCTL_BASE +
 				XUSB_PADCTL_HOST_AXI_STREAMID_VF_0, TEGRA_SID_XUSB_VF0);
+			assert(mmio_read_32(TEGRA_XUSB_PADCTL_BASE +
+				XUSB_PADCTL_HOST_AXI_STREAMID_VF_0) == TEGRA_SID_XUSB_VF0);
 			mmio_write_32(TEGRA_XUSB_PADCTL_BASE +
 				XUSB_PADCTL_HOST_AXI_STREAMID_VF_1, TEGRA_SID_XUSB_VF1);
+			assert(mmio_read_32(TEGRA_XUSB_PADCTL_BASE +
+				XUSB_PADCTL_HOST_AXI_STREAMID_VF_1) == TEGRA_SID_XUSB_VF1);
 			mmio_write_32(TEGRA_XUSB_PADCTL_BASE +
 				XUSB_PADCTL_HOST_AXI_STREAMID_VF_2, TEGRA_SID_XUSB_VF2);
+			assert(mmio_read_32(TEGRA_XUSB_PADCTL_BASE +
+				XUSB_PADCTL_HOST_AXI_STREAMID_VF_2) == TEGRA_SID_XUSB_VF2);
 			mmio_write_32(TEGRA_XUSB_PADCTL_BASE +
 				XUSB_PADCTL_HOST_AXI_STREAMID_VF_3, TEGRA_SID_XUSB_VF3);
+			assert(mmio_read_32(TEGRA_XUSB_PADCTL_BASE +
+				XUSB_PADCTL_HOST_AXI_STREAMID_VF_3) == TEGRA_SID_XUSB_VF3);
 			mmio_write_32(TEGRA_XUSB_PADCTL_BASE +
 				XUSB_PADCTL_DEV_AXI_STREAMID_PF_0, TEGRA_SID_XUSB_DEV);
+			assert(mmio_read_32(TEGRA_XUSB_PADCTL_BASE +
+				XUSB_PADCTL_DEV_AXI_STREAMID_PF_0) == TEGRA_SID_XUSB_DEV);
 		}
 	}
 

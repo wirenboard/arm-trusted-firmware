@@ -68,6 +68,11 @@ struct tegra_bl31_params {
        image_info_t *bl33_image_info;
 };
 
+/*******************************************************************************
+* To suppress Coverity MISRA C-2012 Rule 2.2 violations
+*******************************************************************************/
+#define UNUSED_FUNC_NOP()	asm("nop")
+
 /* Declarations for plat_psci_handlers.c */
 int32_t tegra_soc_validate_power_state(uint32_t power_state,
 		psci_power_state_t *req_state);
@@ -82,6 +87,7 @@ void plat_early_platform_setup(void);
 void plat_late_platform_setup(void);
 void plat_relocate_bl32_image(const image_info_t *bl32_img_info);
 bool plat_supports_system_suspend(void);
+void plat_runtime_setup(void);
 
 /* Declarations for plat_secondary.c */
 void plat_secondary_setup(void);
@@ -89,7 +95,7 @@ int32_t plat_lock_cpu_vectors(void);
 
 /* Declarations for tegra_fiq_glue.c */
 void tegra_fiq_handler_setup(void);
-int tegra_fiq_get_intr_context(void);
+int32_t tegra_fiq_get_intr_context(void);
 void tegra_fiq_set_ns_entrypoint(uint64_t entrypoint);
 
 /* Declarations for tegra_security.c */
@@ -112,19 +118,6 @@ __dead2 void tegra_soc_prepare_system_off(void);
 plat_local_state_t tegra_soc_get_target_pwr_state(uint32_t lvl,
 					     const plat_local_state_t *states,
 					     uint32_t ncpu);
-void tegra_get_sys_suspend_power_state(psci_power_state_t *req_state);
-void tegra_cpu_standby(plat_local_state_t cpu_state);
-int32_t tegra_pwr_domain_on(u_register_t mpidr);
-void tegra_pwr_domain_off(const psci_power_state_t *target_state);
-void tegra_pwr_domain_suspend(const psci_power_state_t *target_state);
-void __dead2 tegra_pwr_domain_power_down_wfi(const psci_power_state_t *target_state);
-void tegra_pwr_domain_on_finish(const psci_power_state_t *target_state);
-void tegra_pwr_domain_suspend_finish(const psci_power_state_t *target_state);
-__dead2 void tegra_system_off(void);
-__dead2 void tegra_system_reset(void);
-int32_t tegra_validate_power_state(uint32_t power_state,
-				   psci_power_state_t *req_state);
-int32_t tegra_validate_ns_entrypoint(uintptr_t entrypoint);
 
 /* Declarations for tegraXXX_pm.c */
 int tegra_prepare_cpu_suspend(unsigned int id, unsigned int afflvl);
@@ -156,5 +149,10 @@ int plat_sip_handler(uint32_t smc_fid,
 		     const void *cookie,
 		     void *handle,
 		     uint64_t flags);
+
+#if RAS_EXTENSION
+void tegra194_ras_enable(void);
+void tegra194_ras_corrected_err_clear(uint64_t *cookie);
+#endif
 
 #endif /* TEGRA_PRIVATE_H */

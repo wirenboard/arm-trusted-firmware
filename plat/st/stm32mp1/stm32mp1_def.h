@@ -25,6 +25,7 @@
 #include <stm32mp_shres_helpers.h>
 #include <stm32mp1_dbgmcu.h>
 #include <stm32mp1_private.h>
+#include <stm32mp1_shared_resources.h>
 #endif
 
 /*******************************************************************************
@@ -36,8 +37,15 @@
 #define STM32MP153A_PART_NB	U(0x05000025)
 #define STM32MP151C_PART_NB	U(0x0500002E)
 #define STM32MP151A_PART_NB	U(0x0500002F)
+#define STM32MP157F_PART_NB	U(0x05000080)
+#define STM32MP157D_PART_NB	U(0x05000081)
+#define STM32MP153F_PART_NB	U(0x050000A4)
+#define STM32MP153D_PART_NB	U(0x050000A5)
+#define STM32MP151F_PART_NB	U(0x050000AE)
+#define STM32MP151D_PART_NB	U(0x050000AF)
 
 #define STM32MP1_REV_B		U(0x2000)
+#define STM32MP1_REV_Z		U(0x2001)
 
 /*******************************************************************************
  * PACKAGE ID
@@ -55,6 +63,18 @@
 
 #define STM32MP_SYSRAM_BASE		U(0x2FFC0000)
 #define STM32MP_SYSRAM_SIZE		U(0x00040000)
+
+#define STM32MP_NS_SYSRAM_SIZE		PAGE_SIZE
+#define STM32MP_NS_SYSRAM_BASE		(STM32MP_SYSRAM_BASE + \
+					 STM32MP_SYSRAM_SIZE - \
+					 STM32MP_NS_SYSRAM_SIZE)
+
+#define STM32MP_SCMI_NS_SHM_BASE	STM32MP_NS_SYSRAM_BASE
+#define STM32MP_SCMI_NS_SHM_SIZE	STM32MP_NS_SYSRAM_SIZE
+
+#define STM32MP_SEC_SYSRAM_BASE		STM32MP_SYSRAM_BASE
+#define STM32MP_SEC_SYSRAM_SIZE		(STM32MP_SYSRAM_SIZE - \
+					 STM32MP_NS_SYSRAM_SIZE)
 
 /* DDR configuration */
 #define STM32MP_DDR_BASE		U(0xC0000000)
@@ -81,18 +101,18 @@ enum ddr_type {
 /* 256 Octets reserved for header */
 #define STM32MP_HEADER_SIZE		U(0x00000100)
 
-#define STM32MP_BINARY_BASE		(STM32MP_SYSRAM_BASE +		\
+#define STM32MP_BINARY_BASE		(STM32MP_SEC_SYSRAM_BASE +	\
 					 STM32MP_PARAM_LOAD_SIZE +	\
 					 STM32MP_HEADER_SIZE)
 
-#define STM32MP_BINARY_SIZE		(STM32MP_SYSRAM_SIZE -		\
+#define STM32MP_BINARY_SIZE		(STM32MP_SEC_SYSRAM_SIZE -	\
 					 (STM32MP_PARAM_LOAD_SIZE +	\
 					  STM32MP_HEADER_SIZE))
 
 #ifdef AARCH32_SP_OPTEE
 #define STM32MP_BL32_SIZE		U(0)
 
-#define STM32MP_OPTEE_BASE		STM32MP_SYSRAM_BASE
+#define STM32MP_OPTEE_BASE		STM32MP_SEC_SYSRAM_BASE
 
 #define STM32MP_OPTEE_SIZE		(STM32MP_DTB_BASE -  \
 					 STM32MP_OPTEE_BASE)
@@ -104,8 +124,8 @@ enum ddr_type {
 #endif
 #endif
 
-#define STM32MP_BL32_BASE		(STM32MP_SYSRAM_BASE + \
-					 STM32MP_SYSRAM_SIZE - \
+#define STM32MP_BL32_BASE		(STM32MP_SEC_SYSRAM_BASE + \
+					 STM32MP_SEC_SYSRAM_SIZE - \
 					 STM32MP_BL32_SIZE)
 
 #ifdef AARCH32_SP_OPTEE
@@ -247,6 +267,104 @@ enum ddr_type {
 #define DEBUG_UART_TX_EN		RCC_MP_APB1ENSETR_UART4EN
 
 /*******************************************************************************
+ * STM32MP1 ETZPC
+ ******************************************************************************/
+#define STM32MP1_ETZPC_BASE		U(0x5C007000)
+
+/* ETZPC TZMA IDs */
+#define STM32MP1_ETZPC_TZMA_ROM		U(0)
+#define STM32MP1_ETZPC_TZMA_SYSRAM	U(1)
+
+#define STM32MP1_ETZPC_TZMA_ALL_SECURE	GENMASK_32(9, 0)
+
+/* ETZPC DECPROT IDs */
+#define STM32MP1_ETZPC_STGENC_ID	0
+#define STM32MP1_ETZPC_BKPSRAM_ID	1
+#define STM32MP1_ETZPC_IWDG1_ID		2
+#define STM32MP1_ETZPC_USART1_ID	3
+#define STM32MP1_ETZPC_SPI6_ID		4
+#define STM32MP1_ETZPC_I2C4_ID		5
+#define STM32MP1_ETZPC_RNG1_ID		7
+#define STM32MP1_ETZPC_HASH1_ID		8
+#define STM32MP1_ETZPC_CRYP1_ID		9
+#define STM32MP1_ETZPC_DDRCTRL_ID	10
+#define STM32MP1_ETZPC_DDRPHYC_ID	11
+#define STM32MP1_ETZPC_I2C6_ID		12
+#define STM32MP1_ETZPC_SEC_ID_LIMIT	13
+
+#define STM32MP1_ETZPC_TIM2_ID		16
+#define STM32MP1_ETZPC_TIM3_ID		17
+#define STM32MP1_ETZPC_TIM4_ID		18
+#define STM32MP1_ETZPC_TIM5_ID		19
+#define STM32MP1_ETZPC_TIM6_ID		20
+#define STM32MP1_ETZPC_TIM7_ID		21
+#define STM32MP1_ETZPC_TIM12_ID		22
+#define STM32MP1_ETZPC_TIM13_ID		23
+#define STM32MP1_ETZPC_TIM14_ID		24
+#define STM32MP1_ETZPC_LPTIM1_ID	25
+#define STM32MP1_ETZPC_WWDG1_ID		26
+#define STM32MP1_ETZPC_SPI2_ID		27
+#define STM32MP1_ETZPC_SPI3_ID		28
+#define STM32MP1_ETZPC_SPDIFRX_ID	29
+#define STM32MP1_ETZPC_USART2_ID	30
+#define STM32MP1_ETZPC_USART3_ID	31
+#define STM32MP1_ETZPC_UART4_ID		32
+#define STM32MP1_ETZPC_UART5_ID		33
+#define STM32MP1_ETZPC_I2C1_ID		34
+#define STM32MP1_ETZPC_I2C2_ID		35
+#define STM32MP1_ETZPC_I2C3_ID		36
+#define STM32MP1_ETZPC_I2C5_ID		37
+#define STM32MP1_ETZPC_CEC_ID		38
+#define STM32MP1_ETZPC_DAC_ID		39
+#define STM32MP1_ETZPC_UART7_ID		40
+#define STM32MP1_ETZPC_UART8_ID		41
+#define STM32MP1_ETZPC_MDIOS_ID		44
+#define STM32MP1_ETZPC_TIM1_ID		48
+#define STM32MP1_ETZPC_TIM8_ID		49
+#define STM32MP1_ETZPC_USART6_ID	51
+#define STM32MP1_ETZPC_SPI1_ID		52
+#define STM32MP1_ETZPC_SPI4_ID		53
+#define STM32MP1_ETZPC_TIM15_ID		54
+#define STM32MP1_ETZPC_TIM16_ID		55
+#define STM32MP1_ETZPC_TIM17_ID		56
+#define STM32MP1_ETZPC_SPI5_ID		57
+#define STM32MP1_ETZPC_SAI1_ID		58
+#define STM32MP1_ETZPC_SAI2_ID		59
+#define STM32MP1_ETZPC_SAI3_ID		60
+#define STM32MP1_ETZPC_DFSDM_ID		61
+#define STM32MP1_ETZPC_TT_FDCAN_ID	62
+#define STM32MP1_ETZPC_LPTIM2_ID	64
+#define STM32MP1_ETZPC_LPTIM3_ID	65
+#define STM32MP1_ETZPC_LPTIM4_ID	66
+#define STM32MP1_ETZPC_LPTIM5_ID	67
+#define STM32MP1_ETZPC_SAI4_ID		68
+#define STM32MP1_ETZPC_VREFBUF_ID	69
+#define STM32MP1_ETZPC_DCMI_ID		70
+#define STM32MP1_ETZPC_CRC2_ID		71
+#define STM32MP1_ETZPC_ADC_ID		72
+#define STM32MP1_ETZPC_HASH2_ID		73
+#define STM32MP1_ETZPC_RNG2_ID		74
+#define STM32MP1_ETZPC_CRYP2_ID		75
+#define STM32MP1_ETZPC_SRAM1_ID		80
+#define STM32MP1_ETZPC_SRAM2_ID		81
+#define STM32MP1_ETZPC_SRAM3_ID		82
+#define STM32MP1_ETZPC_SRAM4_ID		83
+#define STM32MP1_ETZPC_RETRAM_ID	84
+#define STM32MP1_ETZPC_OTG_ID		85
+#define STM32MP1_ETZPC_SDMMC3_ID	86
+#define STM32MP1_ETZPC_DLYBSD3_ID	87
+#define STM32MP1_ETZPC_DMA1_ID		88
+#define STM32MP1_ETZPC_DMA2_ID		89
+#define STM32MP1_ETZPC_DMAMUX_ID	90
+#define STM32MP1_ETZPC_FMC_ID		91
+#define STM32MP1_ETZPC_QSPI_ID		92
+#define STM32MP1_ETZPC_DLYBQ_ID		93
+#define STM32MP1_ETZPC_ETH_ID		94
+#define STM32MP1_ETZPC_RSV_ID		95
+
+#define STM32MP_ETZPC_MAX_ID		96
+
+/*******************************************************************************
  * STM32MP1 TZC (TZ400)
  ******************************************************************************/
 #define STM32MP1_TZC_BASE		U(0x5C006000)
@@ -386,22 +504,26 @@ static inline uint32_t tamp_bkpr(uint32_t idx)
 #define IWDG2_BASE			U(0x5A002000)
 
 /*******************************************************************************
- * STM32MP1 I2C4
+ * Miscellaneous STM32MP1 peripherals base address
  ******************************************************************************/
-#define I2C4_BASE			U(0x5C002000)
-
-/*******************************************************************************
- * STM32MP1 DBGMCU
- ******************************************************************************/
+#define BSEC_BASE			U(0x5C005000)
+#define CRYP1_BASE			U(0x54001000)
 #define DBGMCU_BASE			U(0x50081000)
+#define HASH1_BASE			U(0x54002000)
+#define I2C4_BASE			U(0x5C002000)
+#define I2C6_BASE			U(0x5c009000)
+#define RNG1_BASE			U(0x54003000)
+#define RTC_BASE			U(0x5c004000)
+#define SPI6_BASE			U(0x5c001000)
+#define STGEN_BASE			U(0x5c008000)
+#define SYSCFG_BASE			U(0x50020000)
 
 /*******************************************************************************
  * Device Tree defines
  ******************************************************************************/
 #define DT_BSEC_COMPAT			"st,stm32mp15-bsec"
 #define DT_IWDG_COMPAT			"st,stm32mp1-iwdg"
-#define DT_PWR_COMPAT			"st,stm32mp1-pwr"
+#define DT_PWR_COMPAT			"st,stm32mp1,pwr-reg"
 #define DT_RCC_CLK_COMPAT		"st,stm32mp1-rcc"
-#define DT_SYSCFG_COMPAT		"st,stm32mp157-syscfg"
 
 #endif /* STM32MP1_DEF_H */

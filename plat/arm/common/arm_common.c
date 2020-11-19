@@ -13,7 +13,9 @@
 #include <common/debug.h>
 #include <common/romlib.h>
 #include <lib/mmio.h>
+#include <lib/smccc.h>
 #include <lib/xlat_tables/xlat_tables_compat.h>
+#include <services/arm_arch_svc.h>
 #include <plat/arm/common/plat_arm.h>
 #include <plat/common/platform.h>
 
@@ -95,7 +97,7 @@ uint32_t arm_get_spsr_for_bl33_entry(void)
 	 * the FIP ToC and allowing the platform to have a say as
 	 * well.
 	 */
-	spsr = SPSR_64(mode, MODE_SP_ELX, DISABLE_ALL_EXCEPTIONS);
+	spsr = SPSR_64((uint64_t)mode, MODE_SP_ELX, DISABLE_ALL_EXCEPTIONS);
 	return spsr;
 }
 #else
@@ -214,7 +216,7 @@ int plat_sdei_validate_entry_point(uintptr_t ep, unsigned int client_mode)
 		 * Translate entry point to Physical Address using the EL1&0
 		 * translation regime, including stage 2.
 		 */
-		ats12e1r(ep);
+		AT(ats12e1r, ep);
 	}
 	isb();
 	par = read_par_el1();
@@ -235,21 +237,3 @@ int plat_sdei_validate_entry_point(uintptr_t ep, unsigned int client_mode)
 }
 #endif
 
-/*
- * Weak function to get ARM platform SOC-ID, Always return SOC-ID=0
- * ToDo: Get proper SOC-ID for every ARM platform and define this
- *       function separately for every ARM platform.
- */
-uint32_t plat_arm_get_soc_id(void)
-{
-	return 0U;
-}
-
-/* Get SOC version */
-int32_t plat_get_soc_version(void)
-{
-	return (int32_t)
-		((ARM_SOC_IDENTIFICATION_CODE << ARM_SOC_IDENTIFICATION_SHIFT)
-		 | (ARM_SOC_CONTINUATION_CODE << ARM_SOC_CONTINUATION_SHIFT)
-		 | plat_arm_get_soc_id());
-}

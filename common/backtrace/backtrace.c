@@ -70,7 +70,7 @@ static bool is_address_readable(uintptr_t addr)
 	} else if (el == 2U) {
 		ats1e2r(addr);
 	} else {
-		ats1e1r(addr);
+		AT(ats1e1r, addr);
 	}
 
 	isb();
@@ -261,7 +261,7 @@ void backtrace(const char *cookie)
 	struct frame_record *fr = __builtin_frame_address(0U);
 
 	/* Printing the backtrace may crash the system, flush before starting */
-	(void)console_flush();
+	console_flush();
 
 	fr = adjust_frame_record(fr);
 

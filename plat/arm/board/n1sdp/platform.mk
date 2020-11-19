@@ -15,7 +15,7 @@ PLAT_INCLUDES		:=	-I${N1SDP_BASE}/include
 N1SDP_CPU_SOURCES	:=	lib/cpus/aarch64/neoverse_n1.S
 
 # GIC-600 configuration
-GICV3_IMPL			:=	GIC600
+GICV3_SUPPORT_GIC600		:=	1
 GICV3_IMPL_GIC600_MULTICHIP	:=	1
 
 # Include GICv3 driver files
@@ -38,6 +38,8 @@ BL31_SOURCES		:=	${N1SDP_CPU_SOURCES}			\
 				${N1SDP_BASE}/n1sdp_security.c		\
 				drivers/arm/css/sds/sds.c
 
+FDT_SOURCES		+=	fdts/${PLAT}-single-chip.dts	\
+				fdts/${PLAT}-multi-chip.dts
 
 # TF-A not required to load the SCP Images
 override CSS_LOAD_SCP_IMAGES	  	:=	0

@@ -562,21 +562,14 @@ behaviour of the ``assert()`` function (for example, to save memory).
    doesn't print anything to the console. If ``PLAT_LOG_LEVEL_ASSERT`` isn't
    defined, it defaults to ``LOG_LEVEL``.
 
-If the platform port uses the Activity Monitor Unit, the following constants
+If the platform port uses the Activity Monitor Unit, the following constant
 may be defined:
 
 -  **PLAT_AMU_GROUP1_COUNTERS_MASK**
    This mask reflects the set of group counters that should be enabled.  The
    maximum number of group 1 counters supported by AMUv1 is 16 so the mask
    can be at most 0xffff. If the platform does not define this mask, no group 1
-   counters are enabled. If the platform defines this mask, the following
-   constant needs to also be defined.
-
--  **PLAT_AMU_GROUP1_NR_COUNTERS**
-   This value is used to allocate an array to save and restore the counters
-   specified by ``PLAT_AMU_GROUP1_COUNTERS_MASK`` on CPU suspend.
-   This value should be equal to the highest bit position set in the
-   mask, plus 1.  The maximum number of group 1 counters in AMUv1 is 16.
+   counters are enabled.
 
 File : plat_macros.S [mandatory]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1130,6 +1123,7 @@ This function returns soc version which mainly consist of below fields
 
     soc_version[30:24] = JEP-106 continuation code for the SiP
     soc_version[23:16] = JEP-106 identification code with parity bit for the SiP
+    soc_version[15:0]  = Implementation defined SoC ID
 
 Function : plat_get_soc_revision()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1144,6 +1138,18 @@ This function returns soc revision in below format
 ::
 
     soc_revision[0:30] = SOC revision of specific SOC
+
+Function : plat_is_smccc_feature_available()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : u_register_t
+    Return   : int32_t
+
+This function returns SMC_ARCH_CALL_SUCCESS if the platform supports
+the SMCCC function specified in the argument; otherwise returns
+SMC_ARCH_CALL_NOT_SUPPORTED.
 
 Modifications specific to a Boot Loader stage
 ---------------------------------------------
@@ -1424,7 +1430,7 @@ are platform specific.
 
 On Arm standard platforms, the arguments received are :
 
-    arg0 - Points to load address of HW_CONFIG if present
+    arg0 - Points to load address of FW_CONFIG
 
     arg1 - ``meminfo`` structure populated by BL1. The platform copies
     the contents of ``meminfo`` as it may be subsequently overwritten by BL2.
@@ -1736,6 +1742,10 @@ In Arm standard platforms, the arguments received are :
     which is list of executable images following BL31,
 
     arg1 - Points to load address of SOC_FW_CONFIG if present
+           except in case of Arm FVP platform.
+
+           In case of Arm FVP platform, Points to load address
+           of FW_CONFIG.
 
     arg2 - Points to load address of HW_CONFIG if present
 
@@ -1890,6 +1900,21 @@ frequency for the CPU's generic timer. This value will be programmed into the
 of the system counter, which is retrieved from the first entry in the frequency
 modes table.
 
+Function : plat_arm_set_twedel_scr_el3() [optional]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : void
+    Return   : uint32_t
+
+This function is used in v8.6+ systems to set the WFE trap delay value in
+SCR_EL3. If this function returns TWED_DISABLED or is left unimplemented, this
+feature is not enabled.  The only hook provided is to set the TWED fields in
+SCR_EL3, there are similar fields in HCR_EL2, SCTLR_EL2, and SCTLR_EL1 to adjust
+the WFE trap delays in lower ELs and these fields should be set by the
+appropriate EL2 or EL1 code depending on the platform configuration.
+
 #define : PLAT_PERCPU_BAKERY_LOCK_SIZE [optional]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1941,23 +1966,27 @@ be higher than Normal |SDEI| priority.
 Functions
 .........
 
-Function: int plat_sdei_validate_entry_point(uintptr_t ep) [optional]
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Function: int plat_sdei_validate_entry_point() [optional]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
-  Argument: uintptr_t
+  Argument: uintptr_t ep, unsigned int client_mode
   Return: int
 
-This function validates the address of client entry points provided for both
-event registration and *Complete and Resume* |SDEI| calls. The function
-takes one argument, which is the address of the handler the |SDEI| client
-requested to register. The function must return ``0`` for successful validation,
-or ``-1`` upon failure.
+This function validates the entry point address of the event handler provided by
+the client for both event registration and *Complete and Resume* |SDEI| calls.
+The function ensures that the address is valid in the client translation regime.
+
+The second argument is the exception level that the client is executing in. It
+can be Non-Secure EL1 or Non-Secure EL2.
+
+The function must return ``0`` for successful validation, or ``-1`` upon failure.
 
 The default implementation always returns ``0``. On Arm platforms, this function
-is implemented to translate the entry point to physical address, and further to
-ensure that the address is located in Non-secure DRAM.
+translates the entry point address within the client translation regime and
+further ensures that the resulting physical address is located in Non-secure
+DRAM.
 
 Function: void plat_sdei_handle_masked_trigger(uint64_t mpidr, unsigned int intr) [optional]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2446,9 +2475,7 @@ FVP can be configured to use either GICv2 or GICv3 depending on the build flag
 ``FVP_USE_GIC_DRIVER`` (See :ref:`build_options_arm_fvp_platform` for more
 details).
 
-See also: `Interrupt Controller Abstraction APIs`__.
-
-.. __: ../design/platform-interrupt-controller-API.rst
+See also: :ref:`Interrupt Controller Abstraction APIs<Platform Interrupt Controller API>`.
 
 Function : plat_interrupt_type_to_line() [mandatory]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2573,9 +2600,7 @@ This API is used by the CPU to indicate to the platform IC that processing of
 the highest pending interrupt has begun. It should return the raw, unmodified
 value obtained from the interrupt controller when acknowledging an interrupt.
 The actual interrupt number shall be extracted from this raw value using the API
-`plat_ic_get_interrupt_id()`__.
-
-.. __: ../design/platform-interrupt-controller-API.rst#function-unsigned-int-plat-ic-get-interrupt-id-unsigned-int-raw-optional
+`plat_ic_get_interrupt_id()<plat_ic_get_interrupt_id>`.
 
 This function in Arm standard platforms using GICv2, reads the *Interrupt
 Acknowledge Register* (``GICC_IAR``). This changes the state of the highest
@@ -2699,12 +2724,13 @@ Function : plat_crash_console_flush [mandatory]
 ::
 
     Argument : void
-    Return   : int
+    Return   : void
 
 This API is used by the crash reporting mechanism to force write of all buffered
 data on the designated crash console. It should only use general purpose
-registers x0 through x5 to do its work. The return value is 0 on successful
-completion; otherwise the return value is -1.
+registers x0 through x5 to do its work.
+
+.. _External Abort handling and RAS Support:
 
 External Abort handling and RAS Support
 ---------------------------------------

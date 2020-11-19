@@ -8,7 +8,7 @@
 # Trusted Firmware Version
 #
 VERSION_MAJOR			:= 2
-VERSION_MINOR			:= 3
+VERSION_MINOR			:= 4
 
 # Default goal is build all images
 .DEFAULT_GOAL			:= all
@@ -94,12 +94,6 @@ endif
 
 export Q ECHO
 
-# Default build string (git branch and commit)
-ifeq (${BUILD_STRING},)
-        BUILD_STRING	:=	$(shell git describe --always --dirty --tags 2> /dev/null)
-endif
-VERSION_STRING		:=	v${VERSION_MAJOR}.${VERSION_MINOR}(${BUILD_TYPE}):${BUILD_STRING}
-
 # The cert_create tool cannot generate certificates individually, so we use the
 # target 'certificates' to create them all
 ifneq (${GENERATE_COT},0)
@@ -127,6 +121,10 @@ else ifeq (${BRANCH_PROTECTION},3)
 	# Extend the signing to include leaf functions
 	BP_OPTION := pac-ret+leaf
 	ENABLE_PAUTH := 1
+else ifeq (${BRANCH_PROTECTION},4)
+	# Turn on branch target identification mechanism
+	BP_OPTION := bti
+	ENABLE_BTI := 1
 else
         $(error Unknown BRANCH_PROTECTION value ${BRANCH_PROTECTION})
 endif
@@ -199,10 +197,8 @@ endif
 
 # Memory tagging is supported in architecture Armv8.5-A AArch64 and onwards
 ifeq ($(ARCH), aarch64)
-ifeq ($(shell test $(ARM_ARCH_MAJOR) -gt 8; echo $$?),0)
-mem_tag_arch_support	= 	yes
-else ifeq ($(shell test $(ARM_ARCH_MAJOR) -eq 8 -a $(ARM_ARCH_MINOR) -ge 5; \
-	   echo $$?),0)
+# Check if revision is greater than or equal to 8.5
+ifeq "8.5" "$(word 1, $(sort 8.5 $(ARM_ARCH_MAJOR).$(ARM_ARCH_MINOR)))"
 mem_tag_arch_support	= 	yes
 endif
 endif
@@ -280,6 +276,12 @@ else
         # Use LOG_LEVEL_NOTICE by default for release builds
         LOG_LEVEL	:=	20
 endif
+
+# Default build string (git branch and commit)
+ifeq (${BUILD_STRING},)
+        BUILD_STRING  :=  $(shell git describe --always --dirty --tags 2> /dev/null)
+endif
+VERSION_STRING    :=  v${VERSION_MAJOR}.${VERSION_MINOR}(${BUILD_TYPE}):${BUILD_STRING}
 
 ifeq (${AARCH32_INSTRUCTION_SET},A32)
 TF_CFLAGS_aarch32	+=	-marm
@@ -449,8 +451,10 @@ include common/backtrace/backtrace.mk
 
 include ${MAKE_HELPERS_DIRECTORY}plat_helpers.mk
 
-BUILD_BASE		:=	./build
-BUILD_PLAT		:=	${BUILD_BASE}/${PLAT}/${BUILD_TYPE}
+ifeq (${BUILD_BASE},)
+     BUILD_BASE		:=	./build
+endif
+BUILD_PLAT		:=	$(abspath ${BUILD_BASE})/${PLAT}/${BUILD_TYPE}
 
 SPDS			:=	$(sort $(filter-out none, $(patsubst services/spd/%,%,$(wildcard services/spd/*))))
 
@@ -481,6 +485,10 @@ ifneq (${SPD},none)
             ifeq ($(CTX_INCLUDE_EL2_REGS),0)
                 $(error SPMD with SPM at S-EL2 requires CTX_INCLUDE_EL2_REGS option)
             endif
+        endif
+
+        ifeq ($(findstring optee_sp,$(ARM_SPMC_MANIFEST_DTS)),optee_sp)
+            DTC_CPPFLAGS	+=	-DOPTEE_SP_FW_CONFIG
         endif
     else
         # All other SPDs in spd directory
@@ -649,6 +657,16 @@ ifeq ($(DYN_DISABLE_AUTH), 1)
     ifeq (${TRUSTED_BOARD_BOOT}, 0)
         $(error "TRUSTED_BOARD_BOOT must be enabled for DYN_DISABLE_AUTH to be set.")
     endif
+endif
+
+# SDEI_IN_FCONF is only supported when SDEI_SUPPORT is enabled.
+ifeq ($(SDEI_SUPPORT)-$(SDEI_IN_FCONF),0-1)
+$(error "SDEI_IN_FCONF is an experimental feature and is only supported when \
+	SDEI_SUPPORT is enabled")
+endif
+
+ifeq ($(COT_DESC_IN_DTB),1)
+    $(info CoT in device tree is an experimental feature)
 endif
 
 # If pointer authentication is used in the firmware, make sure that all the
@@ -837,65 +855,78 @@ endif
 # Build options checks
 ################################################################################
 
-$(eval $(call assert_boolean,ALLOW_RO_XLAT_TABLES))
-$(eval $(call assert_boolean,COLD_BOOT_SINGLE_CPU))
-$(eval $(call assert_boolean,CREATE_KEYS))
-$(eval $(call assert_boolean,CTX_INCLUDE_AARCH32_REGS))
-$(eval $(call assert_boolean,CTX_INCLUDE_FPREGS))
-$(eval $(call assert_boolean,CTX_INCLUDE_PAUTH_REGS))
-$(eval $(call assert_boolean,CTX_INCLUDE_MTE_REGS))
-$(eval $(call assert_boolean,CTX_INCLUDE_EL2_REGS))
-$(eval $(call assert_boolean,DEBUG))
-$(eval $(call assert_boolean,DYN_DISABLE_AUTH))
-$(eval $(call assert_boolean,EL3_EXCEPTION_HANDLING))
-$(eval $(call assert_boolean,ENABLE_AMU))
-$(eval $(call assert_boolean,ENABLE_ASSERTIONS))
-$(eval $(call assert_boolean,ENABLE_MPAM_FOR_LOWER_ELS))
-$(eval $(call assert_boolean,ENABLE_PIE))
-$(eval $(call assert_boolean,ENABLE_PMF))
-$(eval $(call assert_boolean,ENABLE_PSCI_STAT))
-$(eval $(call assert_boolean,ENABLE_RUNTIME_INSTRUMENTATION))
-$(eval $(call assert_boolean,ENABLE_SPE_FOR_LOWER_ELS))
-$(eval $(call assert_boolean,ENABLE_SVE_FOR_NS))
-$(eval $(call assert_boolean,ERROR_DEPRECATED))
-$(eval $(call assert_boolean,FAULT_INJECTION_SUPPORT))
-$(eval $(call assert_boolean,GENERATE_COT))
-$(eval $(call assert_boolean,GICV2_G0_FOR_EL3))
-$(eval $(call assert_boolean,HANDLE_EA_EL3_FIRST))
-$(eval $(call assert_boolean,HW_ASSISTED_COHERENCY))
-$(eval $(call assert_boolean,INVERTED_MEMMAP))
-$(eval $(call assert_boolean,MEASURED_BOOT))
-$(eval $(call assert_boolean,NS_TIMER_SWITCH))
-$(eval $(call assert_boolean,OVERRIDE_LIBC))
-$(eval $(call assert_boolean,PL011_GENERIC_UART))
-$(eval $(call assert_boolean,PROGRAMMABLE_RESET_ADDRESS))
-$(eval $(call assert_boolean,PSCI_EXTENDED_STATE_ID))
-$(eval $(call assert_boolean,RAS_EXTENSION))
-$(eval $(call assert_boolean,RESET_TO_BL31))
-$(eval $(call assert_boolean,SAVE_KEYS))
-$(eval $(call assert_boolean,SEPARATE_CODE_AND_RODATA))
-$(eval $(call assert_boolean,SEPARATE_NOBITS_REGION))
-$(eval $(call assert_boolean,SPIN_ON_BL1_EXIT))
-$(eval $(call assert_boolean,SPM_MM))
-$(eval $(call assert_boolean,SPMD_SPM_AT_SEL2))
-$(eval $(call assert_boolean,TRUSTED_BOARD_BOOT))
-$(eval $(call assert_boolean,USE_COHERENT_MEM))
-$(eval $(call assert_boolean,USE_DEBUGFS))
-$(eval $(call assert_boolean,ARM_IO_IN_DTB))
-$(eval $(call assert_boolean,USE_ROMLIB))
-$(eval $(call assert_boolean,USE_TBBR_DEFS))
-$(eval $(call assert_boolean,WARMBOOT_ENABLE_DCACHE_EARLY))
-$(eval $(call assert_boolean,BL2_AT_EL3))
-$(eval $(call assert_boolean,BL2_IN_XIP_MEM))
-$(eval $(call assert_boolean,BL2_INV_DCACHE))
-$(eval $(call assert_boolean,USE_SPINLOCK_CAS))
-$(eval $(call assert_boolean,ENCRYPT_BL31))
-$(eval $(call assert_boolean,ENCRYPT_BL32))
+$(eval $(call assert_booleans,\
+    $(sort \
+        ALLOW_RO_XLAT_TABLES \
+        COLD_BOOT_SINGLE_CPU \
+        CREATE_KEYS \
+        CTX_INCLUDE_AARCH32_REGS \
+        CTX_INCLUDE_FPREGS \
+        CTX_INCLUDE_PAUTH_REGS \
+        CTX_INCLUDE_MTE_REGS \
+        CTX_INCLUDE_EL2_REGS \
+        CTX_INCLUDE_NEVE_REGS \
+        DEBUG \
+        DYN_DISABLE_AUTH \
+        EL3_EXCEPTION_HANDLING \
+        ENABLE_AMU \
+        ENABLE_ASSERTIONS \
+        ENABLE_MPAM_FOR_LOWER_ELS \
+        ENABLE_PIE \
+        ENABLE_PMF \
+        ENABLE_PSCI_STAT \
+        ENABLE_RUNTIME_INSTRUMENTATION \
+        ENABLE_SPE_FOR_LOWER_ELS \
+        ENABLE_SVE_FOR_NS \
+        ERROR_DEPRECATED \
+        FAULT_INJECTION_SUPPORT \
+        GENERATE_COT \
+        GICV2_G0_FOR_EL3 \
+        HANDLE_EA_EL3_FIRST \
+        HW_ASSISTED_COHERENCY \
+        INVERTED_MEMMAP \
+        MEASURED_BOOT \
+        NS_TIMER_SWITCH \
+        OVERRIDE_LIBC \
+        PL011_GENERIC_UART \
+        PROGRAMMABLE_RESET_ADDRESS \
+        PSCI_EXTENDED_STATE_ID \
+        RAS_EXTENSION \
+        RESET_TO_BL31 \
+        SAVE_KEYS \
+        SEPARATE_CODE_AND_RODATA \
+        SEPARATE_NOBITS_REGION \
+        SPIN_ON_BL1_EXIT \
+        SPM_MM \
+        SPMD_SPM_AT_SEL2 \
+        TRUSTED_BOARD_BOOT \
+        USE_COHERENT_MEM \
+        USE_DEBUGFS \
+        ARM_IO_IN_DTB \
+        SDEI_IN_FCONF \
+        SEC_INT_DESC_IN_FCONF \
+        USE_ROMLIB \
+        USE_TBBR_DEFS \
+        WARMBOOT_ENABLE_DCACHE_EARLY \
+        BL2_AT_EL3 \
+        BL2_IN_XIP_MEM \
+        BL2_INV_DCACHE \
+        USE_SPINLOCK_CAS \
+        ENCRYPT_BL31 \
+        ENCRYPT_BL32 \
+        ERRATA_SPECULATIVE_AT \
+        RAS_TRAP_LOWER_EL_ERR_ACCESS \
+        COT_DESC_IN_DTB \
+        USE_SP804_TIMER \
+)))
 
-$(eval $(call assert_numeric,ARM_ARCH_MAJOR))
-$(eval $(call assert_numeric,ARM_ARCH_MINOR))
-$(eval $(call assert_numeric,BRANCH_PROTECTION))
-$(eval $(call assert_numeric,FW_ENC_STATUS))
+$(eval $(call assert_numerics,\
+    $(sort \
+        ARM_ARCH_MAJOR \
+        ARM_ARCH_MINOR \
+        BRANCH_PROTECTION \
+        FW_ENC_STATUS \
+)))
 
 ifdef KEY_SIZE
         $(eval $(call assert_numeric,KEY_SIZE))
@@ -911,62 +942,72 @@ endif
 # platform to overwrite the default options
 ################################################################################
 
-$(eval $(call add_define,ALLOW_RO_XLAT_TABLES))
-$(eval $(call add_define,ARM_ARCH_MAJOR))
-$(eval $(call add_define,ARM_ARCH_MINOR))
-$(eval $(call add_define,COLD_BOOT_SINGLE_CPU))
-$(eval $(call add_define,CTX_INCLUDE_AARCH32_REGS))
-$(eval $(call add_define,CTX_INCLUDE_FPREGS))
-$(eval $(call add_define,CTX_INCLUDE_PAUTH_REGS))
-$(eval $(call add_define,EL3_EXCEPTION_HANDLING))
-$(eval $(call add_define,CTX_INCLUDE_MTE_REGS))
-$(eval $(call add_define,CTX_INCLUDE_EL2_REGS))
-$(eval $(call add_define,DECRYPTION_SUPPORT_${DECRYPTION_SUPPORT}))
-$(eval $(call add_define,ENABLE_AMU))
-$(eval $(call add_define,ENABLE_ASSERTIONS))
-$(eval $(call add_define,ENABLE_BTI))
-$(eval $(call add_define,ENABLE_MPAM_FOR_LOWER_ELS))
-$(eval $(call add_define,ENABLE_PAUTH))
-$(eval $(call add_define,ENABLE_PIE))
-$(eval $(call add_define,ENABLE_PMF))
-$(eval $(call add_define,ENABLE_PSCI_STAT))
-$(eval $(call add_define,ENABLE_RUNTIME_INSTRUMENTATION))
-$(eval $(call add_define,ENABLE_SPE_FOR_LOWER_ELS))
-$(eval $(call add_define,ENABLE_SVE_FOR_NS))
-$(eval $(call add_define,ENCRYPT_BL31))
-$(eval $(call add_define,ENCRYPT_BL32))
-$(eval $(call add_define,ERROR_DEPRECATED))
-$(eval $(call add_define,FAULT_INJECTION_SUPPORT))
-$(eval $(call add_define,GICV2_G0_FOR_EL3))
-$(eval $(call add_define,HANDLE_EA_EL3_FIRST))
-$(eval $(call add_define,HW_ASSISTED_COHERENCY))
-$(eval $(call add_define,LOG_LEVEL))
-$(eval $(call add_define,MEASURED_BOOT))
-$(eval $(call add_define,NS_TIMER_SWITCH))
-$(eval $(call add_define,PL011_GENERIC_UART))
-$(eval $(call add_define,PLAT_${PLAT}))
-$(eval $(call add_define,PROGRAMMABLE_RESET_ADDRESS))
-$(eval $(call add_define,PSCI_EXTENDED_STATE_ID))
-$(eval $(call add_define,RAS_EXTENSION))
-$(eval $(call add_define,RESET_TO_BL31))
-$(eval $(call add_define,SEPARATE_CODE_AND_RODATA))
-$(eval $(call add_define,SEPARATE_NOBITS_REGION))
-$(eval $(call add_define,RECLAIM_INIT_CODE))
-$(eval $(call add_define,SPD_${SPD}))
-$(eval $(call add_define,SPIN_ON_BL1_EXIT))
-$(eval $(call add_define,SPM_MM))
-$(eval $(call add_define,SPMD_SPM_AT_SEL2))
-$(eval $(call add_define,TRUSTED_BOARD_BOOT))
-$(eval $(call add_define,USE_COHERENT_MEM))
-$(eval $(call add_define,USE_DEBUGFS))
-$(eval $(call add_define,ARM_IO_IN_DTB))
-$(eval $(call add_define,USE_ROMLIB))
-$(eval $(call add_define,USE_TBBR_DEFS))
-$(eval $(call add_define,WARMBOOT_ENABLE_DCACHE_EARLY))
-$(eval $(call add_define,BL2_AT_EL3))
-$(eval $(call add_define,BL2_IN_XIP_MEM))
-$(eval $(call add_define,BL2_INV_DCACHE))
-$(eval $(call add_define,USE_SPINLOCK_CAS))
+$(eval $(call add_defines,\
+    $(sort \
+        ALLOW_RO_XLAT_TABLES \
+        ARM_ARCH_MAJOR \
+        ARM_ARCH_MINOR \
+        COLD_BOOT_SINGLE_CPU \
+        CTX_INCLUDE_AARCH32_REGS \
+        CTX_INCLUDE_FPREGS \
+        CTX_INCLUDE_PAUTH_REGS \
+        EL3_EXCEPTION_HANDLING \
+        CTX_INCLUDE_MTE_REGS \
+        CTX_INCLUDE_EL2_REGS \
+        CTX_INCLUDE_NEVE_REGS \
+        DECRYPTION_SUPPORT_${DECRYPTION_SUPPORT} \
+        ENABLE_AMU \
+        ENABLE_ASSERTIONS \
+        ENABLE_BTI \
+        ENABLE_MPAM_FOR_LOWER_ELS \
+        ENABLE_PAUTH \
+        ENABLE_PIE \
+        ENABLE_PMF \
+        ENABLE_PSCI_STAT \
+        ENABLE_RUNTIME_INSTRUMENTATION \
+        ENABLE_SPE_FOR_LOWER_ELS \
+        ENABLE_SVE_FOR_NS \
+        ENCRYPT_BL31 \
+        ENCRYPT_BL32 \
+        ERROR_DEPRECATED \
+        FAULT_INJECTION_SUPPORT \
+        GICV2_G0_FOR_EL3 \
+        HANDLE_EA_EL3_FIRST \
+        HW_ASSISTED_COHERENCY \
+        LOG_LEVEL \
+        MEASURED_BOOT \
+        NS_TIMER_SWITCH \
+        PL011_GENERIC_UART \
+        PLAT_${PLAT} \
+        PROGRAMMABLE_RESET_ADDRESS \
+        PSCI_EXTENDED_STATE_ID \
+        RAS_EXTENSION \
+        RESET_TO_BL31 \
+        SEPARATE_CODE_AND_RODATA \
+        SEPARATE_NOBITS_REGION \
+        RECLAIM_INIT_CODE \
+        SPD_${SPD} \
+        SPIN_ON_BL1_EXIT \
+        SPM_MM \
+        SPMD_SPM_AT_SEL2 \
+        TRUSTED_BOARD_BOOT \
+        USE_COHERENT_MEM \
+        USE_DEBUGFS \
+        ARM_IO_IN_DTB \
+        SDEI_IN_FCONF \
+        SEC_INT_DESC_IN_FCONF \
+        USE_ROMLIB \
+        USE_TBBR_DEFS \
+        WARMBOOT_ENABLE_DCACHE_EARLY \
+        BL2_AT_EL3 \
+        BL2_IN_XIP_MEM \
+        BL2_INV_DCACHE \
+        USE_SPINLOCK_CAS \
+        ERRATA_SPECULATIVE_AT \
+        RAS_TRAP_LOWER_EL_ERR_ACCESS \
+        COT_DESC_IN_DTB \
+        USE_SP804_TIMER \
+)))
 
 ifeq (${SANITIZE_UB},trap)
         $(eval $(call add_define,MONITOR_TRAPS))
@@ -1000,6 +1041,7 @@ ifdef SP_LAYOUT_FILE
         endif
         -include $(BUILD_PLAT)/sp_gen.mk
         FIP_DEPS += sp
+        CRT_DEPS += sp
         NEED_SP_PKG := yes
 else
         ifeq (${SPMD_SPM_AT_SEL2},1)
@@ -1026,14 +1068,6 @@ ifneq ($(findstring clang,$(notdir $(CC))),)
     CPPFLAGS		+= 	-Wno-error=deprecated-declarations
 else
     CPPFLAGS		+= 	-Wno-error=deprecated-declarations -Wno-error=cpp
-endif
-# __ASSEMBLY__ is deprecated in favor of the compiler-builtin __ASSEMBLER__.
-ASFLAGS	+= -D__ASSEMBLY__
-# AARCH32/AARCH64 macros are deprecated in favor of the compiler-builtin __aarch64__.
-ifeq (${ARCH},aarch32)
-        $(eval $(call add_define,AARCH32))
-else
-        $(eval $(call add_define,AARCH64))
 endif
 endif # !ERROR_DEPRECATED
 
@@ -1106,7 +1140,7 @@ endif
 # Add Secure Partition packages
 ifeq (${NEED_SP_PKG},yes)
 $(BUILD_PLAT)/sp_gen.mk: ${SP_MK_GEN} ${SP_LAYOUT_FILE} | ${BUILD_PLAT}
-	${Q}${PYTHON} "$<" "$@" $(filter-out $<,$^) $(BUILD_PLAT)
+	${Q}${PYTHON} "$<" "$@" $(filter-out $<,$^) $(BUILD_PLAT) ${COT}
 sp: $(SPTOOL) $(DTBS) $(BUILD_PLAT)/sp_gen.mk
 	${Q}$(SPTOOL) $(SPTOOL_ARGS)
 	@${ECHO_BLANK_LINE}
@@ -1126,7 +1160,13 @@ endif
 clean:
 	@echo "  CLEAN"
 	$(call SHELL_REMOVE_DIR,${BUILD_PLAT})
+ifdef UNIX_MK
 	${Q}${MAKE} --no-print-directory -C ${FIPTOOLPATH} clean
+else
+# Clear the MAKEFLAGS as we do not want
+# to pass the gnumake flags to nmake.
+	${Q}set MAKEFLAGS= && ${MSVC_NMAKE} /nologo /f ${FIPTOOLPATH}/Makefile.msvc FIPTOOLPATH=$(subst /,\,$(FIPTOOLPATH)) FIPTOOL=$(subst /,\,$(FIPTOOL)) clean
+endif
 	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${CRTTOOLPATH} clean
 	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${ENCTOOLPATH} clean
 	${Q}${MAKE} --no-print-directory -C ${ROMLIBPATH} clean
@@ -1135,7 +1175,13 @@ realclean distclean:
 	@echo "  REALCLEAN"
 	$(call SHELL_REMOVE_DIR,${BUILD_BASE})
 	$(call SHELL_DELETE_ALL, ${CURDIR}/cscope.*)
+ifdef UNIX_MK
 	${Q}${MAKE} --no-print-directory -C ${FIPTOOLPATH} clean
+else
+# Clear the MAKEFLAGS as we do not want
+# to pass the gnumake flags to nmake.
+	${Q}set MAKEFLAGS= && ${MSVC_NMAKE} /nologo /f ${FIPTOOLPATH}/Makefile.msvc FIPTOOLPATH=$(subst /,\,$(FIPTOOLPATH)) FIPTOOL=$(subst /,\,$(FIPTOOL)) realclean
+endif
 	${Q}${MAKE} --no-print-directory -C ${SPTOOLPATH} clean
 	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${CRTTOOLPATH} clean
 	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${ENCTOOLPATH} realclean
@@ -1178,7 +1224,7 @@ certtool: ${CRTTOOL}
 
 .PHONY: ${CRTTOOL}
 ${CRTTOOL}:
-	${Q}${MAKE} PLAT=${PLAT} USE_TBBR_DEFS=${USE_TBBR_DEFS} COT=${COT} --no-print-directory -C ${CRTTOOLPATH}
+	${Q}${MAKE} PLAT=${PLAT} USE_TBBR_DEFS=${USE_TBBR_DEFS} COT=${COT} OPENSSL_DIR=${OPENSSL_DIR} CRTTOOL=${CRTTOOL} --no-print-directory -C ${CRTTOOLPATH}
 	@${ECHO_BLANK_LINE}
 	@echo "Built $@ successfully"
 	@${ECHO_BLANK_LINE}
@@ -1221,12 +1267,21 @@ fwu_fip: ${BUILD_PLAT}/${FWU_FIP_NAME}
 
 .PHONY: ${FIPTOOL}
 ${FIPTOOL}:
-	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" --no-print-directory -C ${FIPTOOLPATH}
+	@${ECHO_BLANK_LINE}
+	@echo "Building $@"
+ifdef UNIX_MK
+	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" FIPTOOL=${FIPTOOL} --no-print-directory -C ${FIPTOOLPATH}
+else
+# Clear the MAKEFLAGS as we do not want
+# to pass the gnumake flags to nmake.
+	${Q}set MAKEFLAGS= && ${MSVC_NMAKE} /nologo /f ${FIPTOOLPATH}/Makefile.msvc FIPTOOLPATH=$(subst /,\,$(FIPTOOLPATH)) FIPTOOL=$(subst /,\,$(FIPTOOL))
+endif
+	@${ECHO_BLANK_LINE}
 
 sptool: ${SPTOOL}
 .PHONY: ${SPTOOL}
 ${SPTOOL}:
-	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" --no-print-directory -C ${SPTOOLPATH}
+	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" SPTOOL=${SPTOOL} --no-print-directory -C ${SPTOOLPATH}
 
 .PHONY: libraries
 romlib.bin: libraries
@@ -1244,7 +1299,7 @@ enctool: ${ENCTOOL}
 
 .PHONY: ${ENCTOOL}
 ${ENCTOOL}:
-	${Q}${MAKE} PLAT=${PLAT} BUILD_INFO=0 --no-print-directory -C ${ENCTOOLPATH}
+	${Q}${MAKE} PLAT=${PLAT} BUILD_INFO=0 OPENSSL_DIR=${OPENSSL_DIR} ENCTOOL=${ENCTOOL} --no-print-directory -C ${ENCTOOLPATH}
 	@${ECHO_BLANK_LINE}
 	@echo "Built $@ successfully"
 	@${ECHO_BLANK_LINE}

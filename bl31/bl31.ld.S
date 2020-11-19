@@ -37,7 +37,7 @@ SECTIONS
     .text . : {
         __TEXT_START__ = .;
         *bl31_entrypoint.o(.text*)
-        *(SORT_BY_ALIGNMENT(.text*))
+        *(SORT_BY_ALIGNMENT(SORT(.text*)))
         *(.vectors)
         . = ALIGN(PAGE_SIZE);
         __TEXT_END__ = .;
@@ -114,27 +114,8 @@ SECTIONS
      */
     __RW_START__ = . ;
 
-    /*
-     * .data must be placed at a lower address than the stacks if the stack
-     * protector is enabled. Alternatively, the .data.stack_protector_canary
-     * section can be placed independently of the main .data section.
-     */
-   .data . : {
-        __DATA_START__ = .;
-        *(SORT_BY_ALIGNMENT(.data*))
-        __DATA_END__ = .;
-    } >RAM
-
-    /*
-     * .rela.dyn needs to come after .data for the read-elf utility to parse
-     * this section correctly. Ensure 8-byte alignment so that the fields of
-     * RELA data structure are aligned.
-     */
-    . = ALIGN(8);
-    __RELA_START__ = .;
-    .rela.dyn . : {
-    } >RAM
-    __RELA_END__ = .;
+    DATA_SECTION >RAM
+    RELA_SECTION >RAM
 
 #ifdef BL31_PROGBITS_LIMIT
     ASSERT(. <= BL31_PROGBITS_LIMIT, "BL31 progbits has exceeded its limit.")
@@ -158,12 +139,7 @@ SECTIONS
     __NOBITS_START__ = .;
 #endif
 
-    stacks (NOLOAD) : {
-        __STACKS_START__ = .;
-        *(tzfw_normal_stacks)
-        __STACKS_END__ = .;
-    } >NOBITS
-
+    STACK_SECTION >NOBITS
     BSS_SECTION >NOBITS
     XLAT_TABLE_SECTION >NOBITS
 

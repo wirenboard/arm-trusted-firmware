@@ -211,6 +211,17 @@
 #define PARANGE_0101	U(48)
 #define PARANGE_0110	U(52)
 
+#define ID_AA64MMFR0_EL1_ECV_SHIFT		U(60)
+#define ID_AA64MMFR0_EL1_ECV_MASK		ULL(0xf)
+#define ID_AA64MMFR0_EL1_ECV_NOT_SUPPORTED	ULL(0x0)
+#define ID_AA64MMFR0_EL1_ECV_SUPPORTED		ULL(0x1)
+#define ID_AA64MMFR0_EL1_ECV_SELF_SYNCH	ULL(0x2)
+
+#define ID_AA64MMFR0_EL1_FGT_SHIFT		U(56)
+#define ID_AA64MMFR0_EL1_FGT_MASK		ULL(0xf)
+#define ID_AA64MMFR0_EL1_FGT_SUPPORTED		ULL(0x1)
+#define ID_AA64MMFR0_EL1_FGT_NOT_SUPPORTED	ULL(0x0)
+
 #define ID_AA64MMFR0_EL1_TGRAN4_SHIFT		U(28)
 #define ID_AA64MMFR0_EL1_TGRAN4_MASK		ULL(0xf)
 #define ID_AA64MMFR0_EL1_TGRAN4_SUPPORTED	ULL(0x0)
@@ -225,6 +236,12 @@
 #define ID_AA64MMFR0_EL1_TGRAN16_MASK		ULL(0xf)
 #define ID_AA64MMFR0_EL1_TGRAN16_SUPPORTED	ULL(0x1)
 #define ID_AA64MMFR0_EL1_TGRAN16_NOT_SUPPORTED	ULL(0x0)
+
+/* ID_AA64MMFR1_EL1 definitions */
+#define ID_AA64MMFR1_EL1_TWED_SHIFT		U(32)
+#define ID_AA64MMFR1_EL1_TWED_MASK		ULL(0xf)
+#define ID_AA64MMFR1_EL1_TWED_SUPPORTED		ULL(0x1)
+#define ID_AA64MMFR1_EL1_TWED_NOT_SUPPORTED	ULL(0x0)
 
 /* ID_AA64MMFR2_EL1 definitions */
 #define ID_AA64MMFR2_EL1		S3_0_C0_C7_2
@@ -252,6 +269,9 @@
 #define MTE_UNIMPLEMENTED	ULL(0)
 #define MTE_IMPLEMENTED_EL0	ULL(1)	/* MTE is only implemented at EL0 */
 #define MTE_IMPLEMENTED_ELX	ULL(2)	/* MTE is implemented at all ELs */
+
+#define ID_AA64PFR1_MPAM_FRAC_SHIFT	ULL(16)
+#define ID_AA64PFR1_MPAM_FRAC_MASK	ULL(0xf)
 
 /* ID_PFR1_EL1 definitions */
 #define ID_PFR1_VIRTEXT_SHIFT	U(12)
@@ -306,28 +326,34 @@
 
 /* CPACR_El1 definitions */
 #define CPACR_EL1_FPEN(x)	((x) << 20)
-#define CPACR_EL1_FP_TRAP_EL0	U(0x1)
-#define CPACR_EL1_FP_TRAP_ALL	U(0x2)
-#define CPACR_EL1_FP_TRAP_NONE	U(0x3)
+#define CPACR_EL1_FP_TRAP_EL0	UL(0x1)
+#define CPACR_EL1_FP_TRAP_ALL	UL(0x2)
+#define CPACR_EL1_FP_TRAP_NONE	UL(0x3)
 
 /* SCR definitions */
 #define SCR_RES1_BITS		((U(1) << 4) | (U(1) << 5))
-#define SCR_ATA_BIT		(U(1) << 26)
-#define SCR_FIEN_BIT		(U(1) << 21)
-#define SCR_EEL2_BIT		(U(1) << 18)
-#define SCR_API_BIT		(U(1) << 17)
-#define SCR_APK_BIT		(U(1) << 16)
-#define SCR_TWE_BIT		(U(1) << 13)
-#define SCR_TWI_BIT		(U(1) << 12)
-#define SCR_ST_BIT		(U(1) << 11)
-#define SCR_RW_BIT		(U(1) << 10)
-#define SCR_SIF_BIT		(U(1) << 9)
-#define SCR_HCE_BIT		(U(1) << 8)
-#define SCR_SMD_BIT		(U(1) << 7)
-#define SCR_EA_BIT		(U(1) << 3)
-#define SCR_FIQ_BIT		(U(1) << 2)
-#define SCR_IRQ_BIT		(U(1) << 1)
-#define SCR_NS_BIT		(U(1) << 0)
+#define SCR_TWEDEL_SHIFT	U(30)
+#define SCR_TWEDEL_MASK		ULL(0xf)
+#define SCR_TWEDEn_BIT		(UL(1) << 29)
+#define SCR_ECVEN_BIT           (UL(1) << 28)
+#define SCR_FGTEN_BIT           (UL(1) << 27)
+#define SCR_ATA_BIT		(UL(1) << 26)
+#define SCR_FIEN_BIT		(UL(1) << 21)
+#define SCR_EEL2_BIT		(UL(1) << 18)
+#define SCR_API_BIT		(UL(1) << 17)
+#define SCR_APK_BIT		(UL(1) << 16)
+#define SCR_TERR_BIT		(UL(1) << 15)
+#define SCR_TWE_BIT		(UL(1) << 13)
+#define SCR_TWI_BIT		(UL(1) << 12)
+#define SCR_ST_BIT		(UL(1) << 11)
+#define SCR_RW_BIT		(UL(1) << 10)
+#define SCR_SIF_BIT		(UL(1) << 9)
+#define SCR_HCE_BIT		(UL(1) << 8)
+#define SCR_SMD_BIT		(UL(1) << 7)
+#define SCR_EA_BIT		(UL(1) << 3)
+#define SCR_FIQ_BIT		(UL(1) << 2)
+#define SCR_IRQ_BIT		(UL(1) << 1)
+#define SCR_NS_BIT		(UL(1) << 0)
 #define SCR_VALID_BIT_MASK	U(0x2f8f)
 #define SCR_RESET_VAL		SCR_RES1_BITS
 
@@ -381,6 +407,7 @@
 /* HCR definitions */
 #define HCR_API_BIT		(ULL(1) << 41)
 #define HCR_APK_BIT		(ULL(1) << 40)
+#define HCR_E2H_BIT		(ULL(1) << 34)
 #define HCR_TGE_BIT		(ULL(1) << 27)
 #define HCR_RW_SHIFT		U(31)
 #define HCR_RW_BIT		(ULL(1) << HCR_RW_SHIFT)
@@ -871,9 +898,14 @@
 #define AMEVTYPER1E_EL0		S3_3_C13_C15_6
 #define AMEVTYPER1F_EL0		S3_3_C13_C15_7
 
+/* AMCFGR_EL0 definitions */
+#define AMCFGR_EL0_NCG_SHIFT	U(28)
+#define AMCFGR_EL0_NCG_MASK	U(0xf)
+#define AMCFGR_EL0_N_SHIFT	U(0)
+#define AMCFGR_EL0_N_MASK	U(0xff)
+
 /* AMCGCR_EL0 definitions */
 #define AMCGCR_EL0_CG1NC_SHIFT	U(8)
-#define AMCGCR_EL0_CG1NC_LENGTH	U(8)
 #define AMCGCR_EL0_CG1NC_MASK	U(0xff)
 
 /* MPAM register definitions */
@@ -946,5 +978,15 @@
 #define TFSR_EL1		S3_0_C5_C6_0
 #define RGSR_EL1		S3_0_C1_C0_5
 #define GCR_EL1			S3_0_C1_C0_6
+
+/*******************************************************************************
+ * Definitions for DynamicIQ Shared Unit registers
+ ******************************************************************************/
+#define CLUSTERPWRDN_EL1	S3_0_c15_c3_6
+
+/* CLUSTERPWRDN_EL1 register definitions */
+#define DSU_CLUSTER_PWR_OFF	0
+#define DSU_CLUSTER_PWR_ON	1
+#define DSU_CLUSTER_PWR_MASK	U(1)
 
 #endif /* ARCH_H */

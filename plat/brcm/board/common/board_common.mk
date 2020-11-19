@@ -133,6 +133,12 @@ PLAT_BL_COMMON_SOURCES	+=	plat/brcm/common/brcm_common.c \
 				plat/brcm/board/common/sbl_util.c \
 				drivers/arm/sp805/sp805.c
 
+# Add RNG driver
+DRIVER_RNG_ENABLE := 1
+ifeq (${DRIVER_RNG_ENABLE},1)
+PLAT_BL_COMMON_SOURCES	+=	drivers/brcm/rng.c
+endif
+
 # Add eMMC driver
 ifeq (${DRIVER_EMMC_ENABLE},1)
 $(eval $(call add_define,DRIVER_EMMC_ENABLE))
@@ -213,7 +219,8 @@ KEY_ALG := rsa_1_5
 AUTH_SOURCES	+= 	drivers/auth/auth_mod.c \
 			drivers/auth/crypto_mod.c \
 			drivers/auth/img_parser_mod.c \
-			drivers/auth/tbbr/tbbr_cot.c
+			drivers/auth/tbbr/tbbr_cot_common.c \
+			drivers/auth/tbbr/tbbr_cot_bl2.c
 
 BL2_SOURCES	+=	${AUTH_SOURCES}
 

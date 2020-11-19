@@ -11,6 +11,11 @@
 #include <lib/utils_def.h>
 
 /*******************************************************************************
+ * Platform BL31 specific defines.
+ ******************************************************************************/
+#define BL31_SIZE			U(0x40000)
+
+/*******************************************************************************
  * MCE apertures used by the ARI interface
  *
  * Aperture 0 - Cpu0 (ARM Cortex A-57)
@@ -163,6 +168,8 @@
 #define MC_VIDEO_PROTECT_BASE_HI	U(0x978)
 #define MC_VIDEO_PROTECT_BASE_LO	U(0x648)
 #define MC_VIDEO_PROTECT_SIZE_MB	U(0x64C)
+#define MC_VIDEO_PROTECT_REG_CTRL	U(0x650)
+#define MC_VIDEO_PROTECT_WRITE_ACCESS_ENABLED	U(3)
 
 /*
  * Carveout (MC_SECURITY_CARVEOUT24) registers used to clear the

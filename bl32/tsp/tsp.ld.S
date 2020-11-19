@@ -70,33 +70,14 @@ SECTIONS
      */
     __RW_START__ = . ;
 
-    .data . : {
-        __DATA_START__ = .;
-        *(.data*)
-        __DATA_END__ = .;
-    } >RAM
-
-    /*
-     * .rela.dyn needs to come after .data for the read-elf utility to parse
-     * this section correctly. Ensure 8-byte alignment so that the fields of
-     * RELA data structure are aligned.
-     */
-    . = ALIGN(8);
-    __RELA_START__ = .;
-    .rela.dyn . : {
-    } >RAM
-    __RELA_END__ = .;
+    DATA_SECTION >RAM
+    RELA_SECTION >RAM
 
 #ifdef TSP_PROGBITS_LIMIT
     ASSERT(. <= TSP_PROGBITS_LIMIT, "TSP progbits has exceeded its limit.")
 #endif
 
-    stacks (NOLOAD) : {
-        __STACKS_START__ = .;
-        *(tzfw_normal_stacks)
-        __STACKS_END__ = .;
-    } >RAM
-
+    STACK_SECTION >RAM
     BSS_SECTION >RAM
     XLAT_TABLE_SECTION >RAM
 

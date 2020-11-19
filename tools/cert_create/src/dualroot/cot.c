@@ -30,9 +30,10 @@ static cert_t cot_certs[] = {
 			TRUSTED_FW_NVCOUNTER_EXT,
 			TRUSTED_BOOT_FW_HASH_EXT,
 			TRUSTED_BOOT_FW_CONFIG_HASH_EXT,
-			HW_CONFIG_HASH_EXT
+			HW_CONFIG_HASH_EXT,
+			FW_CONFIG_HASH_EXT
 		},
-		.num_ext = 4
+		.num_ext = 5
 	},
 
 	[TRUSTED_KEY_CERT] = {
@@ -137,6 +138,43 @@ static cert_t cot_certs[] = {
 		.num_ext = 5
 	},
 
+	[SIP_SECURE_PARTITION_CONTENT_CERT] = {
+		.id = SIP_SECURE_PARTITION_CONTENT_CERT,
+		.opt = "sip-sp-cert",
+		.help_msg = "SiP owned Secure Partition Content Certificate (output file)",
+		.fn = NULL,
+		.cn = "SiP owned Secure Partition Content Certificate",
+		.key = TRUSTED_WORLD_KEY,
+		.issuer = SIP_SECURE_PARTITION_CONTENT_CERT,
+		.ext = {
+			TRUSTED_FW_NVCOUNTER_EXT,
+			SP_PKG1_HASH_EXT,
+			SP_PKG2_HASH_EXT,
+			SP_PKG3_HASH_EXT,
+			SP_PKG4_HASH_EXT,
+		},
+		.num_ext = 5
+	},
+
+	[PLAT_SECURE_PARTITION_CONTENT_CERT] = {
+		.id = PLAT_SECURE_PARTITION_CONTENT_CERT,
+		.opt = "plat-sp-cert",
+		.help_msg = "Platform owned Secure Partition Content Certificate (output file)",
+		.fn = NULL,
+		.cn = "Platform owned Secure Partition Content Certificate",
+		.key = PROT_KEY,
+		.issuer = PLAT_SECURE_PARTITION_CONTENT_CERT,
+		.ext = {
+			NON_TRUSTED_FW_NVCOUNTER_EXT,
+			SP_PKG5_HASH_EXT,
+			SP_PKG6_HASH_EXT,
+			SP_PKG7_HASH_EXT,
+			SP_PKG8_HASH_EXT,
+			PROT_PK_EXT,
+		},
+		.num_ext = 6
+	},
+
 	[FWU_CERT] = {
 		.id = FWU_CERT,
 		.opt = "fwu-cert",
@@ -212,6 +250,17 @@ static ext_t cot_ext[] = {
 		.help_msg = "HW Config file",
 		.sn = "HWConfigHash",
 		.ln = "HW Config hash",
+		.asn1_type = V_ASN1_OCTET_STRING,
+		.type = EXT_TYPE_HASH,
+		.optional = 1
+	},
+
+	[FW_CONFIG_HASH_EXT] = {
+		.oid = FW_CONFIG_HASH_OID,
+		.opt = "fw-config",
+		.help_msg = "Firmware Config file",
+		.sn = "FirmwareConfigHash",
+		.ln = "Firmware Config hash",
 		.asn1_type = V_ASN1_OCTET_STRING,
 		.type = EXT_TYPE_HASH,
 		.optional = 1
@@ -322,6 +371,87 @@ static ext_t cot_ext[] = {
 		.help_msg = "Trusted OS Firmware Config file",
 		.sn = "TrustedOSFirmwareConfigHash",
 		.ln = "Trusted OS Firmware Config hash",
+		.asn1_type = V_ASN1_OCTET_STRING,
+		.type = EXT_TYPE_HASH,
+		.optional = 1
+	},
+
+	[SP_PKG1_HASH_EXT] = {
+		.oid = SP_PKG1_HASH_OID,
+		.opt = "sp-pkg1",
+		.help_msg = "Secure Partition Package1 file",
+		.sn = "SPPkg1Hash",
+		.ln = "SP Pkg1 hash (SHA256)",
+		.asn1_type = V_ASN1_OCTET_STRING,
+		.type = EXT_TYPE_HASH,
+		.optional = 1
+	},
+	[SP_PKG2_HASH_EXT] = {
+		.oid = SP_PKG2_HASH_OID,
+		.opt = "sp-pkg2",
+		.help_msg = "Secure Partition Package2 file",
+		.sn = "SPPkg2Hash",
+		.ln = "SP Pkg2 hash (SHA256)",
+		.asn1_type = V_ASN1_OCTET_STRING,
+		.type = EXT_TYPE_HASH,
+		.optional = 1
+	},
+	[SP_PKG3_HASH_EXT] = {
+		.oid = SP_PKG3_HASH_OID,
+		.opt = "sp-pkg3",
+		.help_msg = "Secure Partition Package3 file",
+		.sn = "SPPkg3Hash",
+		.ln = "SP Pkg3 hash (SHA256)",
+		.asn1_type = V_ASN1_OCTET_STRING,
+		.type = EXT_TYPE_HASH,
+		.optional = 1
+	},
+	[SP_PKG4_HASH_EXT] = {
+		.oid = SP_PKG4_HASH_OID,
+		.opt = "sp-pkg4",
+		.help_msg = "Secure Partition Package4 file",
+		.sn = "SPPkg4Hash",
+		.ln = "SP Pkg4 hash (SHA256)",
+		.asn1_type = V_ASN1_OCTET_STRING,
+		.type = EXT_TYPE_HASH,
+		.optional = 1
+	},
+	[SP_PKG5_HASH_EXT] = {
+		.oid = SP_PKG5_HASH_OID,
+		.opt = "sp-pkg5",
+		.help_msg = "Secure Partition Package5 file",
+		.sn = "SPPkg5Hash",
+		.ln = "SP Pkg5 hash (SHA256)",
+		.asn1_type = V_ASN1_OCTET_STRING,
+		.type = EXT_TYPE_HASH,
+		.optional = 1
+	},
+	[SP_PKG6_HASH_EXT] = {
+		.oid = SP_PKG6_HASH_OID,
+		.opt = "sp-pkg6",
+		.help_msg = "Secure Partition Package6 file",
+		.sn = "SPPkg6Hash",
+		.ln = "SP Pkg6 hash (SHA256)",
+		.asn1_type = V_ASN1_OCTET_STRING,
+		.type = EXT_TYPE_HASH,
+		.optional = 1
+	},
+	[SP_PKG7_HASH_EXT] = {
+		.oid = SP_PKG7_HASH_OID,
+		.opt = "sp-pkg7",
+		.help_msg = "Secure Partition Package7 file",
+		.sn = "SPPkg7Hash",
+		.ln = "SP Pkg7 hash (SHA256)",
+		.asn1_type = V_ASN1_OCTET_STRING,
+		.type = EXT_TYPE_HASH,
+		.optional = 1
+	},
+	[SP_PKG8_HASH_EXT] = {
+		.oid = SP_PKG8_HASH_OID,
+		.opt = "sp-pkg8",
+		.help_msg = "Secure Partition Package8 file",
+		.sn = "SPPkg8Hash",
+		.ln = "SP Pkg8 hash (SHA256)",
 		.asn1_type = V_ASN1_OCTET_STRING,
 		.type = EXT_TYPE_HASH,
 		.optional = 1

@@ -19,6 +19,7 @@ Platform Ports
    intel-stratix10
    marvell/index
    mt8183
+   mt8192
    nvidia-tegra
    warp7
    imx8
@@ -27,6 +28,7 @@ Platform Ports
    poplar
    qemu
    qemu-sbsa
+   qti
    rpi3
    rpi4
    rcar-gen3
@@ -52,6 +54,7 @@ documentation associated with them.
    - Arm Neoverse Reference Design E1 Edge (RD-E1-Edge) FVP
    - Arm SGI-575 and SGM-775
    - MediaTek MT6795 and MT8173 SoCs
+   - Arm Morello Platform
 
 --------------
 

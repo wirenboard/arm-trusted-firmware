@@ -127,6 +127,9 @@ For Cortex-A53, the following errata build flags are defined :
    Earlier revisions of the CPU have other errata which require the same
    workaround in software, so they should be covered anyway.
 
+-  ``ERRATA_A53_1530924``: This applies errata 1530924 workaround to all
+   revisions of Cortex-A53 CPU.
+
 For Cortex-A55, the following errata build flags are defined :
 
 -  ``ERRATA_A55_768277``: This applies errata 768277 workaround to Cortex-A55
@@ -146,6 +149,9 @@ For Cortex-A55, the following errata build flags are defined :
 
 -  ``ERRATA_A55_1221012``: This applies errata 1221012 workaround to Cortex-A55
    CPU. This needs to be enabled only for revision <= r1p0 of the CPU.
+
+-  ``ERRATA_A55_1530923``: This applies errata 1530923 workaround to all
+   revisions of Cortex-A55 CPU.
 
 For Cortex-A57, the following errata build flags are defined :
 
@@ -182,11 +188,16 @@ For Cortex-A57, the following errata build flags are defined :
 -  ``ERRATA_A57_859972``: This applies errata 859972 workaround to Cortex-A57
    CPU. This needs to be enabled only for revision <= r1p3 of the CPU.
 
+-  ``ERRATA_A57_1319537``: This applies errata 1319537 workaround to all
+   revisions of Cortex-A57 CPU.
 
 For Cortex-A72, the following errata build flags are defined :
 
 -  ``ERRATA_A72_859971``: This applies errata 859971 workaround to Cortex-A72
    CPU. This needs to be enabled only for revision <= r0p3 of the CPU.
+
+-  ``ERRATA_A72_1319367``: This applies errata 1319367 workaround to all
+   revisions of Cortex-A72 CPU.
 
 For Cortex-A73, the following errata build flags are defined :
 
@@ -227,11 +238,35 @@ For Cortex-A76, the following errata build flags are defined :
 -  ``ERRATA_A76_1275112``: This applies errata 1275112 workaround to Cortex-A76
    CPU. This needs to be enabled only for revision <= r3p0 of the CPU.
 
-For Hercules, the following errata build flags are defined :
+-  ``ERRATA_A76_1791580``: This applies errata 1791580 workaround to Cortex-A76
+   CPU. This needs to be enabled only for revision <= r4p0 of the CPU.
 
--  ``ERRATA_HERCULES_1688305``: This applies errata 1688305 workaround to
-   Hercules CPU. This needs to be enabled only for revision r0p0 - r1p0 of
-   the CPU.
+-  ``ERRATA_A76_1800710``: This applies errata 1800710 workaround to Cortex-A76
+   CPU. This needs to be enabled only for revision <= r4p0 of the CPU.
+
+-  ``ERRATA_A76_1165522``: This applies errata 1165522 workaround to all
+   revisions of Cortex-A76 CPU. This errata is fixed in r3p0 but due to
+   limitation of errata framework this errata is applied to all revisions
+   of Cortex-A76 CPU.
+
+-  ``ERRATA_A76_1868343``: This applies errata 1868343 workaround to Cortex-A76
+   CPU. This needs to be enabled only for revision <= r4p0 of the CPU.
+
+For Cortex-A77, the following errata build flags are defined :
+
+-  ``ERRATA_A77_1508412``: This applies errata 1508412 workaround to Cortex-A77
+   CPU. This needs to be enabled only for revision <= r1p0 of the CPU.
+
+-  ``ERRATA_A77_1800714``: This applies errata 1800714 workaround to Cortex-A77
+   CPU. This needs to be enabled only for revision <= r1p1 of the CPU.
+
+-  ``ERRATA_A77_1925769``: This applies errata 1925769 workaround to Cortex-A77
+   CPU. This needs to be enabled only for revision <= r1p1 of the CPU.
+
+For Cortex-A78, the following errata build flags are defined :
+
+-  ``ERRATA_A78_1688305``: This applies errata 1688305 workaround to Cortex-A78
+   CPU. This needs to be enabled only for revision r0p0 - r1p0 of the CPU.
 
 For Neoverse N1, the following errata build flags are defined :
 
@@ -267,6 +302,9 @@ For Neoverse N1, the following errata build flags are defined :
 
 -  ``ERRATA_N1_1542419``: This applies errata 1542419 workaround to Neoverse-N1
    CPU. This needs to be enabled only for revisions r3p0 - r4p0 of the CPU.
+
+-  ``ERRATA_N1_1868343``: This applies errata 1868343 workaround to Neoverse-N1
+   CPU. This needs to be enabled only for revision <= r4p0 of the CPU.
 
 DSU Errata Workarounds
 ----------------------
@@ -338,7 +376,7 @@ architecture that can be enabled by the platform as desired.
 
 --------------
 
-*Copyright (c) 2014-2019, Arm Limited and Contributors. All rights reserved.*
+*Copyright (c) 2014-2020, Arm Limited and Contributors. All rights reserved.*
 
 .. _CVE-2017-5715: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-5715
 .. _CVE-2018-3639: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-3639

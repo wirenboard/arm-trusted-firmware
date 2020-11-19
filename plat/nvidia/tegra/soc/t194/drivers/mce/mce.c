@@ -217,6 +217,15 @@ void mce_enable_strict_checking(void)
 		nvg_enable_strict_checking_mode();
 	}
 }
+void mce_verify_strict_checking(void)
+{
+	bool is_silicon = tegra_platform_is_silicon();
+	bool is_fpga = tegra_platform_is_fpga();
+
+	if (is_silicon || is_fpga) {
+		nvg_verify_strict_checking_mode();
+	}
+}
 #endif
 
 /*******************************************************************************
@@ -233,4 +242,12 @@ void mce_system_shutdown(void)
 void mce_system_reboot(void)
 {
 	nvg_system_reboot();
+}
+
+/*******************************************************************************
+ * Handler to clear CCPLEX->HSM correctable RAS error signal.
+ ******************************************************************************/
+void mce_clear_hsm_corr_status(void)
+{
+	nvg_clear_hsm_corr_status();
 }
