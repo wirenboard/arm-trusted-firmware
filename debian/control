@@ -6,7 +6,7 @@ Standards-Version: 4.5.0
 Build-Depends: debhelper-compat (= 13),
  gcc-arm-none-eabi [arm64],
  binutils-arm-none-eabi [arm64],
- libssl-dev,
+ libssl-dev <!pkg.arm-trusted-firmware.notools>,
 Rules-Requires-Root: no
 Homepage: https://www.trustedfirmware.org/
 Vcs-Browser: https://salsa.debian.org/debian/arm-trusted-firmware
@@ -28,6 +28,7 @@ Description: "secure world" software for ARM SoCs - firmware
 Package: arm-trusted-firmware-tools
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Build-Profiles: <!pkg.arm-trusted-firmware.notools>
 Description: "secure world" software for ARM SoCs - tools
  The "secure world" on arm64 machines is a special level of CPU
  privilege that is hidden from the normal OS, and has complete
