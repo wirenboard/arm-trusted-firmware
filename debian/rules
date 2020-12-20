@@ -26,8 +26,6 @@ ifeq ($(DEB_HOST_ARCH),arm64)
 	done
 endif
 
-override_dh_installdocs:
-	# Rename changelog to comply with debian policy.
-	cp docs/change-log.rst docs/changelog
-	dh_installdocs
-	rm docs/changelog
+override_dh_installchangelogs:
+	dh_installchangelogs -parm-trusted-firmware docs/change-log.rst
+	dh_installchangelogs -parm-trusted-firmware-tools
