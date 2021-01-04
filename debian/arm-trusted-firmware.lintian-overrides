@@ -1,3 +1,2 @@
 # This is boot firmware that needs to be statically linked.
-arm-trusted-firmware binary: statically-linked-binary usr/lib/arm-trusted-firmware/rk3328/bl31.elf
-arm-trusted-firmware binary: statically-linked-binary usr/lib/arm-trusted-firmware/rk3399/bl31.elf
+arm-trusted-firmware binary: statically-linked-binary usr/lib/arm-trusted-firmware/*/bl31.elf
