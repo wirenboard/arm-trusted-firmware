@@ -1,5 +1,6 @@
 g12a bl31.bin
 gxbb bl31.bin
 sun50i_a64 bl31.bin
+sun50i_h6 bl31.bin
 rk3328 bl31/bl31.elf
 rk3399 bl31/bl31.elf
