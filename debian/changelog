@@ -1,3 +1,23 @@
+arm-trusted-firmware (2.4+dfsg-1) experimental; urgency=medium
+
+  [ Vagrant Cascadian ]
+  * debian/targets: Enable g12a target (Closes: #973255).
+  * Enable Build-Profile pkg.arm-trusted-firmware.notools to disable
+    building of arm-trusted-firmware-tools.
+  * debian/targets: Enable sun50i_h6 target (Closes: #979179).
+
+  [ Nicolas Boulenguez ]
+  * Update debian/watch (Closes: #977803).
+  * Delegate changelog renaming to debhelper (Closes: #977803).
+  * Let dh_auto_build call sub-Makes (Closes: #977803).
+
+  [ Vagrant Cascadian ]
+  * arm-trusted-firmware: Update lintian overrides to use a glob. Thanks
+    to Nicolas Boulenguez.  (Closes: #977803)
+  * debian/control: Update Standards-Version to 4.5.1.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Mon, 04 Jan 2021 13:40:33 -0800
+
 arm-trusted-firmware (2.3+dfsg-3) unstable; urgency=medium
 
   * Only build firmware on arm64.
