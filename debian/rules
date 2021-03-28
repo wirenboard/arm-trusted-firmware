@@ -1,6 +1,7 @@
 #!/usr/bin/make -f
 
 include /usr/share/dpkg/architecture.mk
+include /usr/share/dpkg/buildtools.mk
 
 export DH_VERBOSE=1
 export TF_CFLAGS += -ffile-prefix-map=$(CURDIR)=.
@@ -21,8 +22,8 @@ target = $(if $(filter rk3328 rk3399,$@),bl31/bl31.elf,bl31.bin)
 override_dh_auto_build:
 # Disable building of arm-trusted-firmware-tools
 ifeq ($(filter pkg.arm-trusted-firmware.notools,$(DEB_BUILD_PROFILES)),)
-	dh_auto_build --sourcedir=tools/fiptool     -- DEBUG=1 V=$(VERBOSE) HOSTCCFLAGS="$(CFLAGS) $(CPPFLAGS)"
-	dh_auto_build --sourcedir=tools/cert_create -- DEBUG=1 V=$(VERBOSE) HOSTCCFLAGS="$(CFLAGS) $(CPPFLAGS) -std=c99 -DUSE_TBBR_DEFS=1"
+	dh_auto_build --sourcedir=tools/fiptool     -- DEBUG=1 V=$(VERBOSE) HOSTCC=$(CC) HOSTCCFLAGS="$(CFLAGS) $(CPPFLAGS)"
+	dh_auto_build --sourcedir=tools/cert_create -- DEBUG=1 V=$(VERBOSE) HOSTCC=$(CC) HOSTCCFLAGS="$(CFLAGS) $(CPPFLAGS) -std=c99 -DUSE_TBBR_DEFS=1"
 endif
 # Only build firmware on arm64.
 ifeq ($(DEB_HOST_ARCH),arm64)
