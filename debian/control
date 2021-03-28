@@ -14,7 +14,7 @@ Vcs-Git: https://salsa.debian.org/debian/arm-trusted-firmware.git -b debian/mast
 
 Package: arm-trusted-firmware
 Architecture: arm64
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${misc:Depends}
 Breaks: u-boot-rockchip (<< 2020.01~rc5)
 Description: "secure world" software for ARM SoCs - firmware
  The "secure world" on arm64 machines is a special level of CPU
