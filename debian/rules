@@ -9,6 +9,9 @@ else
 VERBOSE=1
 endif
 
+platforms := g12a gxbb sun50i_a64 sun50i_h6 rk3328 rk3399
+target = $(if $(filter rk3328 rk3399,$@),bl31/bl31.elf,bl31.bin)
+
 %:
 	dh $@
 
@@ -20,10 +23,11 @@ ifeq ($(filter pkg.arm-trusted-firmware.notools,$(DEB_BUILD_PROFILES)),)
 endif
 # Only build firmware on arm64.
 ifeq ($(DEB_HOST_ARCH),arm64)
+  override_dh_auto_build: $(platforms)
+  $(platforms):
 	# Always set CROSS_COMPILE, which also works for native builds.
-	grep -v '^#' debian/targets | while read plat targets ; do \
-		CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= dh_auto_build -- V=$(VERBOSE) DEBUG=1 PLAT=$$plat bl31 ; \
-	done
+	CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= dh_auto_build -- V=$(VERBOSE) DEBUG=1 PLAT=$@ bl31
+	install -m644 build/$@/debug/$(target) -Dt build/renamed/$@
 endif
 
 override_dh_installchangelogs:
