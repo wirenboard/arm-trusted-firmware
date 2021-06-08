@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2020-2021, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -164,7 +164,6 @@ static int32_t spmd_init(void)
 	for (core_id = 0U; core_id < PLATFORM_CORE_COUNT; core_id++) {
 		if (core_id != linear_id) {
 			spm_core_context[core_id].state = SPMC_STATE_OFF;
-			spm_core_context[core_id].secondary_ep.entry_point = 0UL;
 		}
 	}
 
@@ -370,8 +369,8 @@ static uint64_t spmd_smc_forward(uint32_t smc_fid,
  ******************************************************************************/
 static uint64_t spmd_ffa_error_return(void *handle, int error_code)
 {
-	SMC_RET8(handle, FFA_ERROR,
-		 FFA_TARGET_INFO_MBZ, error_code,
+	SMC_RET8(handle, (uint32_t) FFA_ERROR,
+		 FFA_TARGET_INFO_MBZ, (uint32_t)error_code,
 		 FFA_PARAM_MBZ, FFA_PARAM_MBZ, FFA_PARAM_MBZ,
 		 FFA_PARAM_MBZ, FFA_PARAM_MBZ);
 }
@@ -406,13 +405,6 @@ static int spmd_handle_spmc_message(unsigned long long msg,
 	VERBOSE("%s %llx %llx %llx %llx %llx\n", __func__,
 		msg, parm1, parm2, parm3, parm4);
 
-	switch (msg) {
-	case SPMD_DIRECT_MSG_SET_ENTRY_POINT:
-		return spmd_pm_secondary_core_set_ep(parm1, parm2, parm3);
-	default:
-		break;
-	}
-
 	return -EINVAL;
 }
 
@@ -429,6 +421,7 @@ uint64_t spmd_smc_handler(uint32_t smc_fid,
 			  void *handle,
 			  uint64_t flags)
 {
+	unsigned int linear_id = plat_my_core_pos();
 	spmd_spm_core_context_t *ctx = spmd_get_context();
 	bool secure_origin;
 	int32_t ret;
@@ -437,10 +430,12 @@ uint64_t spmd_smc_handler(uint32_t smc_fid,
 	/* Determine which security state this SMC originated from */
 	secure_origin = is_caller_secure(flags);
 
-	INFO("SPM: 0x%x 0x%llx 0x%llx 0x%llx 0x%llx 0x%llx 0x%llx 0x%llx\n",
-	     smc_fid, x1, x2, x3, x4, SMC_GET_GP(handle, CTX_GPREG_X5),
-	     SMC_GET_GP(handle, CTX_GPREG_X6),
-	     SMC_GET_GP(handle, CTX_GPREG_X7));
+	VERBOSE("SPM(%u): 0x%x 0x%llx 0x%llx 0x%llx 0x%llx "
+		"0x%llx 0x%llx 0x%llx\n",
+		linear_id, smc_fid, x1, x2, x3, x4,
+		SMC_GET_GP(handle, CTX_GPREG_X5),
+		SMC_GET_GP(handle, CTX_GPREG_X6),
+		SMC_GET_GP(handle, CTX_GPREG_X7));
 
 	switch (smc_fid) {
 	case FFA_ERROR:
@@ -470,14 +465,16 @@ uint64_t spmd_smc_handler(uint32_t smc_fid,
 			(ctx->state == SPMC_STATE_RESET)) {
 			ret = FFA_ERROR_NOT_SUPPORTED;
 		} else if (!secure_origin) {
-			ret = MAKE_FFA_VERSION(spmc_attrs.major_version, spmc_attrs.minor_version);
+			ret = MAKE_FFA_VERSION(spmc_attrs.major_version,
+					       spmc_attrs.minor_version);
 		} else {
-			ret = MAKE_FFA_VERSION(FFA_VERSION_MAJOR, FFA_VERSION_MINOR);
+			ret = MAKE_FFA_VERSION(FFA_VERSION_MAJOR,
+					       FFA_VERSION_MINOR);
 		}
 
-		SMC_RET8(handle, ret, FFA_TARGET_INFO_MBZ, FFA_TARGET_INFO_MBZ,
-			 FFA_PARAM_MBZ, FFA_PARAM_MBZ, FFA_PARAM_MBZ,
-			 FFA_PARAM_MBZ, FFA_PARAM_MBZ);
+		SMC_RET8(handle, (uint32_t)ret, FFA_TARGET_INFO_MBZ,
+			 FFA_TARGET_INFO_MBZ, FFA_PARAM_MBZ, FFA_PARAM_MBZ,
+			 FFA_PARAM_MBZ, FFA_PARAM_MBZ, FFA_PARAM_MBZ);
 		break; /* not reached */
 
 	case FFA_FEATURES:
@@ -492,7 +489,7 @@ uint64_t spmd_smc_handler(uint32_t smc_fid,
 		 */
 		if (!is_ffa_fid(x1)) {
 			return spmd_ffa_error_return(handle,
-						      FFA_ERROR_NOT_SUPPORTED);
+						     FFA_ERROR_NOT_SUPPORTED);
 		}
 
 		/* Forward SMC from Normal world to the SPM Core */
@@ -532,6 +529,28 @@ uint64_t spmd_smc_handler(uint32_t smc_fid,
 			 FFA_PARAM_MBZ);
 
 		break; /* not reached */
+
+	case FFA_SECONDARY_EP_REGISTER_SMC64:
+		if (secure_origin) {
+			ret = spmd_pm_secondary_ep_register(x1);
+
+			if (ret < 0) {
+				SMC_RET8(handle, FFA_ERROR_SMC64,
+					FFA_TARGET_INFO_MBZ, ret,
+					FFA_PARAM_MBZ, FFA_PARAM_MBZ,
+					FFA_PARAM_MBZ, FFA_PARAM_MBZ,
+					FFA_PARAM_MBZ);
+			} else {
+				SMC_RET8(handle, FFA_SUCCESS_SMC64,
+					FFA_TARGET_INFO_MBZ, FFA_PARAM_MBZ,
+					FFA_PARAM_MBZ, FFA_PARAM_MBZ,
+					FFA_PARAM_MBZ, FFA_PARAM_MBZ,
+					FFA_PARAM_MBZ);
+			}
+		}
+
+		return spmd_ffa_error_return(handle, FFA_ERROR_NOT_SUPPORTED);
+		break; /* Not reached */
 
 	case FFA_MSG_SEND_DIRECT_REQ_SMC32:
 		if (secure_origin && spmd_is_spmc_message(x1)) {
@@ -620,7 +639,7 @@ uint64_t spmd_smc_handler(uint32_t smc_fid,
 		}
 
 		/* Fall through to forward the call to the other world */
-
+	case FFA_INTERRUPT:
 	case FFA_MSG_YIELD:
 		/* This interface must be invoked only by the Secure world */
 		if (!secure_origin) {

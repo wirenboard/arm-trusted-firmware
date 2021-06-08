@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020, ARM Limited. All rights reserved.
+# Copyright (c) 2016-2021, ARM Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -18,6 +18,9 @@ AARCH32_SP			:= none
 
 # The Target build architecture. Supported values are: aarch64, aarch32.
 ARCH				:= aarch64
+
+# ARM Architecture feature modifiers: none by default
+ARM_ARCH_FEATURE		:= none
 
 # ARM Architecture major and minor versions: 8.0 by default.
 ARM_ARCH_MAJOR			:= 8
@@ -78,6 +81,10 @@ DEFAULT_PLAT			:= fvp
 
 # Disable the generation of the binary image (ELF only).
 DISABLE_BIN_GENERATION		:= 0
+
+# Disable MTPMU if FEAT_MTPMU is supported. Default is 0 to keep backwards
+# compatibility.
+DISABLE_MTPMU			:= 0
 
 # Enable capability to disable authentication dynamically. Only meant for
 # development platforms.
@@ -202,6 +209,9 @@ SAVE_KEYS			:= 0
 # Software Delegated Exception support
 SDEI_SUPPORT            	:= 0
 
+# True Random Number firmware Interface
+TRNG_SUPPORT            	:= 0
+
 # Whether code and read-only data should be put on separate memory pages. The
 # platform Makefile is free to override this value.
 SEPARATE_CODE_AND_RODATA	:= 0
@@ -281,9 +291,10 @@ endif
 # Include Memory Tagging Extension registers in cpu context. This must be set
 # to 1 if the platform wants to use this feature in the Secure world and MTE is
 # enabled at ELX.
-CTX_INCLUDE_MTE_REGS := 0
+CTX_INCLUDE_MTE_REGS		:= 0
 
 ENABLE_AMU			:= 0
+AMU_RESTRICT_COUNTERS		:= 0
 
 # By default, enable Scalable Vector Extension if implemented for Non-secure
 # lower ELs

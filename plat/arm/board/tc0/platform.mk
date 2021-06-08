@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Arm Limited. All rights reserved.
+# Copyright (c) 2020-2021, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -43,7 +43,9 @@ TC0_BASE	=	plat/arm/board/tc0
 
 PLAT_INCLUDES		+=	-I${TC0_BASE}/include/
 
-TC0_CPU_SOURCES	:=	lib/cpus/aarch64/cortex_matterhorn.S
+TC0_CPU_SOURCES	:=	lib/cpus/aarch64/cortex_klein.S         \
+			lib/cpus/aarch64/cortex_matterhorn.S \
+			lib/cpus/aarch64/cortex_matterhorn_elp_arm.S
 
 INTERCONNECT_SOURCES	:=	${TC0_BASE}/tc0_interconnect.c
 
@@ -86,8 +88,12 @@ $(eval $(call TOOL_ADD_PAYLOAD,${FW_CONFIG},--fw-config,${FW_CONFIG}))
 $(eval $(call TOOL_ADD_PAYLOAD,${TB_FW_CONFIG},--tb-fw-config,${TB_FW_CONFIG}))
 
 ifeq (${SPD},spmd)
-FDT_SOURCES		+=	${TC0_BASE}/fdts/${PLAT}_spmc_manifest.dts
-TC0_TOS_FW_CONFIG	:=	${BUILD_PLAT}/fdts/${PLAT}_spmc_manifest.dtb
+ifeq ($(ARM_SPMC_MANIFEST_DTS),)
+ARM_SPMC_MANIFEST_DTS	:=	${TC0_BASE}/fdts/${PLAT}_spmc_manifest.dts
+endif
+
+FDT_SOURCES		+=	${ARM_SPMC_MANIFEST_DTS}
+TC0_TOS_FW_CONFIG	:=	${BUILD_PLAT}/fdts/$(notdir $(basename ${ARM_SPMC_MANIFEST_DTS})).dtb
 
 # Add the TOS_FW_CONFIG to FIP and specify the same to certtool
 $(eval $(call TOOL_ADD_PAYLOAD,${TC0_TOS_FW_CONFIG},--tos-fw-config,${TC0_TOS_FW_CONFIG}))

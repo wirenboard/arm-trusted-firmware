@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2017-2020, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2017-2021, Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include <arch.h>
 #include <asm_macros.S>
-#include <neoverse_n1.h>
 #include <cpuamu.h>
 #include <cpu_macros.S>
 #include <context.h>
+#include <neoverse_n1.h>
 
 /* Hardware handled coherency */
 #if HW_ASSISTED_COHERENCY == 0
@@ -22,19 +22,6 @@
 #endif
 
 	.global neoverse_n1_errata_ic_trap_handler
-	.global is_scu_present_in_dsu
-
-/*
- * Check DSU is configured with SCU and L3 unit
- * 1-> SCU present
- * 0-> SCU not present
- */
-func is_scu_present_in_dsu
-	mrs	x0, CPUCFR_EL1
-	ubfx	x0, x0, #SCU_SHIFT, #1
-	eor	x0, x0, #1
-	ret
-endfunc is_scu_present_in_dsu
 
 /* --------------------------------------------------
  * Errata Workaround for Neoverse N1 Erratum 1043202.
@@ -420,6 +407,63 @@ func check_errata_1868343
 	b	cpu_rev_var_ls
 endfunc check_errata_1868343
 
+	/* --------------------------------------------------
+	 * Errata Workaround for Neoverse N1 Errata #1946160.
+	 * This applies to revisions r3p0, r3p1, r4p0, and
+	 * r4p1 of Neoverse N1. It also exists in r0p0, r1p0,
+	 * and r2p0 but there is no fix in these revisions.
+	 * Inputs:
+	 * x0: variant[4:7] and revision[0:3] of current cpu.
+	 * Shall clobber: x0-x17
+	 * --------------------------------------------------
+	 */
+func errata_n1_1946160_wa
+	/*
+	 * Compare x0 against r3p0 - r4p1
+	 */
+	mov	x17, x30
+	bl	check_errata_1946160
+	cbz	x0, 1f
+
+	mov	x0, #3
+	msr	S3_6_C15_C8_0, x0
+	ldr	x0, =0x10E3900002
+	msr	S3_6_C15_C8_2, x0
+	ldr	x0, =0x10FFF00083
+	msr	S3_6_C15_C8_3, x0
+	ldr	x0, =0x2001003FF
+	msr	S3_6_C15_C8_1, x0
+
+	mov	x0, #4
+	msr	S3_6_C15_C8_0, x0
+	ldr	x0, =0x10E3800082
+	msr	S3_6_C15_C8_2, x0
+	ldr	x0, =0x10FFF00083
+	msr	S3_6_C15_C8_3, x0
+	ldr	x0, =0x2001003FF
+	msr	S3_6_C15_C8_1, x0
+
+	mov	x0, #5
+	msr	S3_6_C15_C8_0, x0
+	ldr	x0, =0x10E3800200
+	msr	S3_6_C15_C8_2, x0
+	ldr	x0, =0x10FFF003E0
+	msr	S3_6_C15_C8_3, x0
+	ldr	x0, =0x2001003FF
+	msr	S3_6_C15_C8_1, x0
+
+	isb
+1:
+	ret	x17
+endfunc errata_n1_1946160_wa
+
+func check_errata_1946160
+	/* Applies to r3p0 - r4p1. */
+	mov	x1, #0x30
+	mov	x2, #0x41
+	b	cpu_rev_var_range
+endfunc check_errata_1946160
+
 func neoverse_n1_reset_func
 	mov	x19, x30
 
@@ -499,6 +543,11 @@ func neoverse_n1_reset_func
 	bl	errata_n1_1868343_wa
 #endif
 
+#if ERRATA_N1_1946160
+	mov	x0, x18
+	bl	errata_n1_1946160_wa
+#endif
+
 #if ENABLE_AMU
 	/* Make sure accesses from EL0/EL1 and EL2 are not trapped to EL3 */
 	mrs	x0, actlr_el3
@@ -515,7 +564,7 @@ func neoverse_n1_reset_func
 	msr	CPUAMCNTENSET_EL0, x0
 #endif
 
-#if NEOVERSE_N1_EXTERNAL_LLC
+#if NEOVERSE_Nx_EXTERNAL_LLC
 	/* Some system may have External LLC, core needs to be made aware */
 	mrs     x0, NEOVERSE_N1_CPUECTLR_EL1
 	orr     x0, x0, NEOVERSE_N1_CPUECTLR_EL1_EXTLLC_BIT
@@ -573,6 +622,7 @@ func neoverse_n1_errata_report
 	report_errata ERRATA_N1_1315703, neoverse_n1, 1315703
 	report_errata ERRATA_N1_1542419, neoverse_n1, 1542419
 	report_errata ERRATA_N1_1868343, neoverse_n1, 1868343
+	report_errata ERRATA_N1_1946160, neoverse_n1, 1946160
 	report_errata ERRATA_DSU_936184, neoverse_n1, dsu_936184
 
 	ldp	x8, x30, [sp], #16

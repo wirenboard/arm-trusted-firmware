@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2016-2021, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -102,6 +102,11 @@
 /* CSSELR definitions */
 #define LEVEL_SHIFT		U(1)
 
+/* ID_DFR1_EL1 definitions */
+#define ID_DFR1_MTPMU_SHIFT	U(0)
+#define ID_DFR1_MTPMU_MASK	U(0xf)
+#define ID_DFR1_MTPMU_SUPPORTED	U(1)
+
 /* ID_MMFR4 definitions */
 #define ID_MMFR4_CNP_SHIFT	U(12)
 #define ID_MMFR4_CNP_LENGTH	U(4)
@@ -111,6 +116,9 @@
 #define ID_PFR0_AMU_SHIFT	U(20)
 #define ID_PFR0_AMU_LENGTH	U(4)
 #define ID_PFR0_AMU_MASK	U(0xf)
+#define ID_PFR0_AMU_NOT_SUPPORTED	U(0x0)
+#define ID_PFR0_AMU_V1		U(0x1)
+#define ID_PFR0_AMU_V1P1	U(0x2)
 
 #define ID_PFR0_DIT_SHIFT	U(24)
 #define ID_PFR0_DIT_LENGTH	U(4)
@@ -126,6 +134,9 @@
 #define ID_PFR1_GENTIMER_MASK	U(0xf)
 #define ID_PFR1_GIC_SHIFT	U(28)
 #define ID_PFR1_GIC_MASK	U(0xf)
+#define ID_PFR1_SEC_SHIFT	U(4)
+#define ID_PFR1_SEC_MASK	U(0xf)
+#define ID_PFR1_ELx_ENABLED	U(1)
 
 /* SCTLR definitions */
 #define SCTLR_RES1_DEF		((U(1) << 23) | (U(1) << 22) | (U(1) << 4) | \
@@ -164,6 +175,7 @@
 #define SDCR_SCCD_BIT		(U(1) << 23)
 #define SDCR_SPME_BIT		(U(1) << 17)
 #define SDCR_RESET_VAL		U(0x0)
+#define SDCR_MTPME_BIT		(U(1) << 28)
 
 /* HSCTLR definitions */
 #define HSCTLR_RES1	((U(1) << 29) | (U(1) << 28) | (U(1) << 23) | \
@@ -244,6 +256,7 @@
 #define VTTBR_BADDR_SHIFT	U(0)
 
 /* HDCR definitions */
+#define HDCR_MTPME_BIT		(U(1) << 28)
 #define HDCR_HLP_BIT		(U(1) << 26)
 #define HDCR_HPME_BIT		(U(1) << 7)
 #define HDCR_RESET_VAL		U(0x0)
@@ -503,6 +516,7 @@
 #define CTR		p15, 0, c0, c0, 1
 #define CNTFRQ		p15, 0, c14, c0, 0
 #define ID_MMFR4	p15, 0, c0, c2, 6
+#define ID_DFR1		p15, 0, c0, c3, 5
 #define ID_PFR0		p15, 0, c0, c1, 0
 #define ID_PFR1		p15, 0, c0, c1, 1
 #define MAIR0		p15, 0, c10, c2, 0
@@ -642,7 +656,7 @@
 #define PAR_ADDR_MASK	(BIT_64(40) - ULL(1)) /* 40-bits-wide page address */
 
 /*******************************************************************************
- * Definitions for system register interface to AMU for ARMv8.4 onwards
+ * Definitions for system register interface to AMU for FEAT_AMUv1
  ******************************************************************************/
 #define AMCR		p15, 0, c13, c2, 0
 #define AMCFGR		p15, 0, c13, c2, 1
@@ -700,6 +714,9 @@
 #define AMEVTYPER1D	p15, 0, c13, c15, 5
 #define AMEVTYPER1E	p15, 0, c13, c15, 6
 #define AMEVTYPER1F	p15, 0, c13, c15, 7
+
+/* AMCR definitions */
+#define AMCR_CG1RZ_BIT		(ULL(1) << 17)
 
 /* AMCFGR definitions */
 #define AMCFGR_NCG_SHIFT	U(28)

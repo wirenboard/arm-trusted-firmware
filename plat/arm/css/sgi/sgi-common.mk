@@ -18,6 +18,8 @@ HANDLE_EA_EL3_FIRST		:=	0
 
 CSS_SGI_CHIP_COUNT		:=	1
 
+CSS_SGI_PLATFORM_VARIANT	:=	0
+
 INTERCONNECT_SOURCES	:=	${CSS_ENT_BASE}/sgi_interconnect.c
 
 PLAT_INCLUDES		+=	-I${CSS_ENT_BASE}/include
@@ -32,8 +34,7 @@ ENT_GIC_SOURCES		:=	${GICV3_SOURCES}		\
 				plat/common/plat_gicv3.c	\
 				plat/arm/common/arm_gicv3.c
 
-PLAT_BL_COMMON_SOURCES	+=	${CSS_ENT_BASE}/sgi_plat.c	\
-				${CSS_ENT_BASE}/aarch64/sgi_helper.S
+PLAT_BL_COMMON_SOURCES	+=	${CSS_ENT_BASE}/aarch64/sgi_helper.S
 
 BL1_SOURCES		+=	${INTERCONNECT_SOURCES}			\
 				drivers/arm/sbsa/sbsa.c
@@ -57,6 +58,8 @@ endif
 $(eval $(call add_define,SGI_PLAT))
 
 $(eval $(call add_define,CSS_SGI_CHIP_COUNT))
+
+$(eval $(call add_define,CSS_SGI_PLATFORM_VARIANT))
 
 override CSS_LOAD_SCP_IMAGES	:=	0
 override NEED_BL2U		:=	no

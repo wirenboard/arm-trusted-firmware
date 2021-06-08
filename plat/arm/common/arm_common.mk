@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015-2020, ARM Limited and Contributors. All rights reserved.
+# Copyright (c) 2015-2021, ARM Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -86,11 +86,7 @@ $(eval $(call assert_boolean,ARM_LINUX_KERNEL_AS_BL33))
 $(eval $(call add_define,ARM_LINUX_KERNEL_AS_BL33))
 
 ifeq (${ARM_LINUX_KERNEL_AS_BL33},1)
-  ifeq (${ARCH},aarch64)
-    ifneq (${RESET_TO_BL31},1)
-      $(error "ARM_LINUX_KERNEL_AS_BL33 is only available if RESET_TO_BL31=1.")
-    endif
-  else
+  ifneq (${ARCH},aarch64)
     ifneq (${RESET_TO_SP_MIN},1)
       $(error "ARM_LINUX_KERNEL_AS_BL33 is only available if RESET_TO_SP_MIN=1.")
     endif
@@ -103,6 +99,11 @@ ifeq (${ARM_LINUX_KERNEL_AS_BL33},1)
   endif
   $(eval $(call add_define,ARM_PRELOADED_DTB_BASE))
 endif
+
+# Arm Ethos-N NPU SiP service
+ARM_ETHOSN_NPU_DRIVER			:=	0
+$(eval $(call assert_boolean,ARM_ETHOSN_NPU_DRIVER))
+$(eval $(call add_define,ARM_ETHOSN_NPU_DRIVER))
 
 # Use an implementation of SHA-256 with a smaller memory footprint but reduced
 # speed.
@@ -166,6 +167,17 @@ ifeq (${ARM_CRYPTOCELL_INTEG},1)
     endif
 endif
 
+# Disable GPT parser support, use FIP image by default
+ARM_GPT_SUPPORT			:=	0
+$(eval $(call assert_boolean,ARM_GPT_SUPPORT))
+$(eval $(call add_define,ARM_GPT_SUPPORT))
+
+# Include necessary sources to parse GPT image
+ifeq (${ARM_GPT_SUPPORT}, 1)
+  BL2_SOURCES	+=	drivers/partition/gpt.c		\
+			drivers/partition/partition.c
+endif
+
 ifeq (${ARCH}, aarch64)
 PLAT_INCLUDES		+=	-Iinclude/plat/arm/common/aarch64
 endif
@@ -221,7 +233,8 @@ include lib/libfdt/libfdt.mk
 
 DYN_CFG_SOURCES		+=	plat/arm/common/arm_dyn_cfg.c		\
 				plat/arm/common/arm_dyn_cfg_helpers.c	\
-				common/fdt_wrappers.c
+				common/fdt_wrappers.c			\
+				common/uuid.c
 
 BL1_SOURCES		+=	${DYN_CFG_SOURCES}
 BL2_SOURCES		+=	${DYN_CFG_SOURCES}
@@ -252,14 +265,26 @@ BL31_SOURCES		+=	plat/arm/common/arm_bl31_setup.c		\
 				plat/arm/common/arm_topology.c			\
 				plat/common/plat_psci_common.c
 
-ifeq (${ENABLE_PMF}, 1)
+ifneq ($(filter 1,${ENABLE_PMF} ${ARM_ETHOSN_NPU_DRIVER}),)
+ARM_SVC_HANDLER_SRCS :=
+
+ifeq (${ENABLE_PMF},1)
+ARM_SVC_HANDLER_SRCS	+=	lib/pmf/pmf_smc.c
+endif
+
+ifeq (${ARM_ETHOSN_NPU_DRIVER},1)
+ARM_SVC_HANDLER_SRCS	+=	plat/arm/common/fconf/fconf_ethosn_getter.c	\
+				drivers/delay_timer/delay_timer.c		\
+				drivers/arm/ethosn/ethosn_smc.c
+endif
+
 ifeq (${ARCH}, aarch64)
 BL31_SOURCES		+=	plat/arm/common/aarch64/execution_state_switch.c\
 				plat/arm/common/arm_sip_svc.c			\
-				lib/pmf/pmf_smc.c
+				${ARM_SVC_HANDLER_SRCS}
 else
 BL32_SOURCES		+=	plat/arm/common/arm_sip_svc.c			\
-				lib/pmf/pmf_smc.c
+				${ARM_SVC_HANDLER_SRCS}
 endif
 endif
 
@@ -289,6 +314,7 @@ endif
 ifeq (${SPD},spmd)
 BL31_SOURCES		+=	plat/common/plat_spmd_manifest.c	\
 				common/fdt_wrappers.c			\
+				common/uuid.c				\
 				${LIBFDT_SRCS}
 
 endif

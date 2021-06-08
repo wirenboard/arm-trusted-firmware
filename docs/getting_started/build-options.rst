@@ -22,9 +22,19 @@ Common build options
    directory containing the SP source, relative to the ``bl32/``; the directory
    is expected to contain a makefile called ``<aarch32_sp-value>.mk``.
 
+-  ``AMU_RESTRICT_COUNTERS``: Register reads to the group 1 counters will return
+   zero at all but the highest implemented exception level.  Reads from the
+   memory mapped view are unaffected by this control.
+
 -  ``ARCH`` : Choose the target build architecture for TF-A. It can take either
    ``aarch64`` or ``aarch32`` as values. By default, it is defined to
    ``aarch64``.
+
+-  ``ARM_ARCH_FEATURE``: Optional Arm Architecture build option which specifies
+   one or more feature modifiers. This option has the form ``[no]feature+...``
+   and defaults to ``none``. It translates into compiler option
+   ``-march=armvX[.Y]-a+[no]feature+...``. See compiler's documentation for the
+   list of supported feature modifiers.
 
 -  ``ARM_ARCH_MAJOR``: The major version of Arm Architecture to target when
    compiling TF-A. Its value must be numeric, and defaults to 8 . See also,
@@ -185,6 +195,11 @@ Common build options
    of the binary image. If set to 1, then only the ELF image is built.
    0 is the default.
 
+-  ``DISABLE_MTPMU``: Boolean option to disable FEAT_MTPMU if implemented
+   (Armv8.6 onwards). Its default value is 0 to keep consistency with platforms
+   that do not implement FEAT_MTPMU. For more information on FEAT_MTPMU,
+   check the latest Arm ARM.
+
 -  ``DYN_DISABLE_AUTH``: Provides the capability to dynamically disable Trusted
    Board Boot authentication at runtime. This option is meant to be enabled only
    for development platforms. ``TRUSTED_BOARD_BOOT`` flag must be set if this
@@ -237,7 +252,8 @@ Common build options
 
 -  ``ENABLE_PIE``: Boolean option to enable Position Independent Executable(PIE)
    support within generic code in TF-A. This option is currently only supported
-   in BL2_AT_EL3, BL31, and BL32 (TSP). Default is 0.
+   in BL2_AT_EL3, BL31, and BL32 (TSP) for AARCH64 binaries, and in BL32
+   (SP_min) for AARCH32. Default is 0.
 
 -  ``ENABLE_PMF``: Boolean option to enable support for optional Performance
    Measurement Framework(PMF). Default is 0.
@@ -392,7 +408,7 @@ Common build options
    library is not supported.
 
 -  ``INVERTED_MEMMAP``: memmap tool print by default lower addresses at the
-   bottom, higher addresses at the top. This buid flag can be set to '1' to
+   bottom, higher addresses at the top. This build flag can be set to '1' to
    invert this behavior. Lower addresses will be printed at the top and higher
    addresses at the bottom.
 
@@ -559,7 +575,7 @@ Common build options
 -  ``SEPARATE_NOBITS_REGION``: Setting this option to ``1`` allows the NOBITS
    sections of BL31 (.bss, stacks, page tables, and coherent memory) to be
    allocated in RAM discontiguous from the loaded firmware image. When set, the
-   platform is expected to provide definitons for ``BL31_NOBITS_BASE`` and
+   platform is expected to provide definitions for ``BL31_NOBITS_BASE`` and
    ``BL31_NOBITS_LIMIT``. When the option is ``0`` (the default), NOBITS
    sections are placed in RAM immediately following the loaded firmware image.
 
@@ -832,4 +848,4 @@ commands can be used:
 
 --------------
 
-*Copyright (c) 2019-2020, Arm Limited. All rights reserved.*
+*Copyright (c) 2019-2021, Arm Limited. All rights reserved.*

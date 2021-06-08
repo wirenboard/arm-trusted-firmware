@@ -241,9 +241,6 @@ For Cortex-A76, the following errata build flags are defined :
 -  ``ERRATA_A76_1791580``: This applies errata 1791580 workaround to Cortex-A76
    CPU. This needs to be enabled only for revision <= r4p0 of the CPU.
 
--  ``ERRATA_A76_1800710``: This applies errata 1800710 workaround to Cortex-A76
-   CPU. This needs to be enabled only for revision <= r4p0 of the CPU.
-
 -  ``ERRATA_A76_1165522``: This applies errata 1165522 workaround to all
    revisions of Cortex-A76 CPU. This errata is fixed in r3p0 but due to
    limitation of errata framework this errata is applied to all revisions
@@ -252,21 +249,31 @@ For Cortex-A76, the following errata build flags are defined :
 -  ``ERRATA_A76_1868343``: This applies errata 1868343 workaround to Cortex-A76
    CPU. This needs to be enabled only for revision <= r4p0 of the CPU.
 
+-  ``ERRATA_A76_1946160``: This applies errata 1946160 workaround to Cortex-A76
+   CPU. This needs to be enabled only for revisions r3p0 - r4p1 of the CPU.
+
 For Cortex-A77, the following errata build flags are defined :
 
 -  ``ERRATA_A77_1508412``: This applies errata 1508412 workaround to Cortex-A77
    CPU. This needs to be enabled only for revision <= r1p0 of the CPU.
 
--  ``ERRATA_A77_1800714``: This applies errata 1800714 workaround to Cortex-A77
+-  ``ERRATA_A77_1925769``: This applies errata 1925769 workaround to Cortex-A77
    CPU. This needs to be enabled only for revision <= r1p1 of the CPU.
 
--  ``ERRATA_A77_1925769``: This applies errata 1925769 workaround to Cortex-A77
+-  ``ERRATA_A77_1946167``: This applies errata 1946167 workaround to Cortex-A77
    CPU. This needs to be enabled only for revision <= r1p1 of the CPU.
 
 For Cortex-A78, the following errata build flags are defined :
 
 -  ``ERRATA_A78_1688305``: This applies errata 1688305 workaround to Cortex-A78
    CPU. This needs to be enabled only for revision r0p0 - r1p0 of the CPU.
+
+-  ``ERRATA_A78_1941498``: This applies errata 1941498 workaround to Cortex-A78
+   CPU. This needs to be enabled for revisions r0p0, r1p0, and r1p1 of the CPU.
+
+-  ``ERRATA_A78_1951500``: This applies errata 1951500 workaround to Cortex-A78
+   CPU. This needs to be enabled for revisions r1p0 and r1p1, r0p0 has the same
+   issue but there is no workaround for that revision.
 
 For Neoverse N1, the following errata build flags are defined :
 
@@ -305,6 +312,10 @@ For Neoverse N1, the following errata build flags are defined :
 
 -  ``ERRATA_N1_1868343``: This applies errata 1868343 workaround to Neoverse-N1
    CPU. This needs to be enabled only for revision <= r4p0 of the CPU.
+
+-  ``ERRATA_N1_1946160``: This applies errata 1946160 workaround to Neoverse-N1
+   CPU. This needs to be enabled for revisions r3p0, r3p1, r4p0, and r4p1, for
+   revisions r0p0, r1p0, and r2p0 there is no workaround.
 
 DSU Errata Workarounds
 ----------------------
@@ -369,14 +380,15 @@ architecture that can be enabled by the platform as desired.
    Cortex-A57 based platform must make its own decision on whether to use
    the optimization. This flag is disabled by default.
 
--  ``NEOVERSE_N1_EXTERNAL_LLC``: This flag indicates that an external last
+-  ``NEOVERSE_Nx_EXTERNAL_LLC``: This flag indicates that an external last
    level cache(LLC) is present in the system, and that the DataSource field
    on the master CHI interface indicates when data is returned from the LLC.
    This is used to control how the LL_CACHE* PMU events count.
+   Default value is 0 (Disabled).
 
 --------------
 
-*Copyright (c) 2014-2020, Arm Limited and Contributors. All rights reserved.*
+*Copyright (c) 2014-2021, Arm Limited and Contributors. All rights reserved.*
 
 .. _CVE-2017-5715: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-5715
 .. _CVE-2018-3639: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-3639

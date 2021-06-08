@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013-2019, ARM Limited and Contributors. All rights reserved.
+# Copyright (c) 2013-2021, ARM Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -40,6 +40,9 @@ BL31_SOURCES		+=	bl31/bl31_main.c				\
 				${SPMD_SOURCES}					\
 				${SPM_SOURCES}
 
+ifeq (${DISABLE_MTPMU},1)
+BL31_SOURCES		+=	lib/extensions/mtpmu/aarch64/mtpmu.S
+endif
 
 ifeq (${ENABLE_PMF}, 1)
 BL31_SOURCES		+=	lib/pmf/pmf_main.c
@@ -63,6 +66,11 @@ BL31_SOURCES		+=	services/std_svc/sdei/sdei_dispatch.S	\
 				services/std_svc/sdei/sdei_intr_mgmt.c	\
 				services/std_svc/sdei/sdei_main.c	\
 				services/std_svc/sdei/sdei_state.c
+endif
+
+ifeq (${TRNG_SUPPORT},1)
+BL31_SOURCES		+=	services/std_svc/trng/trng_main.c	\
+				services/std_svc/trng/trng_entropy_pool.c
 endif
 
 ifeq (${ENABLE_SPE_FOR_LOWER_ELS},1)

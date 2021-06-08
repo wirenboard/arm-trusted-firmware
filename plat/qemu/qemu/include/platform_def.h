@@ -24,6 +24,14 @@
 #define PLATFORM_CLUSTER1_CORE_COUNT	U(0)
 #else
 #define PLATFORM_MAX_CPUS_PER_CLUSTER	U(4)
+/*
+ * Define the number of cores per cluster used in calculating core position.
+ * The cluster number is shifted by this value and added to the core ID,
+ * so its value represents log2(cores/cluster).
+ * Default is 2**(2) = 4 cores per cluster.
+ */
+#define PLATFORM_CPU_PER_CLUSTER_SHIFT	U(2)
+
 #define PLATFORM_CLUSTER_COUNT		U(2)
 #define PLATFORM_CLUSTER0_CORE_COUNT	PLATFORM_MAX_CPUS_PER_CLUSTER
 #define PLATFORM_CLUSTER1_CORE_COUNT	PLATFORM_MAX_CPUS_PER_CLUSTER
@@ -80,6 +88,11 @@
 
 #define SEC_DRAM_BASE			0x0e100000
 #define SEC_DRAM_SIZE			0x00f00000
+
+#define SECURE_GPIO_BASE		0x090b0000
+#define SECURE_GPIO_SIZE		0x00001000
+#define SECURE_GPIO_POWEROFF		0
+#define SECURE_GPIO_RESET		1
 
 /* Load pageable part of OP-TEE 2MB above secure DRAM base */
 #define QEMU_OPTEE_PAGEABLE_LOAD_BASE	(SEC_DRAM_BASE + 0x00200000)
@@ -202,7 +215,7 @@
 #define DEVICE0_BASE			0x08000000
 #define DEVICE0_SIZE			0x01000000
 #define DEVICE1_BASE			0x09000000
-#define DEVICE1_SIZE			0x00041000
+#define DEVICE1_SIZE			0x00c00000
 
 /*
  * GIC related constants

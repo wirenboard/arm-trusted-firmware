@@ -1,5 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 or BSD-3-Clause */
 /*
+ * Copyright (c) 2019-2021, ARM Limited and Contributors. All rights reserved.
+ *
+ * SPDX-License-Identifier: MIT
+ *
  * This header provides constants for the ARM GIC.
  */
 
@@ -17,5 +20,10 @@
 #define IRQ_TYPE_EDGE_BOTH	(IRQ_TYPE_EDGE_FALLING | IRQ_TYPE_EDGE_RISING)
 #define IRQ_TYPE_LEVEL_HIGH	4
 #define IRQ_TYPE_LEVEL_LOW	8
+
+/*
+ * Interrupt specifier cell 2.
+ */
+#define GIC_CPU_MASK_RAW(x) ((x) << 8)
 
 #endif

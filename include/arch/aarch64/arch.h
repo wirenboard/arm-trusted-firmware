@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2021, ARM Limited and Contributors. All rights reserved.
  * Copyright (c) 2020, NVIDIA Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -161,6 +161,9 @@
 #define ID_AA64PFR0_EL3_SHIFT	U(12)
 #define ID_AA64PFR0_AMU_SHIFT	U(44)
 #define ID_AA64PFR0_AMU_MASK	ULL(0xf)
+#define ID_AA64PFR0_AMU_NOT_SUPPORTED	U(0x0)
+#define ID_AA64PFR0_AMU_V1	U(0x1)
+#define ID_AA64PFR0_AMU_V1P1	U(0x2)
 #define ID_AA64PFR0_ELX_MASK	ULL(0xf)
 #define ID_AA64PFR0_GIC_SHIFT	U(24)
 #define ID_AA64PFR0_GIC_WIDTH	U(4)
@@ -187,6 +190,15 @@
 /* ID_AA64DFR0_EL1.PMS definitions (for ARMv8.2+) */
 #define ID_AA64DFR0_PMS_SHIFT	U(32)
 #define ID_AA64DFR0_PMS_MASK	ULL(0xf)
+
+/* ID_AA64DFR0_EL1.MTPMU definitions (for ARMv8.6+) */
+#define ID_AA64DFR0_MTPMU_SHIFT		U(48)
+#define ID_AA64DFR0_MTPMU_MASK		ULL(0xf)
+#define ID_AA64DFR0_MTPMU_SUPPORTED	ULL(1)
+
+/* ID_AA64ISAR0_EL1 definitions */
+#define ID_AA64ISAR0_RNDR_SHIFT U(60)
+#define ID_AA64ISAR0_RNDR_MASK  ULL(0xf)
 
 /* ID_AA64ISAR1_EL1 definitions */
 #define ID_AA64ISAR1_EL1	S3_0_C0_C6_1
@@ -243,6 +255,13 @@
 #define ID_AA64MMFR1_EL1_TWED_SUPPORTED		ULL(0x1)
 #define ID_AA64MMFR1_EL1_TWED_NOT_SUPPORTED	ULL(0x0)
 
+#define ID_AA64MMFR1_EL1_PAN_SHIFT		U(20)
+#define ID_AA64MMFR1_EL1_PAN_MASK		ULL(0xf)
+#define ID_AA64MMFR1_EL1_PAN_NOT_SUPPORTED	ULL(0x0)
+#define ID_AA64MMFR1_EL1_PAN_SUPPORTED		ULL(0x1)
+#define ID_AA64MMFR1_EL1_PAN2_SUPPORTED		ULL(0x2)
+#define ID_AA64MMFR1_EL1_PAN3_SUPPORTED		ULL(0x3)
+
 /* ID_AA64MMFR2_EL1 definitions */
 #define ID_AA64MMFR2_EL1		S3_0_C0_C7_2
 
@@ -266,9 +285,17 @@
 #define ID_AA64PFR1_EL1_MTE_SHIFT	U(8)
 #define ID_AA64PFR1_EL1_MTE_MASK	ULL(0xf)
 
-#define MTE_UNIMPLEMENTED	ULL(0)
-#define MTE_IMPLEMENTED_EL0	ULL(1)	/* MTE is only implemented at EL0 */
-#define MTE_IMPLEMENTED_ELX	ULL(2)	/* MTE is implemented at all ELs */
+/* Memory Tagging Extension is not implemented */
+#define MTE_UNIMPLEMENTED	U(0)
+/* FEAT_MTE: MTE instructions accessible at EL0 are implemented */
+#define MTE_IMPLEMENTED_EL0	U(1)
+/* FEAT_MTE2: Full MTE is implemented */
+#define MTE_IMPLEMENTED_ELX	U(2)
+/*
+ * FEAT_MTE3: MTE is implemented with support for
+ * asymmetric Tag Check Fault handling
+ */
+#define MTE_IMPLEMENTED_ASY	U(3)
 
 #define ID_AA64PFR1_MPAM_FRAC_SHIFT	ULL(16)
 #define ID_AA64PFR1_MPAM_FRAC_MASK	ULL(0xf)
@@ -286,6 +313,7 @@
 
 #define SCTLR_EL1_RES1	((UL(1) << 29) | (UL(1) << 28) | (UL(1) << 23) | \
 			 (UL(1) << 22) | (UL(1) << 20) | (UL(1) << 11))
+
 #define SCTLR_AARCH32_EL1_RES1 \
 			((U(1) << 23) | (U(1) << 22) | (U(1) << 11) | \
 			 (U(1) << 4) | (U(1) << 3))
@@ -300,9 +328,12 @@
 #define SCTLR_SA_BIT		(ULL(1) << 3)
 #define SCTLR_SA0_BIT		(ULL(1) << 4)
 #define SCTLR_CP15BEN_BIT	(ULL(1) << 5)
+#define SCTLR_nAA_BIT		(ULL(1) << 6)
 #define SCTLR_ITD_BIT		(ULL(1) << 7)
 #define SCTLR_SED_BIT		(ULL(1) << 8)
 #define SCTLR_UMA_BIT		(ULL(1) << 9)
+#define SCTLR_EnRCTX_BIT	(ULL(1) << 10)
+#define SCTLR_EOS_BIT		(ULL(1) << 11)
 #define SCTLR_I_BIT		(ULL(1) << 12)
 #define SCTLR_EnDB_BIT		(ULL(1) << 13)
 #define SCTLR_DZE_BIT		(ULL(1) << 14)
@@ -310,21 +341,65 @@
 #define SCTLR_NTWI_BIT		(ULL(1) << 16)
 #define SCTLR_NTWE_BIT		(ULL(1) << 18)
 #define SCTLR_WXN_BIT		(ULL(1) << 19)
-#define SCTLR_UWXN_BIT		(ULL(1) << 20)
+#define SCTLR_TSCXT_BIT		(ULL(1) << 20)
 #define SCTLR_IESB_BIT		(ULL(1) << 21)
+#define SCTLR_EIS_BIT		(ULL(1) << 22)
+#define SCTLR_SPAN_BIT		(ULL(1) << 23)
 #define SCTLR_E0E_BIT		(ULL(1) << 24)
 #define SCTLR_EE_BIT		(ULL(1) << 25)
 #define SCTLR_UCI_BIT		(ULL(1) << 26)
 #define SCTLR_EnDA_BIT		(ULL(1) << 27)
+#define SCTLR_nTLSMD_BIT	(ULL(1) << 28)
+#define SCTLR_LSMAOE_BIT	(ULL(1) << 29)
 #define SCTLR_EnIB_BIT		(ULL(1) << 30)
 #define SCTLR_EnIA_BIT		(ULL(1) << 31)
 #define SCTLR_BT0_BIT		(ULL(1) << 35)
 #define SCTLR_BT1_BIT		(ULL(1) << 36)
 #define SCTLR_BT_BIT		(ULL(1) << 36)
+#define SCTLR_ITFSB_BIT		(ULL(1) << 37)
+#define SCTLR_TCF0_SHIFT	U(38)
+#define SCTLR_TCF0_MASK		ULL(3)
+
+/* Tag Check Faults in EL0 have no effect on the PE */
+#define	SCTLR_TCF0_NO_EFFECT	U(0)
+/* Tag Check Faults in EL0 cause a synchronous exception */
+#define	SCTLR_TCF0_SYNC		U(1)
+/* Tag Check Faults in EL0 are asynchronously accumulated */
+#define	SCTLR_TCF0_ASYNC	U(2)
+/*
+ * Tag Check Faults in EL0 cause a synchronous exception on reads,
+ * and are asynchronously accumulated on writes
+ */
+#define	SCTLR_TCF0_SYNCR_ASYNCW	U(3)
+
+#define SCTLR_TCF_SHIFT		U(40)
+#define SCTLR_TCF_MASK		ULL(3)
+
+/* Tag Check Faults in EL1 have no effect on the PE */
+#define	SCTLR_TCF_NO_EFFECT	U(0)
+/* Tag Check Faults in EL1 cause a synchronous exception */
+#define	SCTLR_TCF_SYNC		U(1)
+/* Tag Check Faults in EL1 are asynchronously accumulated */
+#define	SCTLR_TCF_ASYNC		U(2)
+/*
+ * Tag Check Faults in EL1 cause a synchronous exception on reads,
+ * and are asynchronously accumulated on writes
+ */
+#define	SCTLR_TCF_SYNCR_ASYNCW	U(3)
+
+#define SCTLR_ATA0_BIT		(ULL(1) << 42)
+#define SCTLR_ATA_BIT		(ULL(1) << 43)
 #define SCTLR_DSSBS_BIT		(ULL(1) << 44)
+#define SCTLR_TWEDEn_BIT	(ULL(1) << 45)
+#define SCTLR_TWEDEL_SHIFT	U(46)
+#define SCTLR_TWEDEL_MASK	ULL(0xf)
+#define SCTLR_EnASR_BIT		(ULL(1) << 54)
+#define SCTLR_EnAS0_BIT		(ULL(1) << 55)
+#define SCTLR_EnALS_BIT		(ULL(1) << 56)
+#define SCTLR_EPAN_BIT		(ULL(1) << 57)
 #define SCTLR_RESET_VAL		SCTLR_EL3_RES1
 
-/* CPACR_El1 definitions */
+/* CPACR_EL1 definitions */
 #define CPACR_EL1_FPEN(x)	((x) << 20)
 #define CPACR_EL1_FP_TRAP_EL0	UL(0x1)
 #define CPACR_EL1_FP_TRAP_ALL	UL(0x2)
@@ -334,9 +409,10 @@
 #define SCR_RES1_BITS		((U(1) << 4) | (U(1) << 5))
 #define SCR_TWEDEL_SHIFT	U(30)
 #define SCR_TWEDEL_MASK		ULL(0xf)
+#define SCR_AMVOFFEN_BIT	(UL(1) << 35)
 #define SCR_TWEDEn_BIT		(UL(1) << 29)
-#define SCR_ECVEN_BIT           (UL(1) << 28)
-#define SCR_FGTEN_BIT           (UL(1) << 27)
+#define SCR_ECVEN_BIT		(UL(1) << 28)
+#define SCR_FGTEN_BIT		(UL(1) << 27)
 #define SCR_ATA_BIT		(UL(1) << 26)
 #define SCR_FIEN_BIT		(UL(1) << 21)
 #define SCR_EEL2_BIT		(UL(1) << 18)
@@ -358,6 +434,7 @@
 #define SCR_RESET_VAL		SCR_RES1_BITS
 
 /* MDCR_EL3 definitions */
+#define MDCR_MTPME_BIT		(ULL(1) << 28)
 #define MDCR_SCCD_BIT		(ULL(1) << 23)
 #define MDCR_SPME_BIT		(ULL(1) << 17)
 #define MDCR_SDD_BIT		(ULL(1) << 16)
@@ -373,6 +450,7 @@
 #define MDCR_EL3_RESET_VAL	ULL(0x0)
 
 /* MDCR_EL2 definitions */
+#define MDCR_EL2_MTPME		(U(1) << 28)
 #define MDCR_EL2_HLP		(U(1) << 26)
 #define MDCR_EL2_HCCD		(U(1) << 23)
 #define MDCR_EL2_TTRF		(U(1) << 19)
@@ -405,6 +483,7 @@
 #define VTTBR_BADDR_SHIFT	U(0)
 
 /* HCR definitions */
+#define HCR_AMVOFFEN_BIT	(ULL(1) << 51)
 #define HCR_API_BIT		(ULL(1) << 41)
 #define HCR_APK_BIT		(ULL(1) << 40)
 #define HCR_E2H_BIT		(ULL(1) << 34)
@@ -647,13 +726,13 @@
 #define MAX_CACHE_LINE_SIZE	U(0x800) /* 2KB */
 
 /* Physical timer control register bit fields shifts and masks */
-#define CNTP_CTL_ENABLE_SHIFT   U(0)
-#define CNTP_CTL_IMASK_SHIFT    U(1)
-#define CNTP_CTL_ISTATUS_SHIFT  U(2)
+#define CNTP_CTL_ENABLE_SHIFT	U(0)
+#define CNTP_CTL_IMASK_SHIFT	U(1)
+#define CNTP_CTL_ISTATUS_SHIFT	U(2)
 
-#define CNTP_CTL_ENABLE_MASK    U(1)
-#define CNTP_CTL_IMASK_MASK     U(1)
-#define CNTP_CTL_ISTATUS_MASK   U(1)
+#define CNTP_CTL_ENABLE_MASK	U(1)
+#define CNTP_CTL_IMASK_MASK	U(1)
+#define CNTP_CTL_ISTATUS_MASK	U(1)
 
 /* Physical timer control macros */
 #define CNTP_CTL_ENABLE_BIT	(U(1) << CNTP_CTL_ENABLE_SHIFT)
@@ -839,7 +918,7 @@
 #define MPAM3_EL3		S3_6_C10_C5_0
 
 /*******************************************************************************
- * Definitions for system register interface to AMU for ARMv8.4 onwards
+ * Definitions for system register interface to AMU for FEAT_AMUv1
  ******************************************************************************/
 #define AMCR_EL0		S3_3_C13_C2_0
 #define AMCFGR_EL0		S3_3_C13_C2_1
@@ -916,6 +995,50 @@
 #define MPAM2_EL2_TRAPMPAM1EL1		(ULL(1) << 48)
 
 #define MPAMIDR_HAS_HCR_BIT		(ULL(1) << 17)
+
+/*******************************************************************************
+ * Definitions for system register interface to AMU for FEAT_AMUv1p1
+ ******************************************************************************/
+
+/* Definition for register defining which virtual offsets are implemented. */
+#define AMCG1IDR_EL0		S3_3_C13_C2_6
+#define AMCG1IDR_CTR_MASK	ULL(0xffff)
+#define AMCG1IDR_CTR_SHIFT	U(0)
+#define AMCG1IDR_VOFF_MASK	ULL(0xffff)
+#define AMCG1IDR_VOFF_SHIFT	U(16)
+
+/* New bit added to AMCR_EL0 */
+#define AMCR_CG1RZ_BIT		(ULL(0x1) << 17)
+
+/*
+ * Definitions for virtual offset registers for architected activity monitor
+ * event counters.
+ * AMEVCNTVOFF01_EL2 intentionally left undefined, as it does not exist.
+ */
+#define AMEVCNTVOFF00_EL2	S3_4_C13_C8_0
+#define AMEVCNTVOFF02_EL2	S3_4_C13_C8_2
+#define AMEVCNTVOFF03_EL2	S3_4_C13_C8_3
+
+/*
+ * Definitions for virtual offset registers for auxiliary activity monitor event
+ * counters.
+ */
+#define AMEVCNTVOFF10_EL2	S3_4_C13_C10_0
+#define AMEVCNTVOFF11_EL2	S3_4_C13_C10_1
+#define AMEVCNTVOFF12_EL2	S3_4_C13_C10_2
+#define AMEVCNTVOFF13_EL2	S3_4_C13_C10_3
+#define AMEVCNTVOFF14_EL2	S3_4_C13_C10_4
+#define AMEVCNTVOFF15_EL2	S3_4_C13_C10_5
+#define AMEVCNTVOFF16_EL2	S3_4_C13_C10_6
+#define AMEVCNTVOFF17_EL2	S3_4_C13_C10_7
+#define AMEVCNTVOFF18_EL2	S3_4_C13_C11_0
+#define AMEVCNTVOFF19_EL2	S3_4_C13_C11_1
+#define AMEVCNTVOFF1A_EL2	S3_4_C13_C11_2
+#define AMEVCNTVOFF1B_EL2	S3_4_C13_C11_3
+#define AMEVCNTVOFF1C_EL2	S3_4_C13_C11_4
+#define AMEVCNTVOFF1D_EL2	S3_4_C13_C11_5
+#define AMEVCNTVOFF1E_EL2	S3_4_C13_C11_6
+#define AMEVCNTVOFF1F_EL2	S3_4_C13_C11_7
 
 /*******************************************************************************
  * RAS system registers

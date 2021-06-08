@@ -28,7 +28,7 @@ static scmi_channel_plat_info_t sgi575_scmi_plat_info = {
 		.ring_doorbell = &mhu_ring_doorbell,
 };
 
-static scmi_channel_plat_info_t rd_n1e1_edge_scmi_plat_info[] = {
+static scmi_channel_plat_info_t plat_rd_scmi_info[] = {
 	{
 		.scmi_mbx_mem = CSS_SCMI_PAYLOAD_BASE,
 		.db_reg_addr = PLAT_CSS_MHU_BASE + SENDER_REG_SET(0),
@@ -74,10 +74,12 @@ static scmi_channel_plat_info_t rd_n1e1_edge_scmi_plat_info[] = {
 scmi_channel_plat_info_t *plat_css_get_scmi_info(int channel_id)
 {
 	if (sgi_plat_info.platform_id == RD_N1E1_EDGE_SID_VER_PART_NUM ||
-		sgi_plat_info.platform_id == RD_DANIEL_SID_VER_PART_NUM) {
-		if (channel_id >= ARRAY_SIZE(rd_n1e1_edge_scmi_plat_info))
+		sgi_plat_info.platform_id == RD_V1_SID_VER_PART_NUM ||
+		sgi_plat_info.platform_id == RD_N2_SID_VER_PART_NUM ||
+		sgi_plat_info.platform_id == RD_N2_CFG1_SID_VER_PART_NUM) {
+		if (channel_id >= ARRAY_SIZE(plat_rd_scmi_info))
 			panic();
-		return &rd_n1e1_edge_scmi_plat_info[channel_id];
+		return &plat_rd_scmi_info[channel_id];
 	}
 	else if (sgi_plat_info.platform_id == SGI575_SSC_VER_PART_NUM)
 		return &sgi575_scmi_plat_info;
@@ -107,12 +109,11 @@ void sgi_bl31_common_platform_setup(void)
 const plat_psci_ops_t *plat_arm_psci_override_pm_ops(plat_psci_ops_t *ops)
 {
 	/*
-	 * For RD-E1-Edge and RD-Daniel platforms, only CPU power ON/OFF
-	 * PSCI platform callbacks are supported.
+	 * For RD-E1-Edge, only CPU power ON/OFF, PSCI platform callbacks are
+	 * supported.
 	 */
 	if (((sgi_plat_info.platform_id == RD_N1E1_EDGE_SID_VER_PART_NUM) &&
-	    (sgi_plat_info.config_id == RD_E1_EDGE_CONFIG_ID)) ||
-	    (sgi_plat_info.platform_id == RD_DANIEL_SID_VER_PART_NUM)) {
+	    (sgi_plat_info.config_id == RD_E1_EDGE_CONFIG_ID))) {
 		ops->cpu_standby = NULL;
 		ops->system_off = NULL;
 		ops->system_reset = NULL;

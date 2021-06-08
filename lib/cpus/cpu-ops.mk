@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014-2020, ARM Limited and Contributors. All rights reserved.
+# Copyright (c) 2014-2021, ARM Limited and Contributors. All rights reserved.
 # Copyright (c) 2020, NVIDIA Corporation. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -25,9 +25,9 @@ WORKAROUND_CVE_2017_5715	?=1
 WORKAROUND_CVE_2018_3639	?=1
 DYNAMIC_WORKAROUND_CVE_2018_3639	?=0
 
-# Flag to indicate internal or external Last level cache
+# Flags to indicate internal or external Last level cache
 # By default internal
-NEOVERSE_N1_EXTERNAL_LLC	?=0
+NEOVERSE_Nx_EXTERNAL_LLC	?=0
 
 # Process A57_ENABLE_NONCACHEABLE_LOAD_FWD flag
 $(eval $(call assert_boolean,A57_ENABLE_NONCACHEABLE_LOAD_FWD))
@@ -56,8 +56,8 @@ $(eval $(call add_define,WORKAROUND_CVE_2018_3639))
 $(eval $(call assert_boolean,DYNAMIC_WORKAROUND_CVE_2018_3639))
 $(eval $(call add_define,DYNAMIC_WORKAROUND_CVE_2018_3639))
 
-$(eval $(call assert_boolean,NEOVERSE_N1_EXTERNAL_LLC))
-$(eval $(call add_define,NEOVERSE_N1_EXTERNAL_LLC))
+$(eval $(call assert_boolean,NEOVERSE_Nx_EXTERNAL_LLC))
+$(eval $(call add_define,NEOVERSE_Nx_EXTERNAL_LLC))
 
 ifneq (${DYNAMIC_WORKAROUND_CVE_2018_3639},0)
     ifeq (${WORKAROUND_CVE_2018_3639},0)
@@ -270,10 +270,6 @@ ERRATA_A76_1286807	?=0
 # only to revision <= r4p0 of the Cortex A76 cpu.
 ERRATA_A76_1791580	?=0
 
-# Flag to apply erratum 1800710 workaround during reset. This erratum applies
-# only to revision <= r4p0 of the Cortex A76 cpu.
-ERRATA_A76_1800710	?=0
-
 # Flag to apply erratum 1165522 workaround during reset. This erratum applies
 # to all revisions of Cortex A76 cpu.
 ERRATA_A76_1165522	?=0
@@ -282,21 +278,34 @@ ERRATA_A76_1165522	?=0
 # only to revision <= r4p0 of the Cortex A76 cpu.
 ERRATA_A76_1868343	?=0
 
+# Flag to apply erratum 1946160 workaround during reset. This erratum applies
+# only to revisions r3p0 - r4p1 of the Cortex A76 cpu.
+ERRATA_A76_1946160	?=0
+
 # Flag to apply erratum 1508412 workaround during reset. This erratum applies
 # only to revision <= r1p0 of the Cortex A77 cpu.
 ERRATA_A77_1508412	?=0
-
-# Flag to apply erratum 1800714 workaround during reset. This erratum applies
-# only to revision <= r1p1 of the Cortex A77 cpu.
-ERRATA_A77_1800714	?=0
 
 # Flag to apply erratum 1925769 workaround during reset. This erratum applies
 # only to revision <= r1p1 of the Cortex A77 cpu.
 ERRATA_A77_1925769	?=0
 
+# Flag to apply erratum 1946167 workaround during reset. This erratum applies
+# only to revision <= r1p1 of the Cortex A77 cpu.
+ERRATA_A77_1946167	?=0
+
 # Flag to apply erratum 1688305 workaround during reset. This erratum applies
 # to revisions r0p0 - r1p0 of the A78 cpu.
 ERRATA_A78_1688305	?=0
+
+# Flag to apply erratum 1941498 workaround during reset. This erratum applies
+# to revisions r0p0, r1p0, and r1p1 of the A78 cpu.
+ERRATA_A78_1941498	?=0
+
+# Flag to apply erratum 1951500 workaround during reset. This erratum applies
+# to revisions r1p0 and r1p1 of the A78 cpu.  The issue is present in r0p0 as
+# well but there is no workaround for that revision.
+ERRATA_A78_1951500	?=0
 
 # Flag to apply T32 CLREX workaround during reset. This erratum applies
 # only to r0p0 and r1p0 of the Neoverse N1 cpu.
@@ -349,6 +358,11 @@ ERRATA_N1_1542419	?=0
 # Flag to apply erratum 1868343 workaround during reset. This erratum applies
 # to revision <= r4p0 of the Neoverse N1 cpu.
 ERRATA_N1_1868343	?=0
+
+# Flag to apply erratum 1946160 workaround during reset. This erratum applies
+# to revisions r3p0, r3p1, r4p0, and r4p1 of the Neoverse N1 cpu.  The issue
+# exists in revisions r0p0, r1p0, and r2p0 as well but there is no workaround.
+ERRATA_N1_1946160	?=0
 
 # Flag to apply DSU erratum 798953. This erratum applies to DSUs revision r0p0.
 # Applying the workaround results in higher DSU power consumption on idle.
@@ -555,10 +569,6 @@ $(eval $(call add_define,ERRATA_A76_1286807))
 $(eval $(call assert_boolean,ERRATA_A76_1791580))
 $(eval $(call add_define,ERRATA_A76_1791580))
 
-# Process ERRATA_A76_1800710 flag
-$(eval $(call assert_boolean,ERRATA_A76_1800710))
-$(eval $(call add_define,ERRATA_A76_1800710))
-
 # Process ERRATA_A76_1165522 flag
 $(eval $(call assert_boolean,ERRATA_A76_1165522))
 $(eval $(call add_define,ERRATA_A76_1165522))
@@ -567,21 +577,33 @@ $(eval $(call add_define,ERRATA_A76_1165522))
 $(eval $(call assert_boolean,ERRATA_A76_1868343))
 $(eval $(call add_define,ERRATA_A76_1868343))
 
+# Process ERRATA_A76_1946160 flag
+$(eval $(call assert_boolean,ERRATA_A76_1946160))
+$(eval $(call add_define,ERRATA_A76_1946160))
+
 # Process ERRATA_A77_1508412 flag
 $(eval $(call assert_boolean,ERRATA_A77_1508412))
 $(eval $(call add_define,ERRATA_A77_1508412))
-
-# Process ERRATA_A77_1800714 flag
-$(eval $(call assert_boolean,ERRATA_A77_1800714))
-$(eval $(call add_define,ERRATA_A77_1800714))
 
 # Process ERRATA_A77_1925769 flag
 $(eval $(call assert_boolean,ERRATA_A77_1925769))
 $(eval $(call add_define,ERRATA_A77_1925769))
 
+# Process ERRATA_A77_1946167 flag
+$(eval $(call assert_boolean,ERRATA_A77_1946167))
+$(eval $(call add_define,ERRATA_A77_1946167))
+
 # Process ERRATA_A78_1688305 flag
 $(eval $(call assert_boolean,ERRATA_A78_1688305))
 $(eval $(call add_define,ERRATA_A78_1688305))
+
+# Process ERRATA_A78_1941498 flag
+$(eval $(call assert_boolean,ERRATA_A78_1941498))
+$(eval $(call add_define,ERRATA_A78_1941498))
+
+# Process ERRATA_A78_1951500 flag
+$(eval $(call assert_boolean,ERRATA_A78_1951500))
+$(eval $(call add_define,ERRATA_A78_1951500))
 
 # Process ERRATA_N1_1043202 flag
 $(eval $(call assert_boolean,ERRATA_N1_1043202))
@@ -634,6 +656,10 @@ $(eval $(call add_define,ERRATA_N1_1542419))
 # Process ERRATA_N1_1868343 flag
 $(eval $(call assert_boolean,ERRATA_N1_1868343))
 $(eval $(call add_define,ERRATA_N1_1868343))
+
+# Process ERRATA_N1_1946160 flag
+$(eval $(call assert_boolean,ERRATA_N1_1946160))
+$(eval $(call add_define,ERRATA_N1_1946160))
 
 # Process ERRATA_DSU_798953 flag
 $(eval $(call assert_boolean,ERRATA_DSU_798953))

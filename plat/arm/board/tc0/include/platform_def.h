@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Arm Limited. All rights reserved.
+ * Copyright (c) 2020-2021, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -17,7 +17,7 @@
 #include <plat/arm/soc/common/soc_css_def.h>
 #include <plat/common/common_def.h>
 
-#define PLATFORM_CORE_COUNT		4
+#define PLATFORM_CORE_COUNT		8
 
 #define PLAT_ARM_TRUSTED_SRAM_SIZE	0x00080000	/* 512 KB */
 
@@ -112,7 +112,7 @@
  * little space for growth.
  */
 #if TRUSTED_BOARD_BOOT
-# define PLAT_ARM_MAX_BL2_SIZE		0x1E000
+# define PLAT_ARM_MAX_BL2_SIZE		0x20000
 #else
 # define PLAT_ARM_MAX_BL2_SIZE		0x14000
 #endif
@@ -202,7 +202,7 @@
 #define PLAT_ARM_SCMI_CHANNEL_COUNT	1
 
 #define PLAT_ARM_CLUSTER_COUNT		U(1)
-#define PLAT_MAX_CPUS_PER_CLUSTER	U(4)
+#define PLAT_MAX_CPUS_PER_CLUSTER	U(8)
 #define PLAT_MAX_PE_PER_CPU		U(1)
 
 #define PLAT_CSS_MHU_BASE		UL(0x45400000)
@@ -220,7 +220,7 @@
 /* GIC related constants */
 #define PLAT_ARM_GICD_BASE		UL(0x30000000)
 #define PLAT_ARM_GICC_BASE		UL(0x2C000000)
-#define PLAT_ARM_GICR_BASE		UL(0x30140000)
+#define PLAT_ARM_GICR_BASE		UL(0x30080000)
 
 /*
  * PLAT_CSS_MAX_SCP_BL2_SIZE is calculated using the current

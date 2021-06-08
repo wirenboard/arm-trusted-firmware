@@ -12,13 +12,13 @@ Arm FVPs without shifted affinities, and that do not support threaded CPU cores
 (64-bit host machine only).
 
 .. note::
-   The FVP models used are Version 11.12 Build 38, unless otherwise stated.
+   The FVP models used are Version 11.14 Build 21, unless otherwise stated.
 
 -  ``FVP_Base_AEMvA``
 -  ``FVP_Base_AEMv8A-AEMv8A``
 -  ``FVP_Base_AEMv8A-AEMv8A-AEMv8A-AEMv8A-CCN502``
--  ``FVP_Base_RevC-2xAEMv8A``
--  ``FVP_Base_Cortex-A32x4``
+-  ``FVP_Base_RevC-2xAEMvA``
+-  ``FVP_Base_Cortex-A32x4`` (Version 11.12 build 38)
 -  ``FVP_Base_Cortex-A35x4``
 -  ``FVP_Base_Cortex-A53x4``
 -  ``FVP_Base_Cortex-A55x4+Cortex-A75x4``
@@ -39,18 +39,23 @@ Arm FVPs without shifted affinities, and that do not support threaded CPU cores
 -  ``FVP_Base_Cortex-A76AEx8``
 -  ``FVP_Base_Cortex-A77x4``
 -  ``FVP_Base_Cortex-A78x4``
+-  ``FVP_Base_Matterhornx4``
+-  ``FVP_Morello``         (Version 0.10 build 542)
 -  ``FVP_Base_Neoverse-E1x1``
 -  ``FVP_Base_Neoverse-E1x2``
 -  ``FVP_Base_Neoverse-E1x4``
 -  ``FVP_Base_Neoverse-N1x4``
+-  ``FVP_Base_Neoverse-N2x4`` (Version 11.12 build 38)
 -  ``FVP_Base_Neoverse-V1x4``
 -  ``FVP_CSS_SGI-575``     (Version 11.10 build 36)
 -  ``FVP_CSS_SGM-775``
 -  ``FVP_RD_E1_edge``      (Version 11.9 build 41)
 -  ``FVP_RD_N1_edge``      (Version 11.10 build 36)
 -  ``FVP_RD_N1_edge_dual`` (Version 11.10 build 36)
--  ``FVP_RD_Daniel``       (Version 11.10 build 36)
--  ``FVP_TC0``             (Version 0.0 build 6114)
+-  ``FVP_RD_Daniel``       (Version 11.13 build 10)
+-  ``FVP_RD_N2``           (Version 11.13 build 10)
+-  ``FVP_TC0``             (Version 0.0 build 6509)
+-  ``FVP_Base_AEMv8A-GIC600AE`` (Version 0.0 build 6415)
 -  ``Foundation_Platform``
 
 The latest version of the AArch32 build of TF-A has been tested on the
@@ -140,6 +145,11 @@ Arm FVP Platform Specific Build Options
    similar to the ``FVP_HW_CONFIG_DTS`` option, but it directly specifies the
    HW_CONFIG blob instead of the DTS file. This option is useful to override
    the default HW_CONFIG selected by the build system.
+
+-  ``FVP_GICR_REGION_PROTECTION``: Mark the redistributor pages of
+   inactive/fused CPU cores as read-only. The default value of this option
+   is ``0``, which means the redistributor pages of all CPU cores are marked
+   as read and write.
 
 Booting Firmware Update images
 ------------------------------
@@ -634,7 +644,7 @@ boot Linux with 4 CPUs using the AArch32 build of TF-A.
 
 --------------
 
-*Copyright (c) 2019-2020, Arm Limited. All rights reserved.*
+*Copyright (c) 2019-2021, Arm Limited. All rights reserved.*
 
 .. _TB_FW_CONFIG for FVP: https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git/tree/plat/arm/board/fvp/fdts/fvp_tb_fw_config.dts
 .. _Arm's website: `FVP models`_

@@ -9,6 +9,7 @@ Platform Ports
 
    allwinner
    arm/index
+   deprecated
    meson-axg
    meson-gxbb
    meson-gxl
@@ -20,6 +21,7 @@ Platform Ports
    marvell/index
    mt8183
    mt8192
+   mt8195
    nvidia-tegra
    warp7
    imx8
@@ -32,6 +34,7 @@ Platform Ports
    rpi3
    rpi4
    rcar-gen3
+   rz-g2
    rockchip
    socionext-uniphier
    synquacer

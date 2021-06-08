@@ -13,6 +13,7 @@ PLAT_MARVELL		=	plat/marvell/armada
 BLE_SOURCES		+= 	$(BLE_PATH)/ble_main.c				\
 				$(BLE_PATH)/ble_mem.S				\
 				drivers/delay_timer/delay_timer.c		\
+				drivers/marvell/iob.c				\
 				$(PLAT_MARVELL)/common/aarch64/marvell_helpers.S \
 				$(PLAT_MARVELL)/common/plat_delay_timer.c	\
 				$(PLAT_MARVELL)/common/marvell_console.c
@@ -25,8 +26,6 @@ PLAT_INCLUDES		+= 	-I$(MV_DDR_PATH)				\
 				-I$(CURDIR)/drivers/marvell
 
 BLE_LINKERFILE		:=	$(BLE_PATH)/ble.ld.S
-
-FORCE:
 
 $(MV_DDR_LIB): FORCE
 	@+make -C $(MV_DDR_PATH) --no-print-directory PLAT_INCLUDES="$(PLAT_INCLUDES)" PLATFORM=$(PLAT) ARCH=AARCH64 OBJ_DIR=$(BUILD_PLAT)/ble

@@ -10,7 +10,7 @@
 / {
 
 	chosen {
-		stdout-path = "soc_uart0:115200n8";
+		stdout-path = "serial0:115200n8";
 	};
 
 	reserved-memory {
@@ -80,10 +80,22 @@
 		interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
+	virtio_net@1c180000 {
+		compatible = "virtio,mmio";
+		reg = <0x0 0x1c180000 0x0 0x200>;
+		interrupts = <GIC_SPI 102 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
 	virtio_rng@1c190000 {
-		compatible = "virtio,mmio","virtio-rng";
+		compatible = "virtio,mmio";
 		reg = <0x0 0x1c190000 0x0 0x200>;
 		interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	virtio_p9@1c1a0000 {
+		compatible = "virtio,mmio";
+		reg = <0x0 0x1c1a0000 0x0 0x200>;
+		interrupts = <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	ethernet@1d100000 {

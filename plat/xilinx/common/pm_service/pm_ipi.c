@@ -18,6 +18,8 @@
 #include "pm_ipi.h"
 
 
+#define ERROR_CODE_MASK		0xFFFFU
+
 DEFINE_BAKERY_LOCK(pm_secure_lock);
 
 /**
@@ -53,11 +55,12 @@ static enum pm_ret_status pm_ipi_send_common(const struct pm_proc *proc,
 					     uint32_t payload[PAYLOAD_ARG_CNT],
 					     uint32_t is_blocking)
 {
+	int status;
 	unsigned int offset = 0;
 	uintptr_t buffer_base = proc->ipi->buffer_base +
 					IPI_BUFFER_TARGET_REMOTE_OFFSET +
 					IPI_BUFFER_REQ_OFFSET;
-#if ZYNQMP_IPI_CRC_CHECK
+#if IPI_CRC_CHECK
 	payload[PAYLOAD_CRC_POS] = calculate_crc(payload, IPI_W0_TO_W6_SIZE);
 #endif
 
@@ -68,10 +71,13 @@ static enum pm_ret_status pm_ipi_send_common(const struct pm_proc *proc,
 	}
 
 	/* Generate IPI to remote processor */
-	ipi_mb_notify(proc->ipi->local_ipi_id, proc->ipi->remote_ipi_id,
+	status = ipi_mb_notify(proc->ipi->local_ipi_id, proc->ipi->remote_ipi_id,
 		      is_blocking);
+	if (status == 0) {
+		return PM_RET_SUCCESS;
+	}
 
-	return PM_RET_SUCCESS;
+	return PM_RET_ERROR_TIMEOUT;
 }
 
 /**
@@ -135,7 +141,7 @@ static enum pm_ret_status pm_ipi_buff_read(const struct pm_proc *proc,
 					   unsigned int *value, size_t count)
 {
 	size_t i;
-#if ZYNQMP_IPI_CRC_CHECK
+#if IPI_CRC_CHECK
 	size_t j;
 	unsigned int response_payload[PAYLOAD_ARG_CNT];
 #endif
@@ -154,7 +160,7 @@ static enum pm_ret_status pm_ipi_buff_read(const struct pm_proc *proc,
 		*value = mmio_read_32(buffer_base + (i * PAYLOAD_ARG_SIZE));
 		value++;
 	}
-#if ZYNQMP_IPI_CRC_CHECK
+#if IPI_CRC_CHECK
 	for (j = 0; j < PAYLOAD_ARG_CNT; j++)
 		response_payload[j] = mmio_read_32(buffer_base +
 						(j * PAYLOAD_ARG_SIZE));
@@ -179,7 +185,7 @@ static enum pm_ret_status pm_ipi_buff_read(const struct pm_proc *proc,
 void pm_ipi_buff_read_callb(unsigned int *value, size_t count)
 {
 	size_t i;
-#if ZYNQMP_IPI_CRC_CHECK
+#if IPI_CRC_CHECK
 	size_t j;
 	unsigned int response_payload[PAYLOAD_ARG_CNT];
 #endif
@@ -194,7 +200,7 @@ void pm_ipi_buff_read_callb(unsigned int *value, size_t count)
 		*value = mmio_read_32(buffer_base + (i * PAYLOAD_ARG_SIZE));
 		value++;
 	}
-#if ZYNQMP_IPI_CRC_CHECK
+#if IPI_CRC_CHECK
 	for (j = 0; j < PAYLOAD_ARG_CNT; j++)
 		response_payload[j] = mmio_read_32(buffer_base +
 						(j * PAYLOAD_ARG_SIZE));
@@ -230,7 +236,7 @@ enum pm_ret_status pm_ipi_send_sync(const struct pm_proc *proc,
 	if (ret != PM_RET_SUCCESS)
 		goto unlock;
 
-	ret = pm_ipi_buff_read(proc, value, count);
+	ret = ERROR_CODE_MASK & (pm_ipi_buff_read(proc, value, count));
 
 unlock:
 	bakery_lock_release(&pm_secure_lock);
@@ -260,7 +266,7 @@ uint32_t pm_ipi_irq_status(const struct pm_proc *proc)
 		return 0;
 }
 
-#if ZYNQMP_IPI_CRC_CHECK
+#if IPI_CRC_CHECK
 uint32_t calculate_crc(uint32_t *payload, uint32_t bufsize)
 {
 	uint32_t crcinit = CRC_INIT_VALUE;
