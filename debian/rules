@@ -13,7 +13,7 @@ else
 VERBOSE=1
 endif
 
-platforms := g12a gxbb sun50i_a64 sun50i_h6 rk3328 rk3399
+platforms := g12a gxbb sun50i_a64 sun50i_h6 rk3328 rk3399 rpi3 rpi4
 target = $(if $(filter rk3328 rk3399,$@),bl31/bl31.elf,bl31.bin)
 
 %:
