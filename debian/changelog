@@ -1,3 +1,25 @@
+arm-trusted-firmware (2.5+dfsg-1) experimental; urgency=medium
+
+  * New upstream release
+
+  [ Nicolas Boulenguez ]
+  * Make each command run by Make visible in the build log
+    (Closes: #979278)
+  * Read DEB_HOST_ARCH from /usr/share/architecture.mk instead of
+    environment (Closes: #986059)
+  * Fix cross build of tools by setting HOSTCC from CC (Closes: #986058)
+  * Fix dependencies allowing cross build of rk3399 (Closes: #986057)
+  * Lintian override for non-linux firmware (Closes: #986056)
+  * Drop unused shlibs:Depends debhelper variable from firmware package
+    (Closes: #986055)
+
+  [ Vagrant Cascadian ]
+  * debian/control: Drop explicit branch from Vcs-Git.
+  * debian/copyright: Update for 2.5.
+  * Build rpi3 and rpi4 platforms. (Closes: #989579)
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Tue, 08 Jun 2021 20:04:40 -0700
+
 arm-trusted-firmware (2.4+dfsg-2) unstable; urgency=medium
 
   * Upload to unstable.
