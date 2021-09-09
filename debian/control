@@ -2,7 +2,7 @@ Source: arm-trusted-firmware
 Section: admin
 Priority: optional
 Maintainer: Vagrant Cascadian <vagrant@debian.org>
-Standards-Version: 4.5.1
+Standards-Version: 4.6.0
 Build-Depends: debhelper-compat (= 13),
  gcc-arm-none-eabi:native [arm64],
  binutils-arm-none-eabi:native [arm64],
