@@ -1,3 +1,9 @@
+arm-trusted-firmware (2.5+dfsg-2) unstable; urgency=medium
+
+  * debian/control: Update Standards-Version to 4.6.0, no changes.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Wed, 08 Sep 2021 19:35:43 -0700
+
 arm-trusted-firmware (2.5+dfsg-1) experimental; urgency=medium
 
   * New upstream release
