@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Vagrant Cascadian <vagrant@debian.org>
 Standards-Version: 4.6.0
 Build-Depends: debhelper-compat (= 13),
- gcc-arm-none-eabi:native [arm64],
+ gcc-arm-none-eabi [arm64],
  binutils-arm-none-eabi [arm64],
  libssl-dev <!pkg.arm-trusted-firmware.notools>,
 Rules-Requires-Root: no
