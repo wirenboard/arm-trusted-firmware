@@ -1,3 +1,13 @@
+arm-trusted-firmware (2.6~rc0+dfsg-1) experimental; urgency=medium
+
+  * New upstream release candidate.
+  * debian/control: Remove "native" qualifier from binutils-arm-none-eabi
+    in Build-Depends.
+  * debian/control: Remove "native" qualifier from gcc-arm-none-eabi in
+    Build-Depends.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Wed, 17 Nov 2021 10:31:10 -0800
+
 arm-trusted-firmware (2.5+dfsg-2) unstable; urgency=medium
 
   * debian/control: Update Standards-Version to 4.6.0, no changes.
