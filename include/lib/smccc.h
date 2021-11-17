@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2016-2021, ARM Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -51,6 +51,23 @@
 					 FUNCID_OEN_MASK)
 
 /*******************************************************************************
+ * SMCCC_ARCH_SOC_ID SoC version & revision bit definition
+ ******************************************************************************/
+#define SOC_ID_JEP_106_BANK_IDX_MASK	GENMASK_32(30, 24)
+#define SOC_ID_JEP_106_BANK_IDX_SHIFT	U(24)
+#define SOC_ID_JEP_106_ID_CODE_MASK	GENMASK_32(23, 16)
+#define SOC_ID_JEP_106_ID_CODE_SHIFT	U(16)
+#define SOC_ID_IMPL_DEF_MASK		GENMASK_32(15, 0)
+#define SOC_ID_IMPL_DEF_SHIFT		U(0)
+#define SOC_ID_SET_JEP_106(bkid, mfid)	((((bkid) << SOC_ID_JEP_106_BANK_IDX_SHIFT) & \
+					  SOC_ID_JEP_106_BANK_IDX_MASK) | \
+					 (((mfid) << SOC_ID_JEP_106_ID_CODE_SHIFT) & \
+					  SOC_ID_JEP_106_ID_CODE_MASK))
+
+#define SOC_ID_REV_MASK			GENMASK_32(30, 0)
+#define SOC_ID_REV_SHIFT		U(0)
+
+/*******************************************************************************
  * Owning entity number definitions inside the function id as per the SMC
  * calling convention
  ******************************************************************************/
@@ -91,9 +108,24 @@
 #define SMC_ARCH_CALL_NOT_REQUIRED	-2
 #define SMC_ARCH_CALL_INVAL_PARAM	-3
 
-/* Various flags passed to SMC handlers */
+/*
+ * Various flags passed to SMC handlers
+ *
+ * Bit 5 and bit 0 of the flag are used to
+ * determine the source security state as
+ * follows:
+ * ---------------------------------
+ *  Bit 5 | Bit 0 | Security state
+ * ---------------------------------
+ *   0        0      SMC_FROM_SECURE
+ *   0        1      SMC_FROM_NON_SECURE
+ *   1        1      SMC_FROM_REALM
+ */
+
 #define SMC_FROM_SECURE		(U(0) << 0)
 #define SMC_FROM_NON_SECURE	(U(1) << 0)
+#define SMC_FROM_REALM		U(0x21)
+#define SMC_FROM_MASK		U(0x21)
 
 #ifndef __ASSEMBLER__
 
@@ -101,8 +133,18 @@
 
 #include <lib/cassert.h>
 
+#if ENABLE_RME
+#define is_caller_non_secure(_f)	(((_f) & SMC_FROM_MASK) \
+					  == SMC_FROM_NON_SECURE)
+#define is_caller_secure(_f)		(((_f) & SMC_FROM_MASK) \
+					  == SMC_FROM_SECURE)
+#define is_caller_realm(_f)		(((_f) & SMC_FROM_MASK) \
+					  == SMC_FROM_REALM)
+#define caller_sec_state(_f)		((_f) & SMC_FROM_MASK)
+#else /* ENABLE_RME */
 #define is_caller_non_secure(_f)	(((_f) & SMC_FROM_NON_SECURE) != U(0))
 #define is_caller_secure(_f)		(!is_caller_non_secure(_f))
+#endif /* ENABLE_RME */
 
 /* The macro below is used to identify a Standard Service SMC call */
 #define is_std_svc_call(_fid)		(GET_SMC_OEN(_fid) == OEN_STD_START)

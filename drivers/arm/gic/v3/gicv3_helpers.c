@@ -86,10 +86,50 @@ void gicv3_rdistif_base_addrs_probe(uintptr_t *rdistif_base_addrs,
 		if (proc_num < rdistif_num) {
 			rdistif_base_addrs[proc_num] = rdistif_base;
 		}
-
-		rdistif_base += (1U << GICR_PCPUBASE_SHIFT);
+		rdistif_base += gicv3_redist_size(typer_val);
 	} while ((typer_val & TYPER_LAST_BIT) == 0U);
 }
+
+/*******************************************************************************
+ * Helper function to get the maximum SPI INTID + 1.
+ ******************************************************************************/
+unsigned int gicv3_get_spi_limit(uintptr_t gicd_base)
+{
+	unsigned int spi_limit;
+	unsigned int typer_reg = gicd_read_typer(gicd_base);
+
+	/* (maximum SPI INTID + 1) is equal to 32 * (GICD_TYPER.ITLinesNumber+1) */
+	spi_limit = ((typer_reg & TYPER_IT_LINES_NO_MASK) + 1U) << 5;
+
+	/* Filter out special INTIDs 1020-1023 */
+	if (spi_limit > (MAX_SPI_ID + 1U)) {
+		return MAX_SPI_ID + 1U;
+	}
+
+	return spi_limit;
+}
+
+#if GIC_EXT_INTID
+/*******************************************************************************
+ * Helper function to get the maximum ESPI INTID + 1.
+ ******************************************************************************/
+unsigned int gicv3_get_espi_limit(uintptr_t gicd_base)
+{
+	unsigned int typer_reg = gicd_read_typer(gicd_base);
+
+	/* Check if extended SPI range is implemented */
+	if ((typer_reg & TYPER_ESPI) != 0U) {
+		/*
+		 * (maximum ESPI INTID + 1) is equal to
+		 * 32 * (GICD_TYPER.ESPI_range + 1) + 4096
+		 */
+		return ((((typer_reg >> TYPER_ESPI_RANGE_SHIFT) &
+			TYPER_ESPI_RANGE_MASK) + 1U) << 5) + MIN_ESPI_ID;
+	}
+
+	return 0U;
+}
+#endif /* GIC_EXT_INTID */
 
 /*******************************************************************************
  * Helper function to configure the default attributes of (E)SPIs.
@@ -100,19 +140,8 @@ void gicv3_spis_config_defaults(uintptr_t gicd_base)
 #if GIC_EXT_INTID
 	unsigned int num_eints;
 #endif
-	unsigned int typer_reg = gicd_read_typer(gicd_base);
 
-	/* Maximum SPI INTID is 32 * (GICD_TYPER.ITLinesNumber + 1) - 1 */
-	num_ints = ((typer_reg & TYPER_IT_LINES_NO_MASK) + 1U) << 5;
-
-	/*
-	 * The GICv3 architecture allows GICD_TYPER.ITLinesNumber to be 31, so
-	 * the maximum possible value for num_ints is 1024. Limit the value to
-	 * MAX_SPI_ID + 1 to avoid getting wrong address in GICD_OFFSET() macro.
-	 */
-	if (num_ints > MAX_SPI_ID + 1U) {
-		num_ints = MAX_SPI_ID + 1U;
-	}
+	num_ints = gicv3_get_spi_limit(gicd_base);
 	INFO("Maximum SPI INTID supported: %u\n", num_ints - 1);
 
 	/* Treat all (E)SPIs as G1NS by default. We do 32 at a time. */
@@ -121,13 +150,8 @@ void gicv3_spis_config_defaults(uintptr_t gicd_base)
 	}
 
 #if GIC_EXT_INTID
-	/* Check if extended SPI range is implemented */
-	if ((typer_reg & TYPER_ESPI) != 0U) {
-		/*
-		 * Maximum ESPI INTID is 32 * (GICD_TYPER.ESPI_range + 1) + 4095
-		 */
-		num_eints = ((((typer_reg >> TYPER_ESPI_RANGE_SHIFT) &
-			TYPER_ESPI_RANGE_MASK) + 1U) << 5) + MIN_ESPI_ID;
+	num_eints = gicv3_get_espi_limit(gicd_base);
+	if (num_eints != 0U) {
 		INFO("Maximum ESPI INTID supported: %u\n", num_eints - 1);
 
 		for (i = MIN_ESPI_ID; i < num_eints;
@@ -135,7 +159,6 @@ void gicv3_spis_config_defaults(uintptr_t gicd_base)
 			gicd_write_igroupr(gicd_base, i, ~0U);
 		}
 	} else {
-		num_eints = 0U;
 		INFO("ESPI range is not implemented.\n");
 	}
 #endif
@@ -359,12 +382,29 @@ unsigned int gicv3_rdistif_get_number_frames(const uintptr_t gicr_frame)
 	uintptr_t rdistif_base = gicr_frame;
 	unsigned int count;
 
-	for (count = 1; count < PLATFORM_CORE_COUNT; count++) {
-		if ((gicr_read_typer(rdistif_base) & TYPER_LAST_BIT) != 0U) {
+	for (count = 1U; count < PLATFORM_CORE_COUNT; count++) {
+		uint64_t typer_val = gicr_read_typer(rdistif_base);
+
+		if ((typer_val & TYPER_LAST_BIT) != 0U) {
 			break;
 		}
-		rdistif_base += (1U << GICR_PCPUBASE_SHIFT);
+		rdistif_base += gicv3_redist_size(typer_val);
 	}
 
 	return count;
+}
+
+unsigned int gicv3_get_component_partnum(const uintptr_t gic_frame)
+{
+	unsigned int part_id;
+
+	/*
+	 * The lower 8 bits of PIDR0, complemented by the lower 4 bits of
+	 * PIDR1 contain a part number identifying the GIC component at a
+	 * particular base address.
+	 */
+	part_id = mmio_read_32(gic_frame + GICD_PIDR0_GICV3) & 0xff;
+	part_id |= (mmio_read_32(gic_frame + GICD_PIDR1_GICV3) << 8) & 0xf00;
+
+	return part_id;
 }

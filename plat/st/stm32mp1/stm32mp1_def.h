@@ -28,9 +28,17 @@
 #include <stm32mp1_shared_resources.h>
 #endif
 
+#if !STM32MP_USE_STM32IMAGE
+#include "stm32mp1_fip_def.h"
+#else /* STM32MP_USE_STM32IMAGE */
+#include "stm32mp1_stm32image_def.h"
+#endif /* STM32MP_USE_STM32IMAGE */
+
 /*******************************************************************************
  * CHIP ID
  ******************************************************************************/
+#define STM32MP1_CHIP_ID	U(0x500)
+
 #define STM32MP157C_PART_NB	U(0x05000000)
 #define STM32MP157A_PART_NB	U(0x05000001)
 #define STM32MP153C_PART_NB	U(0x05000024)
@@ -79,13 +87,6 @@
 /* DDR configuration */
 #define STM32MP_DDR_BASE		U(0xC0000000)
 #define STM32MP_DDR_MAX_SIZE		U(0x40000000)	/* Max 1GB */
-#ifdef AARCH32_SP_OPTEE
-#define STM32MP_DDR_S_SIZE		U(0x01E00000)	/* 30 MB */
-#define STM32MP_DDR_SHMEM_SIZE		U(0x00200000)	/* 2 MB */
-#else
-#define STM32MP_DDR_S_SIZE		U(0)
-#define STM32MP_DDR_SHMEM_SIZE		U(0)
-#endif
 
 /* DDR power initializations */
 #ifndef __ASSEMBLER__
@@ -109,26 +110,6 @@ enum ddr_type {
 					 (STM32MP_PARAM_LOAD_SIZE +	\
 					  STM32MP_HEADER_SIZE))
 
-#ifdef AARCH32_SP_OPTEE
-#define STM32MP_BL32_SIZE		U(0)
-
-#define STM32MP_OPTEE_BASE		STM32MP_SEC_SYSRAM_BASE
-
-#define STM32MP_OPTEE_SIZE		(STM32MP_DTB_BASE -  \
-					 STM32MP_OPTEE_BASE)
-#else
-#define STM32MP_BL32_SIZE		U(0x00012000)	/* 72 KB for BL32 */
-#endif
-
-#define STM32MP_BL32_BASE		(STM32MP_SEC_SYSRAM_BASE + \
-					 STM32MP_SEC_SYSRAM_SIZE - \
-					 STM32MP_BL32_SIZE)
-
-#define STM32MP_BL2_SIZE		U(0x0001A000)	/* 100 KB for BL2 */
-
-#define STM32MP_BL2_BASE		(STM32MP_BL32_BASE - \
-					 STM32MP_BL2_SIZE)
-
 /* BL2 and BL32/sp_min require 4 tables */
 #define MAX_XLAT_TABLES			U(4)		/* 16 KB for mapping */
 
@@ -139,37 +120,12 @@ enum ddr_type {
 #if defined(IMAGE_BL2)
   #define MAX_MMAP_REGIONS		11
 #endif
-#if defined(IMAGE_BL32)
-  #define MAX_MMAP_REGIONS		6
-#endif
-
-/* DTB initialization value */
-#define STM32MP_DTB_SIZE		U(0x00005000)	/* 20 KB for DTB */
-
-#define STM32MP_DTB_BASE		(STM32MP_BL2_BASE - \
-					 STM32MP_DTB_SIZE)
 
 #define STM32MP_BL33_BASE		(STM32MP_DDR_BASE + U(0x100000))
+#define STM32MP_BL33_MAX_SIZE		U(0x400000)
 
 /* Define maximum page size for NAND devices */
 #define PLATFORM_MTD_MAX_PAGE_SIZE	U(0x1000)
-
-/*******************************************************************************
- * STM32MP1 RAW partition offset for MTD devices
- ******************************************************************************/
-#define STM32MP_NOR_BL33_OFFSET		U(0x00080000)
-#ifdef AARCH32_SP_OPTEE
-#define STM32MP_NOR_TEEH_OFFSET		U(0x00280000)
-#define STM32MP_NOR_TEED_OFFSET		U(0x002C0000)
-#define STM32MP_NOR_TEEX_OFFSET		U(0x00300000)
-#endif
-
-#define STM32MP_NAND_BL33_OFFSET	U(0x00200000)
-#ifdef AARCH32_SP_OPTEE
-#define STM32MP_NAND_TEEH_OFFSET	U(0x00600000)
-#define STM32MP_NAND_TEED_OFFSET	U(0x00680000)
-#define STM32MP_NAND_TEEX_OFFSET	U(0x00700000)
-#endif
 
 /*******************************************************************************
  * STM32MP1 device/io map related constants (used for MMU)
@@ -249,6 +205,8 @@ enum ddr_type {
 #define DEBUG_UART_TX_CLKSRC		RCC_UART24CKSELR_HSI
 #define DEBUG_UART_TX_EN_REG		RCC_MP_APB1ENSETR
 #define DEBUG_UART_TX_EN		RCC_MP_APB1ENSETR_UART4EN
+#define DEBUG_UART_RST_REG		RCC_APB1RSTSETR
+#define DEBUG_UART_RST_BIT		RCC_APB1RSTSETR_UART4RST
 
 /*******************************************************************************
  * STM32MP1 ETZPC
@@ -353,18 +311,6 @@ enum ddr_type {
  ******************************************************************************/
 #define STM32MP1_TZC_BASE		U(0x5C006000)
 
-#define STM32MP1_TZC_A7_ID		U(0)
-#define STM32MP1_TZC_M4_ID		U(1)
-#define STM32MP1_TZC_LCD_ID		U(3)
-#define STM32MP1_TZC_GPU_ID		U(4)
-#define STM32MP1_TZC_MDMA_ID		U(5)
-#define STM32MP1_TZC_DMA_ID		U(6)
-#define STM32MP1_TZC_USB_HOST_ID	U(7)
-#define STM32MP1_TZC_USB_OTG_ID		U(8)
-#define STM32MP1_TZC_SDMMC_ID		U(9)
-#define STM32MP1_TZC_ETH_ID		U(10)
-#define STM32MP1_TZC_DAP_ID		U(15)
-
 #define STM32MP1_FILTER_BIT_ALL		(TZC_400_REGION_ATTR_FILTER_BIT(0) | \
 					 TZC_400_REGION_ATTR_FILTER_BIT(1))
 
@@ -393,6 +339,9 @@ enum ddr_type {
 #define DATA0_OTP			U(0)
 #define PART_NUMBER_OTP			U(1)
 #define NAND_OTP			U(9)
+#define UID0_OTP			U(13)
+#define UID1_OTP			U(14)
+#define UID2_OTP			U(15)
 #define PACKAGE_OTP			U(16)
 #define HW2_OTP				U(18)
 
@@ -455,6 +404,9 @@ enum ddr_type {
 /* NAND number of planes */
 #define NAND_PLANE_BIT_NB_MASK		BIT(14)
 
+/* UID OTP */
+#define UID_WORD_NB			U(3)
+
 /*******************************************************************************
  * STM32MP1 TAMP
  ******************************************************************************/
@@ -467,6 +419,11 @@ static inline uint32_t tamp_bkpr(uint32_t idx)
 	return TAMP_BKP_REGISTER_BASE + (idx << 2);
 }
 #endif
+
+/*******************************************************************************
+ * STM32MP1 USB
+ ******************************************************************************/
+#define USB_OTG_BASE			U(0x49000000)
 
 /*******************************************************************************
  * STM32MP1 DDRCTRL

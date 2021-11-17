@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020, Renesas Electronics Corporation. All rights reserved.
+ * Copyright (c) 2015-2021, Renesas Electronics Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -20,6 +20,7 @@
 #include "pwrc.h"
 #include "rcar_def.h"
 #include "rcar_private.h"
+#include "cpg_registers.h"
 
 /*
  * Someday there will be a generic power controller api. At the moment each
@@ -43,6 +44,7 @@ RCAR_INSTANTIATE_LOCK
 #define CPU_PWR_OFF				(0x00000003U)
 #define RCAR_PSTR_MASK				(0x00000003U)
 #define ST_ALL_STANDBY				(0x00003333U)
+#define SYSCEXTMASK_EXTMSK0			(0x00000001U)
 /* Suspend to ram	*/
 #define DBSC4_REG_BASE				(0xE6790000U)
 #define DBSC4_REG_DBSYSCNT0			(DBSC4_REG_BASE + 0x0100U)
@@ -190,6 +192,8 @@ static void scu_power_up(uint64_t mpidr)
 {
 	uintptr_t reg_pwrsr, reg_cpumcr, reg_pwron, reg_pwrer;
 	uint32_t c, sysc_reg_bit;
+	uint32_t lsi_product;
+	uint32_t lsi_cut;
 
 	c = rcar_pwrc_get_mpidr_cluster(mpidr);
 	reg_cpumcr = IS_CA57(c) ? RCAR_CA57CPUCMCR : RCAR_CA53CPUCMCR;
@@ -204,6 +208,17 @@ static void scu_power_up(uint64_t mpidr)
 	if (mmio_read_32(reg_cpumcr) != 0)
 		mmio_write_32(reg_cpumcr, 0);
 
+	lsi_product = mmio_read_32((uintptr_t)RCAR_PRR);
+	lsi_cut = lsi_product & PRR_CUT_MASK;
+	lsi_product &= PRR_PRODUCT_MASK;
+
+	if ((lsi_product == PRR_PRODUCT_M3 && lsi_cut >= PRR_PRODUCT_30) ||
+	    lsi_product == PRR_PRODUCT_H3 ||
+	    lsi_product == PRR_PRODUCT_M3N ||
+	    lsi_product == PRR_PRODUCT_E3) {
+		mmio_setbits_32(RCAR_SYSCEXTMASK, SYSCEXTMASK_EXTMSK0);
+	}
+
 	mmio_setbits_32(RCAR_SYSCIER, sysc_reg_bit);
 	mmio_setbits_32(RCAR_SYSCIMR, sysc_reg_bit);
 
@@ -215,7 +230,15 @@ static void scu_power_up(uint64_t mpidr)
 
 	while ((mmio_read_32(RCAR_SYSCISR) & sysc_reg_bit) == 0)
 		;
-	mmio_write_32(RCAR_SYSCISR, sysc_reg_bit);
+	mmio_write_32(RCAR_SYSCISCR, sysc_reg_bit);
+
+	if ((lsi_product == PRR_PRODUCT_M3 && lsi_cut >= PRR_PRODUCT_30) ||
+	    lsi_product == PRR_PRODUCT_H3 ||
+	    lsi_product == PRR_PRODUCT_M3N ||
+	    lsi_product == PRR_PRODUCT_E3) {
+		mmio_clrbits_32(RCAR_SYSCEXTMASK, SYSCEXTMASK_EXTMSK0);
+	}
+
 	while ((mmio_read_32(reg_pwrsr) & STATUS_PWRUP) == 0)
 		;
 }
@@ -238,7 +261,7 @@ void rcar_pwrc_cpuon(uint64_t mpidr)
 	scu_power_up(mpidr);
 	cpu = mpidr & MPIDR_CPU_MASK;
 	on_data = 1 << cpu;
-	mmio_write_32(RCAR_CPGWPR, ~on_data);
+	mmio_write_32(CPG_CPGWPR, ~on_data);
 	mmio_write_32(on_reg, on_data);
 	mmio_write_32(res_reg, res_data & (~(1 << (3 - cpu))));
 
@@ -260,7 +283,7 @@ void rcar_pwrc_cpuoff(uint64_t mpidr)
 	if (read_mpidr_el1() != mpidr)
 		panic();
 
-	mmio_write_32(RCAR_CPGWPR, ~CPU_PWR_OFF);
+	mmio_write_32(CPG_CPGWPR, ~CPU_PWR_OFF);
 	mmio_write_32(reg + cpu * 0x0010, CPU_PWR_OFF);
 
 	rcar_lock_release();
@@ -753,14 +776,14 @@ void rcar_pwrc_code_copy_to_system_ram(void)
 	memcpy((void *)sram.base, code.base, code.len);
 	flush_dcache_range((uint64_t) sram.base, code.len);
 
+	attr = MT_MEMORY | MT_RO | MT_SECURE | MT_EXECUTE;
+	ret = xlat_change_mem_attributes(sram.base, sram.len, attr);
+	assert(ret == 0);
+
 	/* Invalidate instruction cache */
 	plat_invalidate_icache();
 	dsb();
 	isb();
-
-	attr = MT_MEMORY | MT_RO | MT_SECURE | MT_EXECUTE;
-	ret = xlat_change_mem_attributes(sram.base, sram.len, attr);
-	assert(ret == 0);
 }
 
 uint32_t rcar_pwrc_get_cluster(void)

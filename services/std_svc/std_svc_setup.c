@@ -13,6 +13,9 @@
 #include <lib/pmf/pmf.h>
 #include <lib/psci/psci.h>
 #include <lib/runtime_instr.h>
+#include <services/gtsi_svc.h>
+#include <services/pci_svc.h>
+#include <services/rmmd_svc.h>
 #include <services/sdei.h>
 #include <services/spm_mm_svc.h>
 #include <services/spmd_svc.h>
@@ -82,6 +85,15 @@ static uintptr_t std_svc_smc_handler(uint32_t smc_fid,
 			     void *handle,
 			     u_register_t flags)
 {
+	if (((smc_fid >> FUNCID_CC_SHIFT) & FUNCID_CC_MASK) == SMC_32) {
+		/* 32-bit SMC function, clear top parameter bits */
+
+		x1 &= UINT32_MAX;
+		x2 &= UINT32_MAX;
+		x3 &= UINT32_MAX;
+		x4 &= UINT32_MAX;
+	}
+
 	/*
 	 * Dispatch PSCI calls to PSCI SMC handler and return its return
 	 * value
@@ -148,6 +160,23 @@ static uintptr_t std_svc_smc_handler(uint32_t smc_fid,
 				flags);
 	}
 #endif
+#if ENABLE_RME
+	/*
+	 * Granule transition service interface functions (GTSI) are allocated
+	 * from the Std service range. Call the RMM dispatcher to handle calls.
+	 */
+	if (is_gtsi_fid(smc_fid)) {
+		return rmmd_gtsi_handler(smc_fid, x1, x2, x3, x4, cookie,
+						handle, flags);
+	}
+#endif
+
+#if SMC_PCI_SUPPORT
+	if (is_pci_fid(smc_fid)) {
+		return pci_smc_handler(smc_fid, x1, x2, x3, x4, cookie, handle,
+				       flags);
+	}
+#endif
 
 	switch (smc_fid) {
 	case ARM_STD_SVC_CALL_COUNT:
@@ -166,7 +195,7 @@ static uintptr_t std_svc_smc_handler(uint32_t smc_fid,
 		SMC_RET2(handle, STD_SVC_VERSION_MAJOR, STD_SVC_VERSION_MINOR);
 
 	default:
-		WARN("Unimplemented Standard Service Call: 0x%x \n", smc_fid);
+		VERBOSE("Unimplemented Standard Service Call: 0x%x \n", smc_fid);
 		SMC_RET1(handle, SMC_UNK);
 	}
 }

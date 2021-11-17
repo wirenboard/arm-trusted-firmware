@@ -16,6 +16,9 @@
  ******************************************************************************/
 #define CORTEX_A78_CPUECTLR_EL1				S3_0_C15_C1_4
 #define CORTEX_A78_CPUECTLR_EL1_BIT_8			(ULL(1) << 8)
+#define CORTEX_A78_CPUECTLR_EL1_PF_MODE_CNSRV		ULL(3)
+#define CPUECTLR_EL1_PF_MODE_LSB				U(6)
+#define CPUECTLR_EL1_PF_MODE_WIDTH				U(2)
 
 /*******************************************************************************
  * CPU Power Control register specific definitions
@@ -30,6 +33,7 @@
 
 #define CORTEX_A78_ACTLR2_EL1				S3_0_C15_C1_1
 #define CORTEX_A78_ACTLR2_EL1_BIT_1			(ULL(1) << 1)
+#define CORTEX_A78_ACTLR2_EL1_BIT_2			(ULL(1) << 2)
 
 /*******************************************************************************
  * CPU Activity Monitor Unit register specific definitions.

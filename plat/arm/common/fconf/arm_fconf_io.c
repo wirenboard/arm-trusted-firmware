@@ -18,6 +18,11 @@
 #include <plat/arm/common/arm_fconf_io_storage.h>
 #include <platform_def.h>
 
+#if PSA_FWU_SUPPORT
+/* metadata entry details */
+static io_block_spec_t fwu_metadata_spec;
+#endif /* PSA_FWU_SUPPORT */
+
 io_block_spec_t fip_block_spec = {
 /*
  * This is fixed FIP address used by BL1, BL2 loads partition table
@@ -62,6 +67,7 @@ const io_uuid_spec_t arm_uuid_spec[MAX_NUMBER_IDS] = {
 	[SOC_FW_CONFIG_ID] = {UUID_SOC_FW_CONFIG},
 	[TOS_FW_CONFIG_ID] = {UUID_TOS_FW_CONFIG},
 	[NT_FW_CONFIG_ID] = {UUID_NT_FW_CONFIG},
+	[RMM_IMAGE_ID] = {UUID_REALM_MONITOR_MGMT_FIRMWARE},
 #endif /* ARM_IO_IN_DTB */
 #if TRUSTED_BOARD_BOOT
 	[TRUSTED_BOOT_FW_CERT_ID] = {UUID_TRUSTED_BOOT_FW_CERT},
@@ -92,6 +98,20 @@ struct plat_io_policy policies[MAX_NUMBER_IDS] = {
 		open_memmap
 	},
 #endif /* ARM_GPT_SUPPORT */
+#if PSA_FWU_SUPPORT
+	[FWU_METADATA_IMAGE_ID] = {
+		&memmap_dev_handle,
+		/* filled runtime from partition information */
+		(uintptr_t)&fwu_metadata_spec,
+		open_memmap
+	},
+	[BKUP_FWU_METADATA_IMAGE_ID] = {
+		&memmap_dev_handle,
+		/* filled runtime from partition information */
+		(uintptr_t)&fwu_metadata_spec,
+		open_memmap
+	},
+#endif /* PSA_FWU_SUPPORT */
 	[FIP_IMAGE_ID] = {
 		&memmap_dev_handle,
 		(uintptr_t)&fip_block_spec,
@@ -141,6 +161,11 @@ struct plat_io_policy policies[MAX_NUMBER_IDS] = {
 	[BL33_IMAGE_ID] = {
 		&fip_dev_handle,
 		(uintptr_t)&arm_uuid_spec[BL33_IMAGE_ID],
+		open_fip
+	},
+	[RMM_IMAGE_ID] = {
+		&fip_dev_handle,
+		(uintptr_t)&arm_uuid_spec[RMM_IMAGE_ID],
 		open_fip
 	},
 	[HW_CONFIG_ID] = {

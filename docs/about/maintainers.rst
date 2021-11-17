@@ -109,6 +109,16 @@ Exception Handling Framework (EHF)
 :|G|: `john-powell-arm`_
 :|F|: bl31/ehf.c
 
+Realm Management Extension (RME)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:|M|: Bipin Ravi <bipin.ravi@arm.com>
+:|G|: `bipinravi-arm`_
+:|M|: Mark Dykes <mark.dykes@arm.com>
+:|G|: `mardyk01`_
+:|M|: John Powell <John.Powell@arm.com>
+:|G|: `john-powell-arm`_
+:|M|: Zelalem Aweke <Zelalem.Aweke@arm.com>
+:|G|: `zelalem-aweke`_
 
 Drivers, Libraries and Framework Code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -207,6 +217,8 @@ Activity Monitors Unit (AMU) extensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :|M|: Alexei Fedorov <Alexei.Fedorov@arm.com>
 :|G|: `AlexeiFedorov`_
+:|M|: Chris Kay <chris.kay@arm.com>
+:|G|: `CJKay`_
 :|F|: lib/extensions/amu/
 
 Memory Partitioning And Monitoring (MPAM) extensions
@@ -316,6 +328,13 @@ System Control and Management Interface (SCMI) Server
 :|F|: drivers/scmi-msg
 :|F|: include/drivers/scmi\*
 
+Max Power Mitigation Mechanism (MPMM)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:|M|: Chris Kay <chris.kay@arm.com>
+:|G|: `CJKay`_
+:|F|: include/lib/mpmm/
+:|F|: lib/mpmm/
+
 Platform Ports
 ~~~~~~~~~~~~~~
 
@@ -399,6 +418,7 @@ Arm Rich IoT Platform ports
 :|G|: `vishnu-banavath`_
 :|F|: plat/arm/board/corstone700
 :|F|: plat/arm/board/a5ds
+:|F|: plat/arm/board/diphda
 
 Arm Reference Design platform ports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -414,13 +434,13 @@ Arm Reference Design platform ports
 :|F|: plat/arm/board/rdv1mc/
 :|F|: plat/arm/board/sgi575/
 
-Arm Total Compute(tc0) platform port
+Arm Total Compute platform port
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :|M|: Arunachalam Ganapathy <arunachalam.ganapathy@arm.com>
 :|G|: `arugan02`_
 :|M|: Usama Arif <usama.arif@arm.com>
 :|G|: `uarif1`_
-:|F|: plat/arm/board/tc0
+:|F|: plat/arm/board/tc
 
 HiSilicon HiKey and HiKey960 platform ports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -449,8 +469,8 @@ Intel SocFPGA platform ports
 
 MediaTek platform ports
 ^^^^^^^^^^^^^^^^^^^^^^^
-:|M|: Yidi Lin (林以廸) <yidi.lin@mediatek.com>
-:|G|: `mtk09422`_
+:|M|: Rex-BC Chen <rex-bc.chen@mediatek.com>
+:|G|: `mtk-rex-bc-chen`_
 :|F|: plat/mediatek/
 
 Marvell platform ports and SoC drivers
@@ -493,8 +513,8 @@ NXP i.MX 7 WaRP7 platform port and SoC drivers
 
 NXP i.MX 8 platform port
 ^^^^^^^^^^^^^^^^^^^^^^^^
-:|M|: Anson Huang <Anson.Huang@nxp.com>
-:|G|: `Anson-Huang`_
+:|M|: Peng Fan <peng.fan@nxp.com>
+:|G|: `MrVan`_
 :|F|: docs/plat/imx8.rst
 :|F|: plat/imx/
 
@@ -504,6 +524,24 @@ NXP i.MX8M platform port
 :|G|: `JackyBai`_
 :|F|: docs/plat/imx8m.rst
 :|F|: plat/imx/imx8m/
+
+NXP QorIQ Layerscape common code for platform ports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:|M|: Pankaj Gupta <pankaj.gupta@nxp.com>
+:|G|: `pangupta`_
+:|F|: docs/plat/nxp/
+:|F|: plat/nxp/
+:|F|: drivers/nxp/
+:|F|: tools/nxp/
+
+NXP SoC Part LX2160A and its platform port
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:|M|: Pankaj Gupta <pankaj.gupta@nxp.com>
+:|G|: `pangupta`_
+:|F|: plat/nxp/soc-lx2160a
+:|F|: plat/nxp/soc-lx2160a/lx2162aqds
+:|F|: plat/nxp/soc-lx2160a/lx2160aqds
+:|F|: plat/nxp/soc-lx2160a/lx2160ardb
 
 QEMU platform port
 ^^^^^^^^^^^^^^^^^^
@@ -516,7 +554,10 @@ QTI platform port
 ^^^^^^^^^^^^^^^^^
 :|M|: Saurabh Gorecha <sgorecha@codeaurora.org>
 :|G|: `sgorecha`_
-:|M|: Debasish Mandal <dmandal@codeaurora.org>
+:|M|: Lachit Patel <lpatel@codeaurora.org>
+:|G|: `lachitp`_
+:|M|: Sreevyshanavi Kare <skare@codeaurora.org>
+:|G|: `sreekare`_
 :|M|: QTI TF Maintainers <qti.trustedfirmware.maintainers@codeaurora.org>
 :|F|: docs/plat/qti.rst
 :|F|: plat/qti/
@@ -576,6 +617,8 @@ RockChip platform port
 :|G|: `rockchip-linux`_
 :|M|: Heiko Stuebner <heiko@sntech.de>
 :|G|: `mmind`_
+:|M|: Julius Werner <jwerner@chromium.org>
+:|G|: `jwerner-chromium`_
 :|F|: plat/rockchip/
 
 STM32MP1 platform port
@@ -681,6 +724,20 @@ Build system
 :|F|: Makefile
 :|F|: make_helpers/
 
+Threat Model
+~~~~~~~~~~~~~
+:|M|: Zelalem Aweke <Zelalem.Aweke@arm.com>
+:|G|: `zelalem-aweke`_
+:|M|: Sandrine Bailleux <sandrine.bailleux@arm.com>
+:|G|: `sandrine-bailleux-arm`_
+:|M|: Joanna Farley <joanna.farley@arm.com>
+:|G|: `joannafarley-arm`_
+:|M|: Raghu Krishnamurthy <raghu.ncstate@icloud.com>
+:|G|: `raghuncstate`_
+:|M|: Varun Wadekar <vwadekar@nvidia.com>
+:|G|: `vwadekar`_
+:|F|: docs/threat_model/
+
 .. _AlexeiFedorov: https://github.com/AlexeiFedorov
 .. _Andre-ARM: https://github.com/Andre-ARM
 .. _Anson-Huang: https://github.com/Anson-Huang
@@ -697,13 +754,14 @@ Build system
 .. _jenswi-linaro: https://github.com/jenswi-linaro
 .. _jwerner-chromium: https://github.com/jwerner-chromium
 .. _kostapr: https://github.com/kostapr
+.. _lachitp: https://github.com/lachitp
 .. _ldts: https://github.com/ldts
 .. _marex: https://github.com/marex
 .. _masahir0y: https://github.com/masahir0y
 .. _michalsimek: https://github.com/michalsimek
 .. _mmind: https://github.com/mmind
 .. _MrVan: https://github.com/MrVan
-.. _mtk09422: https://github.com/mtk09422
+.. _mtk-rex-bc-chen: https://github.com/mtk-rex-bc-chen
 .. _niej: https://github.com/niej
 .. _npoushin: https://github.com/npoushin
 .. _prabhakarlad: https://github.com/prabhakarlad
@@ -715,6 +773,7 @@ Build system
 .. _shawnguo2: https://github.com/shawnguo2
 .. _smaeul: https://github.com/smaeul
 .. _soby-mathew: https://github.com/soby-mathew
+.. _sreekare: https://github.com/sreekare
 .. _thloh85-intel: https://github.com/thloh85-intel
 .. _thomas-arm: https://github.com/thomas-arm
 .. _TonyXie06: https://github.com/TonyXie06
@@ -745,5 +804,6 @@ Build system
 .. _vijayenthiran-arm: https://github.com/vijayenthiran-arm
 .. _arugan02: https://github.com/arugan02
 .. _uarif1: https://github.com/uarif1
+.. _pangupta: https://github.com/pangupta
 
 .. _Project Maintenance Process: https://developer.trustedfirmware.org/w/collaboration/project-maintenance-process/

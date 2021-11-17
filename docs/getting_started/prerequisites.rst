@@ -26,7 +26,7 @@ Toolchain
 |TF-A| can be built with any of the following *cross-compiler* toolchains that
 target the Armv7-A or Armv8-A architectures:
 
-- GCC >= 9.2-2019.12 (from the `Arm Developer website`_)
+- GCC >= 10.3-2021.07 (from the `Arm Developer website`_)
 - Clang >= 4.0
 - Arm Compiler >= 6.0
 
@@ -112,7 +112,7 @@ Supporting Files
 ----------------
 
 TF-A has been tested with pre-built binaries and file systems from `Linaro
-Release 19.06`_. Alternatively, you can build the binaries from source using
+Release 20.01`_. Alternatively, you can build the binaries from source using
 instructions in :ref:`Performing an Initial Build`.
 
 .. _prerequisites_get_source:
@@ -166,4 +166,4 @@ documentation, available `here <https://git-scm.com/docs/githooks>`_.
 .. _Linaro Release Notes: https://community.arm.com/dev-platforms/w/docs/226/old-release-notes
 .. _Linaro instructions: https://community.arm.com/dev-platforms/w/docs/304/arm-reference-platforms-deliverables
 .. _Development Studio 5 (DS-5): https://developer.arm.com/products/software-development-tools/ds-5-development-studio
-.. _Linaro Release 19.06: http://releases.linaro.org/members/arm/platforms/19.06
+.. _Linaro Release 20.01: http://releases.linaro.org/members/arm/platforms/20.01

@@ -16,6 +16,7 @@
 #if TRNG_SUPPORT
 #include "plat_trng.h"
 #endif
+#include <drivers/fwu/fwu_metadata.h>
 
 /*******************************************************************************
  * Forward declarations
@@ -121,6 +122,16 @@ const char *plat_log_get_prefix(unsigned int log_level);
 void bl2_plat_preload_setup(void);
 int plat_try_next_boot_source(void);
 
+#if MEASURED_BOOT
+int plat_mboot_measure_image(unsigned int image_id, image_info_t *image_data);
+#else
+static inline int plat_mboot_measure_image(unsigned int image_id __unused,
+					   image_info_t *image_data __unused)
+{
+	return 0;
+}
+#endif /* MEASURED_BOOT */
+
 /*******************************************************************************
  * Mandatory BL1 functions
  ******************************************************************************/
@@ -140,6 +151,8 @@ int plat_sdei_validate_entry_point(uintptr_t ep, unsigned int client_mode);
 void plat_sdei_handle_masked_trigger(uint64_t mpidr, unsigned int intr);
 #endif
 
+void plat_default_ea_handler(unsigned int ea_reason, uint64_t syndrome, void *cookie,
+		void *handle, uint64_t flags);
 void plat_ea_handler(unsigned int ea_reason, uint64_t syndrome, void *cookie,
 		void *handle, uint64_t flags);
 
@@ -179,12 +192,16 @@ int bl1_plat_handle_pre_image_load(unsigned int image_id);
 int bl1_plat_handle_post_image_load(unsigned int image_id);
 
 #if MEASURED_BOOT
-/*
- * Calculates and writes BL2 hash data to the platform's defined location.
- * For ARM platforms the data are written to TB_FW_CONFIG DTB.
- */
-void bl1_plat_set_bl2_hash(const image_desc_t *image_desc);
-#endif
+void bl1_plat_mboot_init(void);
+void bl1_plat_mboot_finish(void);
+#else
+static inline void bl1_plat_mboot_init(void)
+{
+}
+static inline void bl1_plat_mboot_finish(void)
+{
+}
+#endif /* MEASURED_BOOT */
 
 /*******************************************************************************
  * Mandatory BL2 functions
@@ -205,9 +222,16 @@ int bl2_plat_handle_post_image_load(unsigned int image_id);
  * Optional BL2 functions (may be overridden)
  ******************************************************************************/
 #if MEASURED_BOOT
-/* Read TCG_DIGEST_SIZE bytes of BL2 hash data */
-void bl2_plat_get_hash(void *data);
-#endif
+void bl2_plat_mboot_init(void);
+void bl2_plat_mboot_finish(void);
+#else
+static inline void bl2_plat_mboot_init(void)
+{
+}
+static inline void bl2_plat_mboot_finish(void)
+{
+}
+#endif /* MEASURED_BOOT */
 
 /*******************************************************************************
  * Mandatory BL2 at EL3 functions: Must be implemented if BL2_AT_EL3 image is
@@ -348,5 +372,13 @@ int32_t plat_get_soc_revision(void);
  * Optional function to check for SMCCC function availability for platform
  */
 int32_t plat_is_smccc_feature_available(u_register_t fid);
+
+/*******************************************************************************
+ * FWU platform specific functions
+ ******************************************************************************/
+int plat_fwu_set_metadata_image_source(unsigned int image_id,
+				       uintptr_t *dev_handle,
+				       uintptr_t *image_spec);
+void plat_fwu_set_images_source(struct fwu_metadata *metadata);
 
 #endif /* PLATFORM_H */

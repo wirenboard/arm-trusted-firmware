@@ -12,51 +12,50 @@ Arm FVPs without shifted affinities, and that do not support threaded CPU cores
 (64-bit host machine only).
 
 .. note::
-   The FVP models used are Version 11.14 Build 21, unless otherwise stated.
+   The FVP models used are Version 11.16 Build 16, unless otherwise stated.
 
--  ``FVP_Base_AEMvA``
--  ``FVP_Base_AEMv8A-AEMv8A``
+-  ``Foundation_Platform``
 -  ``FVP_Base_AEMv8A-AEMv8A-AEMv8A-AEMv8A-CCN502``
--  ``FVP_Base_RevC-2xAEMvA``
--  ``FVP_Base_Cortex-A32x4`` (Version 11.12 build 38)
+-  ``FVP_Base_AEMv8A-AEMv8A`` (For certain configurations also uses 11.14/21)
+-  ``FVP_Base_AEMv8A-GIC600AE``
+-  ``FVP_Base_AEMvA``         (For certain configurations also uses 0.0/6684)
+-  ``FVP_Base_Cortex-A32x4``  (Version 11.12/38)
 -  ``FVP_Base_Cortex-A35x4``
 -  ``FVP_Base_Cortex-A53x4``
--  ``FVP_Base_Cortex-A55x4+Cortex-A75x4``
 -  ``FVP_Base_Cortex-A55x4``
+-  ``FVP_Base_Cortex-A55x4+Cortex-A75x4``
 -  ``FVP_Base_Cortex-A57x1-A53x1``
 -  ``FVP_Base_Cortex-A57x2-A53x4``
 -  ``FVP_Base_Cortex-A57x4-A53x4``
 -  ``FVP_Base_Cortex-A57x4``
--  ``FVP_Base_Cortex-A65x4``
 -  ``FVP_Base_Cortex-A65AEx8``
+-  ``FVP_Base_Cortex-A65x4``
+-  ``FVP_Base_Cortex-A710x4``
 -  ``FVP_Base_Cortex-A72x4-A53x4``
 -  ``FVP_Base_Cortex-A72x4``
 -  ``FVP_Base_Cortex-A73x4-A53x4``
 -  ``FVP_Base_Cortex-A73x4``
 -  ``FVP_Base_Cortex-A75x4``
--  ``FVP_Base_Cortex-A76x4``
 -  ``FVP_Base_Cortex-A76AEx4``
 -  ``FVP_Base_Cortex-A76AEx8``
+-  ``FVP_Base_Cortex-A76x4``
 -  ``FVP_Base_Cortex-A77x4``
 -  ``FVP_Base_Cortex-A78x4``
--  ``FVP_Base_Matterhornx4``
--  ``FVP_Morello``         (Version 0.10 build 542)
 -  ``FVP_Base_Neoverse-E1x1``
 -  ``FVP_Base_Neoverse-E1x2``
 -  ``FVP_Base_Neoverse-E1x4``
 -  ``FVP_Base_Neoverse-N1x4``
 -  ``FVP_Base_Neoverse-N2x4`` (Version 11.12 build 38)
 -  ``FVP_Base_Neoverse-V1x4``
--  ``FVP_CSS_SGI-575``     (Version 11.10 build 36)
--  ``FVP_CSS_SGM-775``
--  ``FVP_RD_E1_edge``      (Version 11.9 build 41)
--  ``FVP_RD_N1_edge``      (Version 11.10 build 36)
--  ``FVP_RD_N1_edge_dual`` (Version 11.10 build 36)
--  ``FVP_RD_Daniel``       (Version 11.13 build 10)
--  ``FVP_RD_N2``           (Version 11.13 build 10)
--  ``FVP_TC0``             (Version 0.0 build 6509)
--  ``FVP_Base_AEMv8A-GIC600AE`` (Version 0.0 build 6415)
--  ``Foundation_Platform``
+-  ``FVP_Base_RevC-2xAEMvA``  (For certain configurations also uses 0.0/6557)
+-  ``FVP_CSS_SGI-575``        (Version 11.15/26)
+-  ``FVP_Morello``            (Version 0.11/19)
+-  ``FVP_RD_E1_edge``         (Version 11.15/26)
+-  ``FVP_RD_N1_edge_dual``    (Version 11.15/26)
+-  ``FVP_RD_N1_edge``         (Version 11.15/26)
+-  ``FVP_RD_V1``              (Version 11.15/26)
+-  ``FVP_TC0``
+-  ``FVP_TC1``
 
 The latest version of the AArch32 build of TF-A has been tested on the
 following Arm FVPs without shifted affinities, and that do not support threaded
@@ -101,7 +100,7 @@ from `Arm's website`_.
    the models. The models can be launched with ``-Q 100`` option if they are
    required to match the run time characteristics of the older versions.
 
-All the above platforms have been tested with `Linaro Release 19.06`_.
+All the above platforms have been tested with `Linaro Release 20.01`_.
 
 .. _build_options_arm_fvp_platform:
 
@@ -526,8 +525,8 @@ with 8 CPUs using the AArch64 build of TF-A.
 
 Notes:
 
--  If Position Independent Executable (PIE) support is enabled for BL31
-   in this config, it can be loaded at any valid address for execution.
+-  Position Independent Executable (PIE) support is enabled in this
+   config allowing BL31 to be loaded at any valid address for execution.
 
 -  Since a FIP is not loaded when using BL31 as reset entrypoint, the
    ``--data="<path-to><bl31|bl32|bl33-binary>"@<base-address-of-binary>``
@@ -588,8 +587,8 @@ with 8 CPUs using the AArch32 build of TF-A.
     --data cluster0.cpu0="<path-to>/<ramdisk>"@0x84000000
 
 .. note::
-   The load address of ``<bl32-binary>`` depends on the value ``BL32_BASE``.
-   It should match the address programmed into the RVBAR register as well.
+   Position Independent Executable (PIE) support is enabled in this
+   config allowing SP_MIN to be loaded at any valid address for execution.
 
 Running on the Cortex-A57-A53 Base FVP with reset to BL31 entrypoint
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -649,5 +648,5 @@ boot Linux with 4 CPUs using the AArch32 build of TF-A.
 .. _TB_FW_CONFIG for FVP: https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git/tree/plat/arm/board/fvp/fdts/fvp_tb_fw_config.dts
 .. _Arm's website: `FVP models`_
 .. _FVP models: https://developer.arm.com/products/system-design/fixed-virtual-platforms
-.. _Linaro Release 19.06: http://releases.linaro.org/members/arm/platforms/19.06
+.. _Linaro Release 20.01: http://releases.linaro.org/members/arm/platforms/20.01
 .. _Arm FVP website: https://developer.arm.com/products/system-design/fixed-virtual-platforms

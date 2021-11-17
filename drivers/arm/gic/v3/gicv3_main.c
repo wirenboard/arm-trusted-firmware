@@ -123,13 +123,7 @@ void __init gicv3_driver_init(const gicv3_driver_data_t *plat_driver_data)
 	gic_version &= PIDR2_ARCH_REV_MASK;
 
 	/* Check GIC version */
-#if GIC_ENABLE_V4_EXTN
-	assert(gic_version == ARCH_REV_GICV4);
-
-	/* GICv4 supports Direct Virtual LPI injection */
-	assert((gicd_read_typer(plat_driver_data->gicd_base)
-					& TYPER_DVIS) != 0);
-#else
+#if !GIC_ENABLE_V4_EXTN
 	assert(gic_version == ARCH_REV_GICV3);
 #endif
 	/*
@@ -332,6 +326,8 @@ void gicv3_cpuif_enable(unsigned int proc_num)
 	write_icc_igrpen1_el3(read_icc_igrpen1_el3() |
 				IGRPEN1_EL3_ENABLE_G1S_BIT);
 	isb();
+	/* Add DSB to ensure visibility of System register writes */
+	dsb();
 }
 
 /*******************************************************************************
@@ -363,6 +359,8 @@ void gicv3_cpuif_disable(unsigned int proc_num)
 
 	/* Synchronise accesses to group enable registers */
 	isb();
+	/* Add DSB to ensure visibility of System register writes */
+	dsb();
 
 	/* Mark the connected core as asleep */
 	gicr_base = gicv3_driver_data->rdistif_base_addrs[proc_num];
@@ -728,40 +726,17 @@ void gicv3_rdistif_init_restore(unsigned int proc_num,
  *****************************************************************************/
 void gicv3_distif_save(gicv3_dist_ctx_t * const dist_ctx)
 {
-	unsigned int typer_reg, num_ints;
-#if GIC_EXT_INTID
-	unsigned int num_eints;
-#endif
-
 	assert(gicv3_driver_data != NULL);
 	assert(gicv3_driver_data->gicd_base != 0U);
 	assert(IS_IN_EL3());
 	assert(dist_ctx != NULL);
 
 	uintptr_t gicd_base = gicv3_driver_data->gicd_base;
-
-	typer_reg = gicd_read_typer(gicd_base);
-
-	/* Maximum SPI INTID is 32 * (GICD_TYPER.ITLinesNumber + 1) - 1 */
-	num_ints = ((typer_reg & TYPER_IT_LINES_NO_MASK) + 1U) << 5;
-
-	/* Filter out special INTIDs 1020-1023 */
-	if (num_ints > (MAX_SPI_ID + 1U)) {
-		num_ints = MAX_SPI_ID + 1U;
-	}
-
+	unsigned int num_ints = gicv3_get_spi_limit(gicd_base);
 #if GIC_EXT_INTID
-	/* Check if extended SPI range is implemented */
-	if ((typer_reg & TYPER_ESPI) != 0U) {
-		/*
-		 * Maximum ESPI INTID is 32 * (GICD_TYPER.ESPI_range + 1) + 4095
-		 */
-		num_eints = ((((typer_reg >> TYPER_ESPI_RANGE_SHIFT) &
-			TYPER_ESPI_RANGE_MASK) + 1U) << 5) + MIN_ESPI_ID;
-	} else {
-		num_eints = 0U;
-	}
+	unsigned int num_eints = gicv3_get_espi_limit(gicd_base);
 #endif
+
 	/* Wait for pending write to complete */
 	gicd_wait_for_pending_write(gicd_base);
 
@@ -838,11 +813,6 @@ void gicv3_distif_save(gicv3_dist_ctx_t * const dist_ctx)
  *****************************************************************************/
 void gicv3_distif_init_restore(const gicv3_dist_ctx_t * const dist_ctx)
 {
-	unsigned int typer_reg, num_ints;
-#if GIC_EXT_INTID
-	unsigned int num_eints;
-#endif
-
 	assert(gicv3_driver_data != NULL);
 	assert(gicv3_driver_data->gicd_base != 0U);
 	assert(IS_IN_EL3());
@@ -864,27 +834,9 @@ void gicv3_distif_init_restore(const gicv3_dist_ctx_t * const dist_ctx)
 	/* Set the ARE_S and ARE_NS bit now that interrupts have been disabled */
 	gicd_set_ctlr(gicd_base, CTLR_ARE_S_BIT | CTLR_ARE_NS_BIT, RWP_TRUE);
 
-	typer_reg = gicd_read_typer(gicd_base);
-
-	/* Maximum SPI INTID is 32 * (GICD_TYPER.ITLinesNumber + 1) - 1 */
-	num_ints = ((typer_reg & TYPER_IT_LINES_NO_MASK) + 1U) << 5;
-
-	/* Filter out special INTIDs 1020-1023 */
-	if (num_ints > (MAX_SPI_ID + 1U)) {
-		num_ints = MAX_SPI_ID + 1U;
-	}
-
+	unsigned int num_ints = gicv3_get_spi_limit(gicd_base);
 #if GIC_EXT_INTID
-	/* Check if extended SPI range is implemented */
-	if ((typer_reg & TYPER_ESPI) != 0U) {
-		/*
-		 * Maximum ESPI INTID is 32 * (GICD_TYPER.ESPI_range + 1) + 4095
-		 */
-		num_eints = ((((typer_reg >> TYPER_ESPI_RANGE_SHIFT) &
-			TYPER_ESPI_RANGE_MASK) + 1U) << 5) + MIN_ESPI_ID;
-	} else {
-		num_eints = 0U;
-	}
+	unsigned int num_eints = gicv3_get_espi_limit(gicd_base);
 #endif
 	/* Restore GICD_IGROUPR for INTIDs 32 - 1019 */
 	RESTORE_GICD_REGS(gicd_base, dist_ctx, num_ints, igroupr, IGROUP);
@@ -1340,7 +1292,7 @@ int gicv3_rdistif_probe(const uintptr_t gicr_frame)
 			gicr_frame_found = true;
 			break;
 		}
-		rdistif_base += (uintptr_t)(ULL(1) << GICR_PCPUBASE_SHIFT);
+		rdistif_base += gicv3_redist_size(typer_val);
 	} while ((typer_val & TYPER_LAST_BIT) == 0U);
 
 	if (!gicr_frame_found) {

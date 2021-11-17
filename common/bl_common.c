@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2013-2021, Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -202,12 +202,26 @@ static int load_auth_image_recursive(unsigned int image_id,
 		return -EAUTH;
 	}
 
-	/*
-	 * Flush the image to main memory so that it can be executed later by
-	 * any CPU, regardless of cache and MMU state. This is only needed for
-	 * child images, not for the parents (certificates).
-	 */
 	if (is_parent_image == 0) {
+		/*
+		 * Measure the image.
+		 * We do not measure its parents because these only play a role
+		 * in authentication, which is orthogonal to measured boot.
+		 *
+		 * TODO: Change this code if we change our minds about measuring
+		 * certificates.
+		 */
+		rc = plat_mboot_measure_image(image_id, image_data);
+		if (rc != 0) {
+			return rc;
+		}
+
+		/*
+		 * Flush the image to main memory so that it can be executed
+		 * later by any CPU, regardless of cache and MMU state. This
+		 * is only needed for child images, not for the parents
+		 * (certificates).
+		 */
 		flush_dcache_range(image_data->image_base,
 				   image_data->image_size);
 	}
@@ -239,9 +253,18 @@ int load_auth_image(unsigned int image_id, image_info_t *image_data)
 {
 	int err;
 
+/*
+ * All firmware banks should be part of the same non-volatile storage as per
+ * PSA FWU specification, hence don't check for any alternate boot source
+ * when PSA FWU is enabled.
+ */
+#if PSA_FWU_SUPPORT
+	err = load_auth_image_internal(image_id, image_data);
+#else
 	do {
 		err = load_auth_image_internal(image_id, image_data);
 	} while ((err != 0) && (plat_try_next_boot_source() != 0));
+#endif /* PSA_FWU_SUPPORT */
 
 	return err;
 }

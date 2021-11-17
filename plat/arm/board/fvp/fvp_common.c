@@ -72,14 +72,11 @@ arm_config_t arm_config;
  * Table of memory regions for various BL stages to map using the MMU.
  * This doesn't include Trusted SRAM as setup_page_tables() already takes care
  * of mapping it.
- *
- * The flash needs to be mapped as writable in order to erase the FIP's Table of
- * Contents in case of unrecoverable error (see plat_error_handler()).
  */
 #ifdef IMAGE_BL1
 const mmap_region_t plat_arm_mmap[] = {
 	ARM_MAP_SHARED_RAM,
-	V2M_MAP_FLASH0_RW,
+	V2M_MAP_FLASH0_RO,
 	V2M_MAP_IOFPGA,
 	MAP_DEVICE0,
 #if FVP_INTERCONNECT_DRIVER == FVP_CCN
@@ -110,6 +107,10 @@ const mmap_region_t plat_arm_mmap[] = {
 #if defined(SPD_spmd)
 	ARM_MAP_TRUSTED_DRAM,
 #endif
+#if ENABLE_RME
+	ARM_MAP_RMM_DRAM,
+	ARM_MAP_GPT_L1_DRAM,
+#endif /* ENABLE_RME */
 #ifdef SPD_tspd
 	ARM_MAP_TSP_SEC_MEM,
 #endif
@@ -162,6 +163,9 @@ const mmap_region_t plat_arm_mmap[] = {
 #endif
 	/* Required by fconf APIs to read HW_CONFIG dtb loaded into DRAM */
 	ARM_DTB_DRAM_NS,
+#if ENABLE_RME
+	ARM_MAP_GPT_L1_DRAM,
+#endif
 	{0}
 };
 
@@ -190,6 +194,15 @@ const mmap_region_t plat_arm_mmap[] = {
 	MAP_DEVICE1,
 	/* Required by fconf APIs to read HW_CONFIG dtb loaded into DRAM */
 	ARM_DTB_DRAM_NS,
+	{0}
+};
+#endif
+
+#ifdef IMAGE_RMM
+const mmap_region_t plat_arm_mmap[] = {
+	V2M_MAP_IOFPGA,
+	MAP_DEVICE0,
+	MAP_DEVICE1,
 	{0}
 };
 #endif
@@ -483,9 +496,9 @@ int32_t plat_is_smccc_feature_available(u_register_t fid)
 int32_t plat_get_soc_version(void)
 {
 	return (int32_t)
-		((ARM_SOC_IDENTIFICATION_CODE << ARM_SOC_IDENTIFICATION_SHIFT)
-		 | (ARM_SOC_CONTINUATION_CODE << ARM_SOC_CONTINUATION_SHIFT)
-		 | FVP_SOC_ID);
+		(SOC_ID_SET_JEP_106(ARM_SOC_CONTINUATION_CODE,
+				    ARM_SOC_IDENTIFICATION_CODE) |
+		 (FVP_SOC_ID & SOC_ID_IMPL_DEF_MASK));
 }
 
 /* Get SOC revision */
@@ -494,6 +507,6 @@ int32_t plat_get_soc_revision(void)
 	unsigned int sys_id;
 
 	sys_id = mmio_read_32(V2M_SYSREGS_BASE + V2M_SYS_ID);
-	return (int32_t)((sys_id >> V2M_SYS_ID_REV_SHIFT) &
-			V2M_SYS_ID_REV_MASK);
+	return (int32_t)(((sys_id >> V2M_SYS_ID_REV_SHIFT) &
+			  V2M_SYS_ID_REV_MASK) & SOC_ID_REV_MASK);
 }

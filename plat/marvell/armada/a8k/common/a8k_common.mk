@@ -75,21 +75,28 @@ endif
 # This define specifies DDR type for BLE
 $(eval $(call add_define,CONFIG_DDR4))
 
+# This define specifies DDR topology for BLE
+DDR_TOPOLOGY	?= 0
+$(eval $(call add_define,DDR_TOPOLOGY))
+
 MARVELL_GIC_SOURCES	:=	drivers/arm/gic/common/gic_common.c	\
 				drivers/arm/gic/v2/gicv2_main.c		\
 				drivers/arm/gic/v2/gicv2_helpers.c	\
 				plat/common/plat_gicv2.c
 
-PLAT_INCLUDES		:=	-I$(BOARD_DIR)				\
+PLAT_INCLUDES		+=	-I$(BOARD_DIR)				\
 				-I$(BOARD_DIR)/board			\
+				-I$(CURDIR)/drivers/marvell		\
 				-I$(PLAT_COMMON_BASE)/include		\
 				-I$(PLAT_INCLUDE_BASE)/common
 
 PLAT_BL_COMMON_SOURCES	:=	$(PLAT_COMMON_BASE)/aarch64/a8k_common.c \
 				drivers/ti/uart/aarch64/16550_console.S
 
+ifndef BLE_PORTING_SOURCES
 BLE_PORTING_SOURCES	:=	$(BOARD_DIR)/board/dram_port.c \
 				$(BOARD_DIR)/board/marvell_plat_config.c
+endif
 
 MARVELL_MOCHI_DRV	+=	$(MARVELL_DRV_BASE)/mochi/cp110_setup.c
 
@@ -124,7 +131,9 @@ ifeq (${MSS_SUPPORT}, 1)
 MARVELL_DRV		+=	$(MARVELL_DRV_BASE)/mg_conf_cm3/mg_conf_cm3.c
 endif
 
+ifndef BL31_PORTING_SOURCES
 BL31_PORTING_SOURCES	:=	$(BOARD_DIR)/board/marvell_plat_config.c
+endif
 
 ifeq ($(SYSTEM_POWER_SUPPORT),1)
 BL31_PORTING_SOURCES	+=	$(BOARD_DIR)/board/system_power.c
@@ -161,7 +170,7 @@ endif
 BLE_PATH	?=  $(PLAT_COMMON_BASE)/ble
 
 include ${BLE_PATH}/ble.mk
-$(eval $(call MAKE_BL,e))
+$(eval $(call MAKE_BL,ble))
 
 clean realclean distclean: mrvl_clean
 

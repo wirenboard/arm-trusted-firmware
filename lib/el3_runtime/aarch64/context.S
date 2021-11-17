@@ -193,6 +193,11 @@ func el2_sysregs_context_save
 	str	x13, [x0, #CTX_SCXTNUM_EL2]
 #endif
 
+#if ENABLE_FEAT_HCX
+	mrs	x14, hcrx_el2
+	str	x14, [x0, #CTX_HCRX_EL2]
+#endif
+
 	ret
 endfunc el2_sysregs_context_save
 
@@ -360,6 +365,11 @@ func el2_sysregs_context_restore
 #if ARM_ARCH_AT_LEAST(8, 5)
 	ldr	x13, [x0, #CTX_SCXTNUM_EL2]
 	msr	scxtnum_el2, x13
+#endif
+
+#if ENABLE_FEAT_HCX
+	ldr	x14, [x0, #CTX_HCRX_EL2]
+	msr	hcrx_el2, x14
 #endif
 
 	ret
@@ -697,13 +707,14 @@ func save_gp_pmcr_pauth_regs
 	str	x18, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_SP_EL0]
 
 	/* ----------------------------------------------------------
-	 * Check if earlier initialization MDCR_EL3.SCCD to 1 failed,
-	 * meaning that ARMv8-PMU is not implemented and PMCR_EL0
-	 * should be saved in non-secure context.
+	 * Check if earlier initialization MDCR_EL3.SCCD/MCCD to 1
+	 * failed, meaning that FEAT_PMUv3p5/7 is not implemented and
+	 * PMCR_EL0 should be saved in non-secure context.
 	 * ----------------------------------------------------------
 	 */
+	mov_imm	x10, (MDCR_SCCD_BIT | MDCR_MCCD_BIT)
 	mrs	x9, mdcr_el3
-	tst	x9, #MDCR_SCCD_BIT
+	tst	x9, x10
 	bne	1f
 
 	/* Secure Cycle Counter is not disabled */
@@ -792,13 +803,14 @@ func restore_gp_pmcr_pauth_regs
 
 	/* ----------------------------------------------------------
 	 * Back to Non-secure state.
-	 * Check if earlier initialization MDCR_EL3.SCCD to 1 failed,
-	 * meaning that ARMv8-PMU is not implemented and PMCR_EL0
-	 * should be restored from non-secure context.
+	 * Check if earlier initialization MDCR_EL3.SCCD/MCCD to 1
+	 * failed, meaning that FEAT_PMUv3p5/7 is not implemented and
+	 * PMCR_EL0 should be restored from non-secure context.
 	 * ----------------------------------------------------------
 	 */
+	mov_imm	x1, (MDCR_SCCD_BIT | MDCR_MCCD_BIT)
 	mrs	x0, mdcr_el3
-	tst	x0, #MDCR_SCCD_BIT
+	tst	x0, x1
 	bne	2f
 	ldr	x0, [sp, #CTX_EL3STATE_OFFSET + CTX_PMCR_EL0]
 	msr	pmcr_el0, x0
@@ -898,6 +910,24 @@ func el3_exit
 	msr	scr_el3, x18
 	msr	spsr_el3, x16
 	msr	elr_el3, x17
+
+#if IMAGE_BL31
+	/* ----------------------------------------------------------
+	 * Restore CPTR_EL3.
+	 * ZCR is only restored if SVE is supported and enabled.
+	 * Synchronization is required before zcr_el3 is addressed.
+	 * ----------------------------------------------------------
+	 */
+	ldp	x19, x20, [sp, #CTX_EL3STATE_OFFSET + CTX_CPTR_EL3]
+	msr	cptr_el3, x19
+
+	ands	x19, x19, #CPTR_EZ_BIT
+	beq	sve_not_enabled
+
+	isb
+	msr	S3_6_C1_C2_0, x20 /* zcr_el3 */
+sve_not_enabled:
+#endif
 
 #if IMAGE_BL31 && DYNAMIC_WORKAROUND_CVE_2018_3639
 	/* ----------------------------------------------------------

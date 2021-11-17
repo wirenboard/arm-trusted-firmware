@@ -19,20 +19,19 @@
 
 #include <stm32mp_dt.h>
 
-static int fdt_checked;
-
-static void *fdt = (void *)(uintptr_t)STM32MP_DTB_BASE;
+static void *fdt;
 
 /*******************************************************************************
  * This function checks device tree file with its header.
  * Returns 0 on success and a negative FDT error code on failure.
  ******************************************************************************/
-int dt_open_and_check(void)
+int dt_open_and_check(uintptr_t dt_addr)
 {
-	int ret = fdt_check_header(fdt);
+	int ret;
 
+	ret = fdt_check_header((void *)dt_addr);
 	if (ret == 0) {
-		fdt_checked = 1;
+		fdt = (void *)dt_addr;
 	}
 
 	return ret;
@@ -45,11 +44,13 @@ int dt_open_and_check(void)
  ******************************************************************************/
 int fdt_get_address(void **fdt_addr)
 {
-	if (fdt_checked == 1) {
-		*fdt_addr = fdt;
+	if (fdt == NULL) {
+		return 0;
 	}
 
-	return fdt_checked;
+	*fdt_addr = fdt;
+
+	return 1;
 }
 
 /*******************************************************************************
@@ -203,12 +204,44 @@ int dt_get_stdout_uart_info(struct dt_node_info *info)
 }
 
 /*******************************************************************************
+ * This function returns the node offset matching compatible string in the DT,
+ * and also matching the reg property with the given address.
+ * Returns value on success, and error value on failure.
+ ******************************************************************************/
+int dt_match_instance_by_compatible(const char *compatible, uintptr_t address)
+{
+	int node;
+
+	fdt_for_each_compatible_node(fdt, node, compatible) {
+		const fdt32_t *cuint;
+
+		assert(fdt_get_node_parent_address_cells(node) == 1);
+
+		cuint = fdt_getprop(fdt, node, "reg", NULL);
+		if (cuint == NULL) {
+			continue;
+		}
+
+		if ((uintptr_t)fdt32_to_cpu(*cuint) == address) {
+			return node;
+		}
+	}
+
+	return -FDT_ERR_NOTFOUND;
+}
+
+/*******************************************************************************
  * This function gets DDR size information from the DT.
  * Returns value in bytes on success, and 0 on failure.
  ******************************************************************************/
 uint32_t dt_get_ddr_size(void)
 {
+	static uint32_t size;
 	int node;
+
+	if (size != 0U) {
+		return size;
+	}
 
 	node = fdt_node_offset_by_compatible(fdt, -1, DT_DDR_COMPAT);
 	if (node < 0) {
@@ -216,7 +249,11 @@ uint32_t dt_get_ddr_size(void)
 		return 0;
 	}
 
-	return fdt_read_uint32_default(fdt, node, "st,mem-size", 0);
+	size = fdt_read_uint32_default(fdt, node, "st,mem-size", 0U);
+
+	flush_dcache_range((uintptr_t)&size, sizeof(uint32_t));
+
+	return size;
 }
 
 /*******************************************************************************
