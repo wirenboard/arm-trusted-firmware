@@ -1,3 +1,11 @@
+arm-trusted-firmware (2.6+dfsg-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/rules: Adjust installation of upstream changelog.
+  * Remove upstream signing key.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Fri, 26 Nov 2021 17:26:17 -0800
+
 arm-trusted-firmware (2.6~rc0+dfsg-1) experimental; urgency=medium
 
   * New upstream release candidate.
