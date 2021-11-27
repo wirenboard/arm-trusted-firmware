@@ -35,5 +35,5 @@ ifeq ($(DEB_HOST_ARCH),arm64)
 endif
 
 override_dh_installchangelogs:
-	dh_installchangelogs -parm-trusted-firmware docs/change-log.rst
+	dh_installchangelogs -parm-trusted-firmware docs/change-log.md
 	dh_installchangelogs -parm-trusted-firmware-tools
