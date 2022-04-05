@@ -17,6 +17,15 @@ platforms := g12a gxbb sun50i_a64 sun50i_h6 rk3328 rk3399 rpi3 rpi4 imx8mn
 platforms_nodebug := imx8mq
 target = $(if $(filter rk3328 rk3399,$@),bl31/bl31.elf,bl31.bin)
 
+# Always set CROSS_COMPILE, which also works for native builds.
+define build_platform
+	$(eval platform := $(1))
+	$(eval debug := $(2))
+	$(eval buildtype := $(3))
+	CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= dh_auto_build -- V=$(VERBOSE) DEBUG=$(debug) PLAT=$(platform) bl31
+	install -m644 build/$@/$(buildtype)/$(target) -Dt build/renamed/$(platform)
+endef
+
 %:
 	dh $@
 
@@ -30,13 +39,9 @@ endif
 ifeq ($(DEB_HOST_ARCH),arm64)
   override_dh_auto_build: $(platforms) $(platforms_nodebug)
   $(platforms):
-	# Always set CROSS_COMPILE, which also works for native builds.
-	CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= dh_auto_build -- V=$(VERBOSE) DEBUG=1 PLAT=$@ bl31
-	install -m644 build/$@/debug/$(target) -Dt build/renamed/$@
+	$(call build_platform,$@,1,debug)
   $(platforms_nodebug):
-	# Always set CROSS_COMPILE, which also works for native builds.
-	CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= dh_auto_build -- V=$(VERBOSE) DEBUG=0 PLAT=$@ bl31
-	install -m644 build/$@/release/$(target) -Dt build/renamed/$@
+	$(call build_platform,$@,0,release)
 endif
 
 override_dh_installchangelogs:
