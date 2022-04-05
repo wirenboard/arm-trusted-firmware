@@ -13,9 +13,33 @@ else
 VERBOSE=1
 endif
 
-platforms := g12a gxbb sun50i_a64 sun50i_h6 rk3328 rk3399 rpi3 rpi4
+platforms := g12a gxbb sun50i_a64 sun50i_h6 rk3328 rk3399 rpi3 rpi4 imx8mn
 platforms_nodebug := imx8mq
-target = $(if $(filter rk3328 rk3399,$@),bl31/bl31.elf,bl31.bin)
+
+# By default, iMX8MN uses UART2 console. However, other boards supported
+# upstream (e.g. Variscite VAR-SOM-MX8M-NANO board) uses UART4.
+# Add two subplatforms for imx8mn platform:
+#   * imx8mn: default configuration
+#   * imx8mn_uart4: console set to UART4
+imx8mn_subplatforms := imx8mn imx8mn_uart4
+imx8mn_uart4_assigns := IMX_BOOT_UART_BASE=0x30a60000
+
+# Always set CROSS_COMPILE, which also works for native builds.
+define build_platform
+	$(eval platform := $(1))
+	$(eval debug := $(2))
+	$(eval buildtype := $(3))
+	$(eval subplatforms := $(if $($(platform)_subplatforms), $($(platform)_subplatforms), $(platform)))
+	$(eval target := $(if $(filter rk3328 rk3399,$(platform)),bl31/bl31.elf,bl31.bin))
+	$(foreach subplatform, $(subplatforms), \
+		CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= dh_auto_build -- V=$(VERBOSE) DEBUG=$(debug) $($(subplatform)_assigns) PLAT=$(platform) bl31 ; \
+		install -m644 build/$(platform)/$(buildtype)/$(target) -Dt build/renamed/$(subplatform) ; \
+		# For each subplatform, make is called using the same PLAT variable. If
+		# the build is not cleaned between each call, objects will remain the
+		# same, without rebuilding them.
+		make DEBUG=$(debug) PLAT=$(platform) clean ; \
+	)
+endef
 
 %:
 	dh $@
@@ -30,13 +54,9 @@ endif
 ifeq ($(DEB_HOST_ARCH),arm64)
   override_dh_auto_build: $(platforms) $(platforms_nodebug)
   $(platforms):
-	# Always set CROSS_COMPILE, which also works for native builds.
-	CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= dh_auto_build -- V=$(VERBOSE) DEBUG=1 PLAT=$@ bl31
-	install -m644 build/$@/debug/$(target) -Dt build/renamed/$@
+	$(call build_platform,$@,1,debug)
   $(platforms_nodebug):
-	# Always set CROSS_COMPILE, which also works for native builds.
-	CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= dh_auto_build -- V=$(VERBOSE) DEBUG=0 PLAT=$@ bl31
-	install -m644 build/$@/release/$(target) -Dt build/renamed/$@
+	$(call build_platform,$@,0,release)
 endif
 
 override_dh_installchangelogs:
