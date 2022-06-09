@@ -10,7 +10,7 @@ Files-Excluded:
 
 Files: *
 Copyright:
- 2013-2021, Arm Limited and Contributors.
+ 2013-2022, Arm Limited and Contributors.
 License: BSD-3-clause
 
 Files: debian/*
@@ -20,7 +20,7 @@ License: BSD-3-clause
 
 Files: drivers/brcm/*
 Copyright:
- 2016-2020, Broadcom
+ 2016-2021, Broadcom
 License: BSD-3-clause
 
 Files: drivers/imx/uart/*
@@ -34,15 +34,15 @@ Copyright:
 License: BSD-3-clause
 
 Files: drivers/renesas/*
-Copyright: 
- 2015-2020, Renesas Electronics Corporation.
+Copyright:
+ 2015-2021, Renesas Electronics Corporation.
 License: BSD-3-clause
 
 Files:
  drivers/st/*
 Copyright:
- 2016-2020, STMicroelectronics
- 2018-2020, ARM Limited and Contributors.
+ 2016-2022, STMicroelectronics
+ 2018-2022, ARM Limited and Contributors.
 License: BSD-3-clause
 
 Files:
@@ -51,12 +51,12 @@ Files:
  drivers/st/ddr/stm32mp1_ram.c
  drivers/st/fmc/stm32_fmc2_nand.c
  drivers/st/spi/stm32_qspi.c
-Copyright: 2018-2021, STMicroelectronics
+Copyright: 2018-2022, STMicroelectronics
 License: GPL-2+ or BSD-3-clause
 
 Files: fdts/stm32*
 Copyright:
- 2017-2020, STMicroelectronics
+ 2017-2022, STMicroelectronics
  2019, Arrow Electronics
  2019, Linaro Ltd
  2020 Ahmad Fatoum, Pengutronix
@@ -65,15 +65,19 @@ License: GPL-2+ or BSD-3-clause
 
 Files: include/dt-bindings/*
 Copyright:
- 2017-2020, STMicroelectronics
+ 2017-2022, STMicroelectronics
 License: GPL-2+ or BSD-3-clause
 
-Files: include/dt-bindings/reset/stm32mp1-resets.h
+Files:
+ include/dt-bindings/reset/stm32mp13-resets.h
+ include/dt-bindings/reset/stm32mp15-resets.h
 Copyright:
- 2018 STMicroelectronics
+ 2018-2022 STMicroelectronics
 License: GPL-2 or BSD-3-clause
 
-Files: include/dt-bindings/interrupt-controller/arm-gic.h
+Files:
+ include/dt-bindings/interrupt-controller/arm-gic.h
+ include/dt-bindings/interrupt-controller/irq.h
 Copyright:
  2019-2021, ARM Limited and Contributors.
 License: MIT
@@ -96,12 +100,14 @@ Copyright:
 License: BSD-3-clause
 
 Files:
- include/drivers/st/stm32mp1_ddr.h
- include/drivers/st/stm32mp1_ddr_regs.h
  include/drivers/st/stm32_fmc2_nand.h
  include/drivers/st/stm32_qspi.h
+ include/drivers/st/stm32mp1_ddr.h
+ include/drivers/st/stm32mp1_ddr_regs.h
+ include/drivers/st/stm32mp_ddr.h
+ include/drivers/st/stm32mp_ddrctrl_regs.h
 Copyright:
- 2017-2021, STMicroelectronics
+ 2017-2022, STMicroelectronics
 License: GPL-2+ or BSD-3-clause
 
 Files:
@@ -130,17 +136,18 @@ Copyright:
  1995-2017 Jean-loup Gailly
 License: Zlib
 
-Files: lib/zlib/tf_gunzip.c 
+Files: lib/zlib/tf_gunzip.c
  lib/zlib/zlib.mk
 Copyright:
- 2018, ARM Limited and Contributors. 
+ 2018-2021, ARM Limited and Contributors.
 License: BSD-3-clause
 
 Files: plat/allwinner/*
 Copyright:
- 2017-2021, ARM Limited and Contributors.
+ 2017-2022, ARM Limited and Contributors.
  2018, Andre Przywara <osp@andrep.de>
  2018, Icenowy Zheng <icenowy@aosc.io>
+ 2021 Sipeed
 License: BSD-3-clause
 
 Files: plat/marvell/*
@@ -150,41 +157,45 @@ Copyright:
  2016-2020, ARM Limited and Contributors.
  2019 Repk repk@triplefau.lt
  2020-2021 Marek Behun, CZ.NIC
- 2020 Sartura Ltd.
+ 2020-2021 Sartura Ltd.
+ 2021 Globalscale technologies, Inc.
+ 2021 Semihalf.
 License: BSD-3-clause
 
 Files: plat/ti/*
 Copyright:
- 2018 Texas Instruments Incorporated
- 2017-2020, ARM Limited and Contributors.
+ 2018-2022 Texas Instruments Incorporated
+ 2017-2022, ARM Limited and Contributors.
 License: BSD-3-clause
 
 Files: plat/renesas/*
 Copyright:
  2013-2020, ARM Limited and Contributors.
- 2015-2021, Renesas Electronics Corporation.
+ 2015-2022, Renesas Electronics Corporation.
 License: BSD-3-clause
 
 Files: plat/st/*
 Copyright:
- 2015-2021, ARM Limited and Contributors.
- 2014-2020, STMicroelectronics
+ 2015-2022, ARM Limited and Contributors.
+ 2014-2022, STMicroelectronics
+ 2021, Linaro Limited
 License: BSD-3-clause
 
 Files: plat/imx/*
 Copyright:
  2018-2019 Linaro Limited and Contributors.
  2016 Freescale Semiconductor, Inc.
- 2015-2021 ARM Limited and Contributors.
- 2017-2021 NXP
+ 2015-2022 ARM Limited and Contributors.
+ 2017-2022 NXP
  2021 Arm
+ 2922 Linaro
 License: BSD-3-clause
 
 Files: services/spd/*
 Copyright:
- 2013-2021, ARM Limited and Contributors.
+ 2013-2022, ARM Limited and Contributors.
  2020, NVIDIA Corporation.
- 2014, Linaro Limited. 
+ 2014, Linaro Limited.
 License: BSD-3-clause
 
 Files: tools/marvell/*
@@ -194,17 +205,17 @@ License: BSD-3-clause
 
 Files: tools/renesas/*
 Copyright:
- 2015-2020, Renesas Electronics Corporation.
+ 2015-2021, Renesas Electronics Corporation.
 License: BSD-3-clause
 
 Files: tools/stm32image/*
 Copyright:
- 2017-2018, ARM Limited and Contributors. 
- 2017-2018, STMicroelectronics
+ 2017-2018, ARM Limited and Contributors.
+ 2017-2022, STMicroelectronics
 License: BSD-3-clause
 
 Files:
- lib/libfdt/* 
+ lib/libfdt/*
  include/lib/libfdt/*
 Copyright:
  2006-2012 David Gibson, IBM Corporation.
@@ -216,7 +227,7 @@ Copyright:
 License: BSD-2-clause or GPL-2+
 
 Files: lib/libfdt/libfdt.mk
-Copyright: 2016, ARM Limited and Contributors. 
+Copyright: 2016, ARM Limited and Contributors.
 License: BSD-3-clause
 
 Files: include/lib/libc/*
@@ -227,6 +238,7 @@ Copyright:
  2012-2021 Roberto E. Vargas Caballero
  2018-2020, ARM Limited and Contributors.
  2021 ARM Limited
+ 2020 Broadcom
 License: BSD-3-clause
 
 Files: include/lib/libc/endian.h
