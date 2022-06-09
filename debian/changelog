@@ -1,3 +1,22 @@
+arm-trusted-firmware (2.7.0+dfsg-1) experimental; urgency=medium
+
+  * New upstream release.
+
+  [ Vagrant Cascadian ]
+  * debian/rules: Add imx8mq platform.
+  * debian/copyright: Update for 2.7.0.
+  * debian/control: Update Standards Version to 4.6.1.
+
+  [ Ariel D'Alessandro ]
+  * d/rules: Enable imx8mn target
+  * d/rules: Unify build rule for both debug and release platforms
+  * d/rules: Add imx8mn_uart4 target subplatform
+
+  [ Jelmer Vernooĳ ]
+  * Set upstream Repository/Repository-Browse fields.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Wed, 08 Jun 2022 20:58:51 -0700
+
 arm-trusted-firmware (2.6+dfsg-1) unstable; urgency=medium
 
   * New upstream release.
