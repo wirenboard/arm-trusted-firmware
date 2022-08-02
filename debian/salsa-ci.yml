@@ -5,3 +5,6 @@ include:
 variables:
   # No arch:all packages
   SALSA_CI_DISABLE_BUILD_PACKAGE_ALL: 1
+
+test-crossbuild-arm64:
+  allow_failure: false
