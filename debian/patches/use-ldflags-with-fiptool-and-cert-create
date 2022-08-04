@@ -1,0 +1,28 @@
+Use LDFLAGS when building fiptool and cert_create.
+
+diff --git a/tools/cert_create/Makefile b/tools/cert_create/Makefile
+index ca548b836..a823f0dcc 100644
+--- a/tools/cert_create/Makefile
++++ b/tools/cert_create/Makefile
+@@ -83,7 +83,7 @@ ${BINARY}: ${OBJECTS} Makefile
+ 	@echo 'const char build_msg[] = "Built : "__TIME__", "__DATE__; \
+                 const char platform_msg[] = "${PLAT_MSG}";' | \
+                 ${HOSTCC} -c ${HOSTCCFLAGS} -xc - -o src/build_msg.o
+-	${Q}${HOSTCC} src/build_msg.o ${OBJECTS} ${LIB_DIR} ${LIB} -o $@
++	${Q}${HOSTCC} src/build_msg.o ${OBJECTS} ${LIB_DIR} ${LIB} ${LDFLAGS} -o $@
+ 
+ %.o: %.c
+ 	@echo "  HOSTCC  $<"
+diff --git a/tools/fiptool/Makefile b/tools/fiptool/Makefile
+index e6aeba95b..68a5b2acb 100644
+--- a/tools/fiptool/Makefile
++++ b/tools/fiptool/Makefile
+@@ -57,7 +57,7 @@ all: ${PROJECT}
+ 
+ ${PROJECT}: ${OBJECTS} Makefile
+ 	@echo "  HOSTLD  $@"
+-	${Q}${HOSTCC} ${OBJECTS} -o $@ ${LDLIBS}
++	${Q}${HOSTCC} ${OBJECTS} -o $@ ${LDLIBS} ${LDFLAGS}
+ 	@${ECHO_BLANK_LINE}
+ 	@echo "Built $@ successfully"
+ 	@${ECHO_BLANK_LINE}
