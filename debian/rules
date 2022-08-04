@@ -5,6 +5,7 @@ include /usr/share/dpkg/buildtools.mk
 
 export DH_VERBOSE=1
 export TF_CFLAGS += -ffile-prefix-map=$(CURDIR)=.
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
 
 # Enable verbose build by default, disable when terse is specified.
 ifneq (,$(filter terse,$(DEB_BUILD_OPTIONS)))
