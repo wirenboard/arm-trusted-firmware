@@ -1,3 +1,15 @@
+arm-trusted-firmware (2.7.0+dfsg-2) unstable; urgency=medium
+
+  * debian/rules: Fix build failure by ignoring warnings for RWX segments.
+  * debian/rules: Work around gcc-12 bug by passing --param=min-pagesize=0
+    in CFLAGS.
+  * debian/patches: Use LDFLAGS with fiptool and cert_create.
+  * debian/rules: Enable hardening options.
+  * Update lintian override for statically-linked-binary.
+  * Update lintian override for wrong-section-according-to-package-name.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Fri, 05 Aug 2022 20:28:37 -0700
+
 arm-trusted-firmware (2.7.0+dfsg-1) experimental; urgency=medium
 
   * New upstream release.
