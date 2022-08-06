@@ -2,4 +2,4 @@
 arm-trusted-firmware binary: statically-linked-binary *usr/lib/arm-trusted-firmware/*/bl31.elf*
 
 # Intended for U-Boot, not linux.
-wrong-section-according-to-package-name arm-trusted-firmware => kernel
+arm-trusted-firmware binary: wrong-section-according-to-package-name admin => kernel
