@@ -14,8 +14,8 @@ else
 VERBOSE=1
 endif
 
-platforms := g12a gxbb sun50i_a64 sun50i_h6 rk3328 rk3399 rpi3 rpi4 imx8mn
-platforms_nodebug := imx8mq
+platforms := g12a gxbb sun50i_h6 rk3328 rk3399 rpi3 rpi4 imx8mn
+platforms_nodebug := sun50i_a64 imx8mq
 
 # By default, iMX8MN uses UART2 console. However, other boards supported
 # upstream (e.g. Variscite VAR-SOM-MX8M-NANO board) uses UART4.
