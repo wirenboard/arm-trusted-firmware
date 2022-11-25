@@ -14,7 +14,7 @@ else
 VERBOSE=1
 endif
 
-platforms := g12a gxbb sun50i_a64 sun50i_h6 rk3328 rk3399 rpi3 rpi4 imx8mn imx8mm
+platforms := g12a gxbb sun50i_a64 sun50i_h6 rcar rk3328 rk3399 rpi3 rpi4 imx8mn imx8mm
 platforms_nodebug := imx8mq
 
 # By default, iMX8MN uses UART2 console. However, other boards supported
@@ -35,6 +35,14 @@ imx8mm_uart4_assigns := IMX_BOOT_UART_BASE=0x30A60000
 rk3328_targets := bl31/bl31.elf
 rk3399_targets := bl31/bl31.elf
 
+rcar_subplatforms := rcar_uclb_h3 rcar_uclb_m3w rcar_uclb_m3n
+rcar_uclb_h3_assigns := LSI=H3 RCAR_DRAM_SPLIT=1 RCAR_GEN3_ULCB=1 PMIC_LEVEL_MODE=0 RCAR_DRAM_LPDDR4_MEMCONF=0 SPD=opteed RCAR_LOSSY_ENABLE=1
+rcar_uclb_m3n_assigns := LSI=M3N RCAR_GEN3_ULCB=1 PMIC_LEVEL_MODE=0 RCAR_DRAM_LPDDR4_MEMCONF=0 SPD=opteed RCAR_LOSSY_ENABLE=1
+rcar_uclb_m3w_assigns := LSI=M3 RCAR_DRAM_SPLIT=2 RCAR_GEN3_ULCB=1 PMIC_LEVEL_MODE=0 RCAR_DRAM_LPDDR4_MEMCONF=0 SPD=opteed RCAR_LOSSY_ENABLE=1
+
+rcar_targets := bl31.srec bl2.srec
+rcar_make_target := rcar
+
 # Always set CROSS_COMPILE, which also works for native builds.
 define build_platform
 	$(eval platform := $(1))
@@ -51,7 +59,7 @@ define build_platform
 		# For each subplatform, make is called using the same PLAT variable. If
 		# the build is not cleaned between each call, objects will remain the
 		# same, without rebuilding them.
-		make DEBUG=$(debug) PLAT=$(platform) clean ; \
+		make DEBUG=$(debug) $($(subplatform)_assigns) PLAT=$(platform) clean ; \
 	)
 endef
 
