@@ -61,7 +61,14 @@ Copyright:
  2019, Linaro Ltd
  2020 Ahmad Fatoum, Pengutronix
  2021, Grzegorz Szymaszek.
+ 2019-2020 Marek Vasut <marex@denx.de>
+ 2022-2022 DH electronics GmbH
 License: GPL-2+ or BSD-3-clause
+
+File: fdts/stm32mp1-cot-descriptors.dtsi
+Copyright:
+ 2020-2022, ARM Limited. All rights reserved.
+License: BSD-3-Clause
 
 Files: include/dt-bindings/*
 Copyright:
@@ -96,7 +103,7 @@ License: BSD-3-Clause
 Files: include/drivers/st/*
 Copyright:
  2015-2018, ARM Limited and Contributors
- 2015-2019, STMicroelectronics
+ 2015-2022, STMicroelectronics
 License: BSD-3-clause
 
 Files:
@@ -132,7 +139,7 @@ License: BSD-2-clause
 
 Files: lib/zlib/*
 Copyright:
- 1995-2017 Mark Adler
+ 1995-2022 Mark Adler
  1995-2017 Jean-loup Gailly
 License: Zlib
 
@@ -188,7 +195,8 @@ Copyright:
  2015-2022 ARM Limited and Contributors.
  2017-2022 NXP
  2021 Arm
- 2922 Linaro
+ 2022 Linaro
+ 2022 Leica Geosystems AG
 License: BSD-3-clause
 
 Files: services/spd/*
@@ -196,6 +204,7 @@ Copyright:
  2013-2022, ARM Limited and Contributors.
  2020, NVIDIA Corporation.
  2014, Linaro Limited.
+ 2021-2022, ProvenRun S.A.S. All rights reserved.
 License: BSD-3-clause
 
 Files: tools/marvell/*
