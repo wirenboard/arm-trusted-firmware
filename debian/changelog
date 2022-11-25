@@ -1,11 +1,12 @@
-arm-trusted-firmware (2.8.0+dfsg-1~0) UNRELEASED; urgency=medium
+arm-trusted-firmware (2.8.0+dfsg-1) unstable; urgency=medium
 
   * New upstream release.
   * debian/control: Add openssl to Build-Depends.
   * debian/rules: Move sun50i_a64 to platforms_nodebug.
-  * debian/patches: Refresh for v2.8.0.
+  * debian/patches: Refresh for 2.8.0.
+  * debian/copyright: Update for 2.8.0.
 
- -- Vagrant Cascadian <vagrant@debian.org>  Thu, 24 Nov 2022 20:23:15 -0800
+ -- Vagrant Cascadian <vagrant@debian.org>  Thu, 24 Nov 2022 22:31:44 -0800
 
 arm-trusted-firmware (2.7.0+dfsg-2) unstable; urgency=medium
 
