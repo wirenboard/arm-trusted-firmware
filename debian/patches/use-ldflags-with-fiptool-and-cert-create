@@ -19,7 +19,7 @@ index e6aeba95b..68a5b2acb 100644
 +++ b/tools/fiptool/Makefile
 @@ -57,7 +57,7 @@ all: ${PROJECT}
  
- ${PROJECT}: ${OBJECTS} Makefile
+ ${PROJECT}: --openssl ${OBJECTS} Makefile
  	@echo "  HOSTLD  $@"
 -	${Q}${HOSTCC} ${OBJECTS} -o $@ ${LDLIBS}
 +	${Q}${HOSTCC} ${OBJECTS} -o $@ ${LDLIBS} ${LDFLAGS}
