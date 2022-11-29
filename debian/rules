@@ -32,16 +32,22 @@ imx8mm_uart1_assigns := IMX_BOOT_UART_BASE=0x30860000
 imx8mm_uart3_assigns := IMX_BOOT_UART_BASE=0x30880000
 imx8mm_uart4_assigns := IMX_BOOT_UART_BASE=0x30A60000
 
+rk3328_targets := bl31/bl31.elf
+rk3399_targets := bl31/bl31.elf
+
 # Always set CROSS_COMPILE, which also works for native builds.
 define build_platform
 	$(eval platform := $(1))
 	$(eval debug := $(2))
 	$(eval buildtype := $(3))
 	$(eval subplatforms := $(if $($(platform)_subplatforms), $($(platform)_subplatforms), $(platform)))
-	$(eval target := $(if $(filter rk3328 rk3399,$(platform)),bl31/bl31.elf,bl31.bin))
+	$(eval targets := $(if $($(platform)_targets), $($(platform)_targets), bl31.bin))
+	$(eval make_target := $(if $($(platform)_make_target), $($(platform)_make_target), bl31))
 	$(foreach subplatform, $(subplatforms), \
-		CROSS_COMPILE=aarch64-linux-gnu- CFLAGS=--param=min-pagesize=0 LDFLAGS= TF_LDFLAGS=--no-warn-rwx-segments dh_auto_build -- V=$(VERBOSE) DEBUG=$(debug) $($(subplatform)_assigns) PLAT=$(platform) bl31 ; \
-		install -m644 build/$(platform)/$(buildtype)/$(target) -Dt build/renamed/$(subplatform) ; \
+		CROSS_COMPILE=aarch64-linux-gnu- CFLAGS=--param=min-pagesize=0 LDFLAGS= TF_LDFLAGS=--no-warn-rwx-segments dh_auto_build -- V=$(VERBOSE) DEBUG=$(debug) $($(subplatform)_assigns) PLAT=$(platform) $(make_target) ; \
+		$(foreach target, $(targets), \
+			install -m644 build/$(platform)/$(board)/$(buildtype)/$(target) -Dt build/renamed/$(subplatform) ; \
+		) \
 		# For each subplatform, make is called using the same PLAT variable. If
 		# the build is not cleaned between each call, objects will remain the
 		# same, without rebuilding them.
