@@ -33,6 +33,13 @@ imx8mm_uart1_assigns := IMX_BOOT_UART_BASE=0x30860000
 imx8mm_uart3_assigns := IMX_BOOT_UART_BASE=0x30880000
 imx8mm_uart4_assigns := IMX_BOOT_UART_BASE=0x30A60000
 
+# TF-A's regulator setup breaks Ethernet on some H6 boards,
+# so make it optional by having two subplatforms:
+#   * sun50i_h6: default configuration
+#   * sun50i_h6_leave_regulators: skip regulator setup
+sun50i_h6_subplatforms := sun50i_h6 sun50i_h6_no_pmic
+sun50i_h6_leave_regulators_assigns := SUNXI_SETUP_REGULATORS=0
+
 rk3328_targets := bl31/bl31.elf
 rk3399_targets := bl31/bl31.elf
 
