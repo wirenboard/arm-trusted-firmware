@@ -14,7 +14,7 @@ else
 VERBOSE=1
 endif
 
-platforms := g12a gxbb sun50i_h6 rk3328 rk3399 rpi3 rpi4 imx8mn
+platforms := g12a gxbb sun50i_h6 rk3328 rk3399 rpi3 rpi4 imx8mn imx8mm
 platforms_nodebug := sun50i_a64 imx8mq
 
 # By default, iMX8MN uses UART2 console. However, other boards supported
@@ -24,6 +24,13 @@ platforms_nodebug := sun50i_a64 imx8mq
 #   * imx8mn_uart4: console set to UART4
 imx8mn_subplatforms := imx8mn imx8mn_uart4
 imx8mn_uart4_assigns := IMX_BOOT_UART_BASE=0x30a60000
+
+# By default, iMX8MM uses UART2 console. However, other boards
+# use other UARTs
+imx8mm_subplatforms := imx8mm imx8mm_uart1 imx8mm_uart3 imx8mm_uart4
+imx8mm_uart1_assigns := IMX_BOOT_UART_BASE=0x30860000
+imx8mm_uart3_assigns := IMX_BOOT_UART_BASE=0x30880000
+imx8mm_uart4_assigns := IMX_BOOT_UART_BASE=0x30A60000
 
 # Always set CROSS_COMPILE, which also works for native builds.
 define build_platform
