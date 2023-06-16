@@ -10,7 +10,7 @@ Files-Excluded:
 
 Files: *
 Copyright:
- 2013-2022, Arm Limited and Contributors.
+ 2013-2023, Arm Limited and Contributors.
 License: BSD-3-clause
 
 Files: debian/*
@@ -41,7 +41,7 @@ License: BSD-3-clause
 Files:
  drivers/st/*
 Copyright:
- 2016-2022, STMicroelectronics
+ 2016-2023, STMicroelectronics
  2018-2022, ARM Limited and Contributors.
 License: BSD-3-clause
 
@@ -56,16 +56,18 @@ License: GPL-2+ or BSD-3-clause
 
 Files: fdts/stm32*
 Copyright:
- 2017-2022, STMicroelectronics
+ 2017-2023, STMicroelectronics
  2019, Arrow Electronics
  2019, Linaro Ltd
  2020 Ahmad Fatoum, Pengutronix
  2021, Grzegorz Szymaszek.
  2019-2020 Marek Vasut <marex@denx.de>
  2022-2022 DH electronics GmbH
+ 2023 Oleksij Rempel <kernel@pengutronix.de>, Pengutronix
+ 2023 Protonic Holland
 License: GPL-2+ or BSD-3-clause
 
-File: fdts/stm32mp1-cot-descriptors.dtsi
+Files: fdts/stm32mp1-cot-descriptors.dtsi
 Copyright:
  2020-2022, ARM Limited. All rights reserved.
 License: BSD-3-Clause
@@ -102,8 +104,8 @@ License: BSD-3-Clause
 
 Files: include/drivers/st/*
 Copyright:
- 2015-2018, ARM Limited and Contributors
- 2015-2022, STMicroelectronics
+ 2018, ARM Limited and Contributors
+ 2015-2023, STMicroelectronics
 License: BSD-3-clause
 
 Files:
@@ -177,14 +179,14 @@ License: BSD-3-clause
 
 Files: plat/renesas/*
 Copyright:
- 2013-2020, ARM Limited and Contributors.
+ 2013-2023, ARM Limited and Contributors.
  2015-2022, Renesas Electronics Corporation.
 License: BSD-3-clause
 
 Files: plat/st/*
 Copyright:
- 2015-2022, ARM Limited and Contributors.
- 2014-2022, STMicroelectronics
+ 2015-2023, ARM Limited and Contributors.
+ 2014-2023, STMicroelectronics
  2021, Linaro Limited
 License: BSD-3-clause
 
@@ -192,8 +194,8 @@ Files: plat/imx/*
 Copyright:
  2018-2019 Linaro Limited and Contributors.
  2016 Freescale Semiconductor, Inc.
- 2015-2022 ARM Limited and Contributors.
- 2017-2022 NXP
+ 2015-2023 ARM Limited and Contributors.
+ 2017-2023 NXP
  2021 Arm
  2022 Linaro
  2022 Leica Geosystems AG
@@ -201,7 +203,7 @@ License: BSD-3-clause
 
 Files: services/spd/*
 Copyright:
- 2013-2022, ARM Limited and Contributors.
+ 2013-2023, ARM Limited and Contributors.
  2020, NVIDIA Corporation.
  2014, Linaro Limited.
  2021-2022, ProvenRun S.A.S. All rights reserved.
@@ -245,7 +247,7 @@ Copyright:
  UNIX System Laboratories, Inc.
  2001 David E. O'Brien
  2012-2021 Roberto E. Vargas Caballero
- 2018-2020, ARM Limited and Contributors.
+ 2018-2023, ARM Limited and Contributors.
  2021 ARM Limited
  2020 Broadcom
 License: BSD-3-clause
@@ -258,6 +260,7 @@ Files:
  include/tools_share/uuid.h
 Copyright:
  2002 Marcel Moolenaar
+ 2014-2023 Arm Limited and Contributors.
 License: BSD-2-clause
 
 License: BSD-3-clause
