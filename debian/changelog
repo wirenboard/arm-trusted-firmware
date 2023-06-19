@@ -1,3 +1,9 @@
+arm-trusted-firmware (2.9.0+dfsg-2) experimental; urgency=medium
+
+  * debian/rules: Fix variable assignment for sun50i_h6_no_pmic target.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Sun, 18 Jun 2023 20:42:17 -0700
+
 arm-trusted-firmware (2.9.0+dfsg-1) experimental; urgency=medium
 
   [ Manuel Traut ]
