@@ -1,4 +1,4 @@
-arm-trusted-firmware (2.9.0+dfsg-1~0) UNRELEASED; urgency=medium
+arm-trusted-firmware (2.9.0+dfsg-1) experimental; urgency=medium
 
   [ Manuel Traut ]
   * Build for i.MX8MM
@@ -8,7 +8,19 @@ arm-trusted-firmware (2.9.0+dfsg-1~0) UNRELEASED; urgency=medium
   * debian/control: Update Standards-Version to 4.6.2.
   * debian/rules: Build sun50i_a64 with debugging enabled again.
 
- -- Vagrant Cascadian <vagrant@debian.org>  Fri, 16 Jun 2023 16:56:30 -0700
+  [ Detlev Casanova ]
+  * debian/patches: Add mandatory fields in reserved-memory node
+  * debian/rules: Add platform target specifiers
+  * debian/rules: Also build bl31 for the rcar platform
+
+  [ Vagrant Cascadian ]
+  * debian/rules: Disable imx8mq, as it is not well supported upstream.
+
+  [ harry88@gmx.ph ]
+  * debian/rules: Add sun50i_h6 subplatform without PMIC regulators.
+    (Closes: #1032395)
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Sun, 18 Jun 2023 20:26:00 -0700
 
 arm-trusted-firmware (2.8.0+dfsg-1) unstable; urgency=medium
 
