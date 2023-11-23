@@ -1,1 +1,2 @@
 use-ldflags-with-fiptool-and-cert-create
+fix-rk3328-apply-ERRATA_A53_1530924-erratum.patch

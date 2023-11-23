@@ -1,0 +1,43 @@
+From: Diederik de Haas <didi.trustedfirmware@cknow.org>
+Date: Mon, 27 Nov 2023 10:21:37 +0100
+Subject: fix(rk3328): apply ERRATA_A53_1530924 erratum
+Origin: upstream, https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git/commit?id=dd2c888606dcdd638354c6345e08d4415d9d09fd
+
+Apply erratum ERRATA_A53_1530924.
+
+Signed-off-by: Olivier Deprez <olivier.deprez@arm.com>
+Change-Id: Ib4130fd9d4cd16b12322f44e91196607fcb6bf6b
+---
+ changelog.yaml                   | 3 +++
+ plat/rockchip/rk3328/platform.mk | 1 +
+ 2 files changed, 4 insertions(+)
+
+diff --git a/changelog.yaml b/changelog.yaml
+index 1467ab4ca..c5e157d9b 100644
+--- a/changelog.yaml
++++ b/changelog.yaml
+@@ -569,6 +569,9 @@ subsections:
+               - rockchip/rk3399
+               - rk3399/suspend
+ 
++          - title: RK3328
++            scope: rk3328
++
+       - title: Socionext
+         scope: socionext
+ 
+diff --git a/plat/rockchip/rk3328/platform.mk b/plat/rockchip/rk3328/platform.mk
+index 5b4766d51..f96e18bb0 100644
+--- a/plat/rockchip/rk3328/platform.mk
++++ b/plat/rockchip/rk3328/platform.mk
+@@ -65,6 +65,7 @@ include lib/libfdt/libfdt.mk
+ 
+ # Enable workarounds for selected Cortex-A53 errata
+ ERRATA_A53_855873	:=	1
++ERRATA_A53_1530924	:=      1
+ 
+ $(eval $(call add_define,PLAT_EXTRA_LD_SCRIPT))
+ $(eval $(call add_define,PLAT_SKIP_OPTEE_S_EL1_INT_REGISTER))
+-- 
+2.43.0
+
