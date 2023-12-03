@@ -150,6 +150,10 @@ subsections:
         scope: trf
 
   - title: Platforms
+    scope: platforms
+
+    deprecated:
+      - plat/common
 
     subsections:
       - title: Allwinner
@@ -180,8 +184,8 @@ subsections:
 
             deprecated:
               - arm_fgpa
-              - arm_fpga
               - plat/arm_fpga
+              - arm/fpga
 
           - title: FVP
             scope: fvp
@@ -244,8 +248,18 @@ subsections:
           - title: Corstone-1000
             scope: corstone-1000
 
+      - title: Aspeed
+        scope: aspeed
+
+        subsections:
+          - title: AST2700
+            scope: ast2700
+
       - title: Broadcom
         scope: brcm
+
+      - title: Cadence
+        scope: cadence
 
       - title: HiSilicon
         scope: hisilicon
@@ -399,6 +413,13 @@ subsections:
               - title: i.MX 8
                 scope: imx8
 
+              - title: i.MX 9
+                scope: imx9
+
+                subsections:
+                  - title: i.MX93
+                    scope: imx93
+
           - title: Layerscape
             scope: layerscape
 
@@ -484,6 +505,9 @@ subsections:
         subsections:
           - title: SBSA
             scope: qemu-sbsa
+
+            deprecated:
+              - qemu_sbsa
 
       - title: QTI
         scope: qti
@@ -575,6 +599,9 @@ subsections:
               - title: STM32MP15
                 scope: stm32mp15
 
+          - title: STM32MP2
+            scope: stm32mp2
+
       - title: Texas Instruments
         scope: ti
 
@@ -592,6 +619,9 @@ subsections:
           - plat/xilinx
 
         subsections:
+          - title: DCC (Debug Communication Channel)
+            scope: dcc
+
           - title: Versal
             scope: versal
 
@@ -613,6 +643,13 @@ subsections:
             deprecated:
               - plat/zynqmp
               - plat/xilinx/zynqmp
+
+      - title: Nuvoton
+        scope: nuvoton
+
+        subsections:
+          - title: npcm845x
+            scope: npcm845x
 
   - title: Bootloader Images
     scope: bl
@@ -667,6 +704,9 @@ subsections:
         scope: spm
 
         subsections:
+          - title: EL3 SPM
+            scope: el3-spm
+
           - title: EL3 SPMC
             scope: el3-spmc
 
@@ -685,10 +725,14 @@ subsections:
       - title: TRNG
         scope: trng
 
-      - title: ERRATA_ABI
-        scope: errata_abi
+      - title: ERRATA ABI
+        scope: errata-abi
+
+        deprecated:
+          - errata_abi
 
   - title: Libraries
+    scope: lib
 
     subsections:
       - title: CPU Support
@@ -760,6 +804,9 @@ subsections:
       - title: Semihosting
         scope: semihosting
 
+      - title: Firmware Handoff
+        scope: handoff
+
   - title: Drivers
 
     subsections:
@@ -778,6 +825,9 @@ subsections:
 
           - title: mbedTLS
             scope: mbedtls
+
+          - title: mbedTLS-PSA
+            scope: mbedtls-psa
 
       - title: Console
         scope: console
@@ -874,6 +924,9 @@ subsections:
 
                   - title: GIC-600AE
                     scope: gic600ae
+
+              - title: GICv2
+                scope: gicv2
 
           - title: SMMU
             scope: smmu
@@ -1036,6 +1089,9 @@ subsections:
 
           - title: TZC-380
             scope: nxp-tzc380
+
+          - title: TRDC
+            scope: imx-trdc
 
       - title: Renesas
         scope: renesas-drivers
@@ -1201,6 +1257,9 @@ subsections:
               - title: STM32MP15
                 scope: stm32mp15-fdts
 
+          - title: STM32MP2
+            scope: stm32mp2-fdts
+
       - title: PIE
         scope: pie
 
@@ -1301,6 +1360,9 @@ subsections:
       - title: Certificate Creation Tool
         scope: cert-create
 
+      - title: Memory Mapping Tool
+        scope: memmap
+
         deprecated:
           - cert_create
 
@@ -1322,6 +1384,9 @@ subsections:
 
       - title: Node Package Manager (NPM)
         scope: npm
+
+      - title: Poetry
+        scope: poetry
 
       - title: zlib
         scope: zlib

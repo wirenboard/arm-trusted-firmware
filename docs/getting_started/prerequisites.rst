@@ -26,7 +26,7 @@ Toolchain
 |TF-A| can be built with any of the following *cross-compiler* toolchains that
 target the Armv7-A or Armv8-A architectures:
 
-- GCC >= 12.2.Rel1 (from the `Arm Developer website`_)
+- TF-A has been tested with version 12.3.Rel1 (gcc 12.3) from the `Arm Developer website`_
 
    You will need the targets ``arm-none-eabi`` and ``aarch64-none-elf`` for
    AArch32 and AArch64 builds respectively.
@@ -77,7 +77,7 @@ supporting tools:
 The following libraries are required for Trusted Board Boot and Measured Boot
 support:
 
-- mbed TLS == 3.4.0 (tag: ``mbedtls-3.4.0``)
+- mbed TLS == 3.4.1 (tag: ``mbedtls-3.4.1``)
 
 These tools are optional:
 
