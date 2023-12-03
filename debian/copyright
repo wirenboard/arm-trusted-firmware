@@ -10,224 +10,239 @@ Files-Excluded:
 
 Files: *
 Copyright:
- 2013-2023, Arm Limited and Contributors.
-License: BSD-3-clause
-
-Files: debian/*
-Copyright: 2018 Adam Borowski <kilobyte@angband.pl>
- 2018-2020 Vagrant Cascadian <vagrant@debian.org>
-License: BSD-3-clause
-
-Files: drivers/brcm/*
-Copyright:
- 2016-2021, Broadcom
-License: BSD-3-clause
-
-Files: drivers/imx/uart/*
-Copyright:
-  Linaro 2018 Limited and Contributors.
-License: BSD-3-clause
-
-Files: drivers/marvell/*
-Copyright:
+ 1989 Regents of the University of California.
+ 1998 Softweyr LLC.  All rights reserved.
+ 2001 David E. O'Brien
+ 2005 MontaVista Software, Inc.
+ 2005 Nokia Corporation
+ 2011 The FreeBSD Foundation
+ 2012-2021 Roberto E. Vargas Caballero
+ 2013-2023 ARM Limited and Contributors. All rights reserved.
+ 2013-2023 Arm Limited and Contributors. All rights reserved.
+ 2014-2023 Arm Limited. All rights reserved.
+ 2014-2016 Freescale Semiconductor, Inc.
+ 2014 Linaro Limited. All rights reserved.
+ 2014-2023 STMicroelectronics - All Rights Reserved
+ 2014 STMicroelectronics International N.V.
+ 2015-2021 Broadcom
+ 2015-2023 NVIDIA Corporation. All rights reserved.
+ 2015-2023 Renesas Electronics Corporation.
+ 2015-2023 Renesas Electronics Corporation. All rights
+ 2015-2023 Renesas Electronics Corporation. All rights reserved.
+ 2016-2020 Marvell International Ltd.
+ 2016-2022 Linaro Limited. All rights reserved.
  2016-2021 Marvell International Ltd.
-License: BSD-3-clause
-
-Files: drivers/renesas/*
-Copyright:
- 2015-2021, Renesas Electronics Corporation.
-License: BSD-3-clause
+ 2016-2023 NXP
+ 2017-2020 Arm Limited and Contributors. All rights reserved.
+ 2017-2023 NVIDIA CORPORATION. All rights reserved.
+ 2017-2022 NXP Semiconductors
+ 2017-2023 Nuvoton Ltd.
+ 2017-2023 Nuvoton Technology Corp.
+ 2017-2022 Xilinx, Inc. All rights reserved.
+ 2018 Andre Przywara <osp@andrep.de>
+ 2018-2020 Arm Limited and Contributors.
+ 2018 Icenowy Zheng <icenowy@aosc.io>
+ 2018-2019 Linaro
+ 2018-2022 Texas Instruments Incorporated - https://www.ti.com/
+ 2018-2021 The Linux Foundation. All rights reserved.
+ 2019-2023 STMicroelectronics - All Rights Reserved
+ 2019-2020 Broadcom.
+ 2019 Carlo Caione <ccaione@baylibre.com>
+ 2019-2023 Intel Corporation. All rights reserved.
+ 2019-2022 Linaro Limited
+ 2019-2020 Linaro Limited and Contributors.
+ 2019-2023 Linaro Limited and Contributors. All rights reserved.
+ 2019-2023 MediaTek Inc. All rights reserved.
+ 2019-2022 NXP. All rights reserved.
+ 2019 Remi Pommarel <repk@triplefau.lt>
+ 2019 Repk repk@triplefau.lt
+ 2019-2022 Socionext Inc. All rights reserved.
+ 2019 Ying-Chun Liu (PaulLiu) <paul.liu@linaro.org>
+ 2020-2022 ARM Limited and Contributors. All rights reserved.
+ 2020-2023 Google LLC. All rights reserved.
+ 2020 Marek Behun, CZ.NIC
+ 2020 Marvell Technology Group Ltd. All rights reserved.
+ 2020 MediaTek Inc. All rights reserved.
+ 2020 NXP.
+ 2020 Nuvia Inc
+ 2020-2021 Sartura Ltd.
+ 2020-2021 Siemens AG
+ 2021 Xilinx Inc.
+ 2021 Arm
+ 2021 Arm Limited
+ 2021 Globalscale technologies, Inc.
+ 2021 Marek Behun <marek.behun@nic.cz>
+ 2021-2022 ProvenRun S.A.S. All rights reserved.
+ 2021 Semihalf.
+ 2021 Sipeed
+ 2021-2023 Stephan Gerhold <stephan@gerhold.net>
+ 2022-2023 Advanced Micro Devices, Inc. All rights reserved.
+ 2022-2023 Arm Ltd. All rights reserved.
+ 2022 Fujitsu Limited and Contributors. All rights reserved.
+ 2022 Leica Geosystems AG
+ 2022 Linaro
+ 2022-2023 Linaro.
+ 2022 Mediatek Inc. All rights reserved.
+ 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ 2022 The Hafnium Authors.
+ 2023 Advanced Micro Devices. All rights reserved.
+ 2023 Arm Limited. All rights reserved
+ 2023 Aspeed Technology Inc.
+ 2023 Pengutronix. All rights reserved.
+License: BSD-3-Clause
 
 Files:
- drivers/st/*
-Copyright:
- 2016-2023, STMicroelectronics
- 2018-2022, ARM Limited and Contributors.
-License: BSD-3-clause
-
-Files:
+ drivers/st/clk/clk-stm32-core.c
+ drivers/st/clk/clk-stm32-core.h
+ drivers/st/clk/clk-stm32mp13.c
  drivers/st/clk/stm32mp1_clk.c
  drivers/st/ddr/stm32mp1_ddr.c
  drivers/st/ddr/stm32mp1_ram.c
  drivers/st/fmc/stm32_fmc2_nand.c
  drivers/st/spi/stm32_qspi.c
-Copyright: 2018-2022, STMicroelectronics
-License: GPL-2+ or BSD-3-clause
-
-Files: fdts/stm32*
-Copyright:
- 2017-2023, STMicroelectronics
- 2019, Arrow Electronics
- 2019, Linaro Ltd
- 2020 Ahmad Fatoum, Pengutronix
- 2021, Grzegorz Szymaszek.
- 2019-2020 Marek Vasut <marex@denx.de>
- 2022-2022 DH electronics GmbH
- 2023 Oleksij Rempel <kernel@pengutronix.de>, Pengutronix
- 2023 Protonic Holland
-License: GPL-2+ or BSD-3-clause
-
-Files: fdts/stm32mp1-cot-descriptors.dtsi
-Copyright:
- 2020-2022, ARM Limited. All rights reserved.
-License: BSD-3-Clause
-
-Files: include/dt-bindings/*
-Copyright:
- 2017-2022, STMicroelectronics
-License: GPL-2+ or BSD-3-clause
-
-Files:
- include/dt-bindings/reset/stm32mp13-resets.h
- include/dt-bindings/reset/stm32mp15-resets.h
-Copyright:
- 2018-2022 STMicroelectronics
-License: GPL-2 or BSD-3-clause
-
-Files:
- include/dt-bindings/interrupt-controller/arm-gic.h
- include/dt-bindings/interrupt-controller/irq.h
-Copyright:
- 2019-2021, ARM Limited and Contributors.
-License: MIT
-
-Files: include/drivers/marvell/*
-Copyright:
-  2016-2020 Marvell International Ltd.
-License: BSD-3-clause
-
-Files: include/drivers/mentor/mi2cv.h
-Copyright:
- 2018 Marvell International Ltd.
- 2018 Icenowy Zheng <icenowy@aosc.io>
-License: BSD-3-Clause
-
-Files: include/drivers/st/*
-Copyright:
- 2018, ARM Limited and Contributors
- 2015-2023, STMicroelectronics
-License: BSD-3-clause
-
-Files:
+ fdts/stm32mp13-bl2.dtsi
+ fdts/stm32mp13-ddr.dtsi
+ fdts/stm32mp13-ddr3-1x4Gb-1066-binF.dtsi
+ fdts/stm32mp13-fw-config.dtsi
+ fdts/stm32mp13-pinctrl.dtsi
+ fdts/stm32mp131.dtsi
+ fdts/stm32mp133.dtsi
+ fdts/stm32mp135.dtsi
+ fdts/stm32mp135f-dk-fw-config.dts
+ fdts/stm32mp135f-dk.dts
+ fdts/stm32mp13xa.dtsi
+ fdts/stm32mp13xc.dtsi
+ fdts/stm32mp13xd.dtsi
+ fdts/stm32mp13xf.dtsi
+ fdts/stm32mp15-bl2.dtsi
+ fdts/stm32mp15-bl32.dtsi
+ fdts/stm32mp15-ddr.dtsi
+ fdts/stm32mp15-ddr3-1x2Gb-1066-binG.dtsi
+ fdts/stm32mp15-ddr3-1x4Gb-1066-binG.dtsi
+ fdts/stm32mp15-ddr3-2x4Gb-1066-binG.dtsi
+ fdts/stm32mp15-ddr3-dhsom-2x4Gb-1066-binG.dtsi
+ fdts/stm32mp15-fw-config.dtsi
+ fdts/stm32mp15-pinctrl.dtsi
+ fdts/stm32mp151.dtsi
+ fdts/stm32mp151a-prtt1a-fw-config.dts
+ fdts/stm32mp151a-prtt1a.dts
+ fdts/stm32mp153.dtsi
+ fdts/stm32mp157.dtsi
+ fdts/stm32mp157a-avenger96-fw-config.dts
+ fdts/stm32mp157a-avenger96.dts
+ fdts/stm32mp157a-dhcor-avenger96-fw-config.dts
+ fdts/stm32mp157a-dk1-fw-config.dts
+ fdts/stm32mp157a-dk1.dts
+ fdts/stm32mp157a-ed1-fw-config.dts
+ fdts/stm32mp157a-ev1-fw-config.dts
+ fdts/stm32mp157c-dhcom-pdk2-fw-config.dts
+ fdts/stm32mp157c-dhcom-pdk2.dts
+ fdts/stm32mp157c-dk2-fw-config.dts
+ fdts/stm32mp157c-dk2.dts
+ fdts/stm32mp157c-ed1-fw-config.dts
+ fdts/stm32mp157c-ed1.dts
+ fdts/stm32mp157c-ev1-fw-config.dts
+ fdts/stm32mp157c-ev1.dts
+ fdts/stm32mp157c-lxa-mc1-fw-config.dts
+ fdts/stm32mp157c-lxa-mc1.dts
+ fdts/stm32mp157c-odyssey-fw-config.dts
+ fdts/stm32mp157c-odyssey-som.dtsi
+ fdts/stm32mp157c-odyssey.dts
+ fdts/stm32mp157d-dk1-fw-config.dts
+ fdts/stm32mp157d-ed1-fw-config.dts
+ fdts/stm32mp157d-ev1-fw-config.dts
+ fdts/stm32mp157f-dk2-fw-config.dts
+ fdts/stm32mp157f-ed1-fw-config.dts
+ fdts/stm32mp157f-ev1-fw-config.dts
+ fdts/stm32mp15xc.dtsi
+ fdts/stm32mp15xx-dhcom-pdk2.dtsi
+ fdts/stm32mp15xx-dhcom-som.dtsi
+ fdts/stm32mp15xx-dkx.dtsi
+ fdts/stm32mp15xx-osd32.dtsi
+ fdts/stm32mp15xxaa-pinctrl.dtsi
+ fdts/stm32mp15xxab-pinctrl.dtsi
+ fdts/stm32mp15xxac-pinctrl.dtsi
+ fdts/stm32mp15xxad-pinctrl.dtsi
+ fdts/stm32mp25-bl2.dtsi
+ fdts/stm32mp25-pinctrl.dtsi
+ fdts/stm32mp251.dtsi
+ fdts/stm32mp253.dtsi
+ fdts/stm32mp255.dtsi
+ fdts/stm32mp257.dtsi
+ fdts/stm32mp257f-ev1.dts
+ fdts/stm32mp25xc.dtsi
+ fdts/stm32mp25xf.dtsi
+ fdts/stm32mp25xxai-pinctrl.dtsi
+ fdts/stm32mp25xxak-pinctrl.dtsi
+ fdts/stm32mp25xxal-pinctrl.dtsi
  include/drivers/st/stm32_fmc2_nand.h
  include/drivers/st/stm32_qspi.h
  include/drivers/st/stm32mp1_ddr.h
  include/drivers/st/stm32mp1_ddr_regs.h
  include/drivers/st/stm32mp_ddr.h
  include/drivers/st/stm32mp_ddrctrl_regs.h
+ include/dt-bindings/clock/stm32mp1-clks.h
+ include/dt-bindings/clock/stm32mp1-clksrc.h
+ include/dt-bindings/clock/stm32mp13-clksrc.h
+ include/dt-bindings/clock/stm32mp15-clksrc.h
+ include/dt-bindings/clock/stm32mp25-clksrc.h
+ include/dt-bindings/pinctrl/stm32-pinfunc.h
+ include/dt-bindings/reset/stm32mp1-resets.h
+ include/dt-bindings/soc/st,stm32-etzpc.h
+ include/dt-bindings/soc/stm32mp13-tzc400.h
+ include/dt-bindings/soc/stm32mp15-tzc400.h
 Copyright:
- 2017-2022, STMicroelectronics
-License: GPL-2+ or BSD-3-clause
+ 2017-2022 STMicroelectronics
+ 2017-2023 STMicroelectronics - All Rights Reserved
+ 2019 Arrow Electronics
+ 2019 Linaro Ltd
+ 2019-2020 Marek Vasut <marex@denx.de>
+ 2019 STMicroelectronics. All Rights Reserved.
+ 2020 Ahmad Fatoum, Pengutronix
+ 2020 DH electronics - All Rights Reserved
+ 2021 Grzegorz Szymaszek.
+ 2022 DH electronics GmbH
+ 2023 Oleksij Rempel <kernel@pengutronix.de>, Pengutronix
+ 2023 Protonic Holland - All Rights Reserved
+License: GPL-2.0+ OR BSD-3-Clause
 
 Files:
- lib/libc/str*
+ lib/compiler-rt/builtins/arm/aeabi_ldivmod.S
+ lib/compiler-rt/builtins/arm/aeabi_memcpy.S
+ lib/compiler-rt/builtins/arm/aeabi_memset.S
+ lib/compiler-rt/builtins/arm/aeabi_uldivmod.S
+ lib/compiler-rt/builtins/assembly.h
+ lib/compiler-rt/builtins/ctzdi2.c
+ lib/compiler-rt/builtins/divdi3.c
+ lib/compiler-rt/builtins/divmoddi4.c
+ lib/compiler-rt/builtins/int_div_impl.inc
+ lib/compiler-rt/builtins/int_endianness.h
+ lib/compiler-rt/builtins/int_lib.h
+ lib/compiler-rt/builtins/int_math.h
+ lib/compiler-rt/builtins/int_types.h
+ lib/compiler-rt/builtins/int_util.h
+ lib/compiler-rt/builtins/lshrdi3.c
+ lib/compiler-rt/builtins/popcountdi2.c
+ lib/compiler-rt/builtins/popcountsi2.c
+ lib/compiler-rt/builtins/udivmoddi4.c
 Copyright:
- 1988-1993 The Regents of the University of California.
- 2011 The FreeBSD Foundation
- 1998 Softweyr LLC
- 2018, ARM Limited and Contributors
-License: BSD-3-clause
-
-Files: lib/libc/strlcpy.c
- lib/libc/strlcat.c
-Copyright:
- 1998, 2015 Todd C. Miller <Todd.Miller@courtesan.com>
-License: ISC
-
-Files: lib/libc/strnlen.c
-Copyright:
- 2009 David Schultz <das@FreeBSD.org>
-License: BSD-2-clause
-
-Files: lib/zlib/*
-Copyright:
- 1995-2022 Mark Adler
- 1995-2017 Jean-loup Gailly
-License: Zlib
-
-Files: lib/zlib/tf_gunzip.c
- lib/zlib/zlib.mk
-Copyright:
- 2018-2021, ARM Limited and Contributors.
-License: BSD-3-clause
-
-Files: plat/allwinner/*
-Copyright:
- 2017-2022, ARM Limited and Contributors.
- 2018, Andre Przywara <osp@andrep.de>
- 2018, Icenowy Zheng <icenowy@aosc.io>
- 2021 Sipeed
-License: BSD-3-clause
-
-Files: plat/marvell/*
- include/plat/marvell/*
-Copyright:
- 2016-2021 Marvell International Ltd.
- 2016-2020, ARM Limited and Contributors.
- 2019 Repk repk@triplefau.lt
- 2020-2021 Marek Behun, CZ.NIC
- 2020-2021 Sartura Ltd.
- 2021 Globalscale technologies, Inc.
- 2021 Semihalf.
-License: BSD-3-clause
-
-Files: plat/ti/*
-Copyright:
- 2018-2022 Texas Instruments Incorporated
- 2017-2022, ARM Limited and Contributors.
-License: BSD-3-clause
-
-Files: plat/renesas/*
-Copyright:
- 2013-2023, ARM Limited and Contributors.
- 2015-2022, Renesas Electronics Corporation.
-License: BSD-3-clause
-
-Files: plat/st/*
-Copyright:
- 2015-2023, ARM Limited and Contributors.
- 2014-2023, STMicroelectronics
- 2021, Linaro Limited
-License: BSD-3-clause
-
-Files: plat/imx/*
-Copyright:
- 2018-2019 Linaro Limited and Contributors.
- 2016 Freescale Semiconductor, Inc.
- 2015-2023 ARM Limited and Contributors.
- 2017-2023 NXP
- 2021 Arm
- 2022 Linaro
- 2022 Leica Geosystems AG
-License: BSD-3-clause
-
-Files: services/spd/*
-Copyright:
- 2013-2023, ARM Limited and Contributors.
- 2020, NVIDIA Corporation.
- 2014, Linaro Limited.
- 2021-2022, ProvenRun S.A.S. All rights reserved.
-License: BSD-3-clause
-
-Files: tools/marvell/*
-Copyright:
- 2018 Marvell International Ltd.
-License: BSD-3-clause
-
-Files: tools/renesas/*
-Copyright:
- 2015-2021, Renesas Electronics Corporation.
-License: BSD-3-clause
-
-Files: tools/stm32image/*
-Copyright:
- 2017-2018, ARM Limited and Contributors.
- 2017-2022, STMicroelectronics
-License: BSD-3-clause
+ NONE
+License: Apache-2.0 WITH LLVM exception
 
 Files:
- lib/libfdt/*
- include/lib/libfdt/*
+ include/lib/libfdt/fdt.h
+ include/lib/libfdt/libfdt.h
+ include/lib/libfdt/libfdt_env.h
+ lib/libfdt/fdt.c
+ lib/libfdt/fdt_addresses.c
+ lib/libfdt/fdt_empty_tree.c
+ lib/libfdt/fdt_overlay.c
+ lib/libfdt/fdt_ro.c
+ lib/libfdt/fdt_rw.c
+ lib/libfdt/fdt_strerror.c
+ lib/libfdt/fdt_sw.c
+ lib/libfdt/fdt_wip.c
+ lib/libfdt/libfdt_internal.h
 Copyright:
  2006-2012 David Gibson, IBM Corporation.
  2012 Kim Phillips, Freescale Semiconductor.
@@ -235,33 +250,109 @@ Copyright:
  2016 Free Electrons
  2016 NextThing Co.
  2018 embedded brains GmbH
-License: BSD-2-clause or GPL-2+
-
-Files: lib/libfdt/libfdt.mk
-Copyright: 2016, ARM Limited and Contributors.
-License: BSD-3-clause
-
-Files: include/lib/libc/*
-Copyright:
- 1982-1993 The Regents of the University of California.
- UNIX System Laboratories, Inc.
- 2001 David E. O'Brien
- 2012-2021 Roberto E. Vargas Caballero
- 2018-2023, ARM Limited and Contributors.
- 2021 ARM Limited
- 2020 Broadcom
-License: BSD-3-clause
-
-Files: include/lib/libc/endian.h
-Copyright: 2002 Thomas Moestl <tmm@FreeBSD.org>
-License: BSD-2-clause
+License: GPL-2.0+ OR BSD-2-Clause
 
 Files:
- include/tools_share/uuid.h
+ include/lib/libc/aarch64/float.h
+Copyright:
+ 1989 Regents of the University of California.
+License: BSD-3-Clause
+
+Files: include/tools_share/uuid.h
 Copyright:
  2002 Marcel Moolenaar
- 2014-2023 Arm Limited and Contributors.
-License: BSD-2-clause
+License: BSD-2-Clause
+
+Files:
+ fdts/arm_fpga.dts
+ fdts/fvp-base-psci-common.dtsi
+ fdts/n1sdp-multi-chip.dts
+ fdts/n1sdp-single-chip.dts
+ fdts/n1sdp.dtsi
+ include/dt-bindings/reset/stm32mp13-resets.h
+ include/dt-bindings/reset/stm32mp15-resets.h
+Copyright:
+ 2017-2021 ARM Limited and Contributors. All rights reserved.
+ 2018-2022 STMicroelectronics
+ 2019-2022 Arm Limited.
+ 2020 Arm Limited. All rights reserved.
+License: GPL-2.0 or BSD-3-Clause
+
+Files:
+ fdts/stm32mp157a-dhcor-avenger96.dts
+ fdts/stm32mp15xx-dhcor-avenger96.dtsi
+ fdts/stm32mp15xx-dhcor-io1v8.dtsi
+ fdts/stm32mp15xx-dhcor-som.dtsi
+ include/dt-bindings/clock/stm32mp25-clks.h
+Copyright:
+ 2019 Linaro Ltd
+ 2020 Marek Vasut <marex@denx.de>
+ 2022 DH electronics GmbH
+ 2023 STMicroelectronics - All Rights Reserved
+License: GPL-2.0 OR BSD-3-Clause
+
+Files:
+ include/dt-bindings/interrupt-controller/arm-gic.h
+ include/dt-bindings/interrupt-controller/irq.h
+Copyright:
+ 2019-2021 Arm Limited and Contributors. All rights reserved.
+License: MIT
+
+Files:
+ drivers/arm/dcc/dcc_console.c
+ lib/compiler-rt/compiler-rt.mk
+ plat/common/ubsan.c
+Copyright:
+ 2015-2021 Xilinx Inc.
+ 2016 Linaro Limited
+ 2017-2019 Arm Limited and Contributors. All rights reserved.
+ 2019 ARM Limited. All rights reserved.
+License: BSD-2-Clause
+
+Files:
+ include/dt-bindings/clock/stm32mp13-clks.h
+ include/dt-bindings/clock/stm32mp15-clks.h
+ include/dt-bindings/reset/stm32mp25-resets.h
+Copyright:
+ 2018-2022 STMicroelectronics
+ 2023 STMicroelectronics - All Rights Reserved
+License: GPL-2.0+ or BSD-3-Clause
+
+Files:
+ include/lib/libc/endian.h
+ lib/libc/strnlen.c
+Copyright:
+ 2002 Thomas Moestl <tmm@FreeBSD.org>
+ 2009 David Schultz <das@FreeBSD.org>
+ 2018 Arm Limited and Contributors.
+License: BSD-2-Clause
+
+Files:
+ lib/libc/strlcat.c
+ lib/libc/strlcpy.c
+Copyright:
+ 1998-2015 Todd C. Miller <Todd.Miller@courtesan.com>
+License: ISC
+
+Files:
+ fdts/rtsm_ve-motherboard.dtsi
+Copyright:
+ 2012-2022 ARM Ltd.
+License: GPL-2.0 OR MIT
+
+Files:
+ lib/zlib/*
+Copyright:
+ 1995-2022 Mark Adler
+ 1995-2023 Jean-loup Gailly, Mark Adler
+License: Zlib
+
+Files:
+ lib/zlib/tf_gunzip.c
+ lib/zlib/zlib.mk
+Copyright:
+ 2018-2021 Arm Limited and Contributors. All rights reserved.
+License: BSD-3-clause
 
 License: BSD-3-clause
  Redistribution and use in source and binary forms, with or without modification,
@@ -311,7 +402,7 @@ License: BSD-2-clause
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-License: GPL-2+
+License: GPL-2.0+
  This library is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or (at
@@ -325,7 +416,7 @@ License: GPL-2+
  On Debian systems, the full text of the GNU General Public License
  version 2 can be found in the file `/usr/share/common-licenses/GPL-2'.
 
-License: GPL-2
+License: GPL-2.0
  This library is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; version 2 of the License.
@@ -378,3 +469,7 @@ License: MIT
  .
  The above copyright notice and this permission notice shall be included in all
  copies or substantial portions of the Software.
+
+License: Apache-2.0 WITH LLVM exception
+ Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+ See https://llvm.org/LICENSE.txt for license information.
