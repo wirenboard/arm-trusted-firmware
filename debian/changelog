@@ -1,3 +1,12 @@
+arm-trusted-firmware (2.10.0+dfsg-1~0) UNRELEASED; urgency=medium
+
+  * New upstream release.
+  * debian/patches: Drop patches applied upstream.
+  * debian/patches: Refresh patch to use ldflags.
+  * debian/copyright: Update for 2.10.0.
+
+ -- Vagrant Cascadian <vagrant@debian.org>  Sun, 03 Dec 2023 16:22:21 -0800
+
 arm-trusted-firmware (2.9.0+dfsg-3) unstable; urgency=medium
 
   * Upload to unstable.
