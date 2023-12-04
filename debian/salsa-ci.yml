@@ -8,5 +8,9 @@ variables:
   # No arch:all packages
   SALSA_CI_DISABLE_BUILD_PACKAGE_ALL: 1
 
-test-crossbuild-arm64:
-  allow_failure: false
+test-build-arm64:
+  image: ${SALSA_CI_IMAGES}/arm64v8/base:${RELEASE}
+  variables:
+    BUILD_ARCH: 'arm64'
+  tags:
+    - arm64
