@@ -1,3 +1,9 @@
+arm-trusted-firmware (2.10.0+dfsg-1+wb2) unstable; urgency=medium
+
+  * add Allwinner H616 build
+
+ -- Nikita Maslov <nikita.maslov@wirenboard.com>  Thu, 29 Feb 2024 19:16:33 +0600
+
 arm-trusted-firmware (2.10.0+dfsg-1+wb1) unstable; urgency=medium
 
   * configure build on Wiren Board CI (bullseye), no major functional changes
