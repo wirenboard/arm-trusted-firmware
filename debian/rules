@@ -60,7 +60,7 @@ define build_platform
 	$(eval targets := $(if $($(platform)_targets), $($(platform)_targets), bl31.bin))
 	$(eval make_target := $(if $($(platform)_make_target), $($(platform)_make_target), bl31))
 	$(foreach subplatform, $(subplatforms), \
-		CROSS_COMPILE=aarch64-linux-gnu- CFLAGS=--param=min-pagesize=0 LDFLAGS= TF_LDFLAGS=--no-warn-rwx-segments dh_auto_build -- V=$(VERBOSE) DEBUG=$(debug) $($(subplatform)_assigns) PLAT=$(platform) $(make_target) ; \
+		CROSS_COMPILE=aarch64-linux-gnu- CFLAGS= LDFLAGS= TF_LDFLAGS= dh_auto_build -- V=$(VERBOSE) DEBUG=$(debug) $($(subplatform)_assigns) PLAT=$(platform) $(make_target) ; \
 		$(foreach target, $(targets), \
 			install -m644 build/$(platform)/$(board)/$(buildtype)/$(target) -Dt build/renamed/$(subplatform) ; \
 		) \
