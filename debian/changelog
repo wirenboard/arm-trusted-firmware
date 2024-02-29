@@ -1,3 +1,9 @@
+arm-trusted-firmware (2.10.0+dfsg-1+wb1) unstable; urgency=medium
+
+  * configure build on Wiren Board CI (bullseye), no major functional changes
+
+ -- Nikita Maslov <nikita.maslov@wirenboard.com>  Thu, 29 Feb 2024 19:08:47 +0600
+
 arm-trusted-firmware (2.10.0+dfsg-1) unstable; urgency=medium
 
   * New upstream release.
