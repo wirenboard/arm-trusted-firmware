@@ -14,7 +14,7 @@ else
 VERBOSE=1
 endif
 
-platforms := g12a gxbb sun50i_a64 sun50i_h6 rcar rk3328 rk3399 rpi3 rpi4 imx8mn imx8mm
+platforms := g12a gxbb sun50i_a64 sun50i_h6 sun50i_h616 rcar rk3328 rk3399 rpi3 rpi4 imx8mn imx8mm
 # Disable building of imx8mq, as it is not well supported upstream.
 #platforms_nodebug := imx8mq
 
@@ -39,6 +39,9 @@ imx8mm_uart4_assigns := IMX_BOOT_UART_BASE=0x30A60000
 #   * sun50i_h6_no_pmic: skip regulator setup
 sun50i_h6_subplatforms := sun50i_h6 sun50i_h6_no_pmic
 sun50i_h6_no_pmic_assigns := SUNXI_SETUP_REGULATORS=0
+
+sun50i_h616_subplatforms := sun50i_h616 sun50i_h616_no_pmic
+sun50i_h616_no_pmic_assigns := SUNXI_SETUP_REGULATORS=0
 
 rk3328_targets := bl31/bl31.elf
 rk3399_targets := bl31/bl31.elf
