@@ -88,49 +88,35 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 		 * in an EC watchdog reset.
 		 */
 		unsigned int beats = 0;
-
-		NOTICE("PSCI: GICD_CTLR=%x ISEN0=%x ISEN4=%x IGRP4=%x PRIO136=%x TGT136=%x GICC_CTLR=%x PMR=%x\n",
-		       mmio_read_32(SUNXI_GICD_BASE + 0x000),
-		       mmio_read_32(SUNXI_GICD_BASE + 0x100),
-		       mmio_read_32(SUNXI_GICD_BASE + 0x110),
-		       mmio_read_32(SUNXI_GICD_BASE + 0x090),
-		       mmio_read_32(SUNXI_GICD_BASE + 0x488),
-		       mmio_read_32(SUNXI_GICD_BASE + 0x888),
-		       mmio_read_32(SUNXI_GICC_BASE + 0x000),
-		       mmio_read_32(SUNXI_GICC_BASE + 0x004));
+		uint32_t axi_cfg;
 
 		/*
-		 * The CPUIDLE hardware was enabled when the other cores
-		 * were hot-unplugged on the way into suspend (CPU_OFF).
-		 * With it enabled, this core's WFI is hardware-managed and
-		 * never wakes (interrupts go pending at the GIC but the
-		 * gated core does not observe them — verified by polling).
-		 * Disable it for the retention wait, re-enable afterwards.
+		 * With the other cores hardware-closed, WFI on this core
+		 * never wakes (the CPUIDLE hardware gates the core; GIC
+		 * interrupts go pending but are never observed — verified
+		 * on WB 8.5.1). Instead of WFI, poll ISR_EL1 with the CPU
+		 * switched down to the 24 MHz oscillator: ~1 ms wakeup
+		 * latency at a small fraction of the run-time power.
 		 */
-		mmio_write_32(SUNXI_CPUIDLE_EN_REG, 0x16aa0000U);
-		mmio_write_32(SUNXI_CPUIDLE_EN_REG, 0xaa160000U);
+		axi_cfg = mmio_read_32(SUNXI_CCU_BASE + 0x500U);
+		mmio_write_32(SUNXI_CCU_BASE + 0x500U,
+			      axi_cfg & ~(0x7U << 24));	/* CPUX <- HOSC */
+		udelay(10U);
 
-		/* Secure timer PPI 29 as heartbeat/backstop wake. */
-		mmio_write_32(SUNXI_GICD_BASE + 0x100, BIT_32(29));
-
-		while (read_isr_el1() == 0U && beats < 36U) {
-			write_cntps_tval_el1(read_cntfrq_el0() * 5U);
-			write_cntps_ctl_el1(1U);
-			dsb();
-			wfi();
-			write_cntps_ctl_el1(0U);
+		/* One beat = 1 ms; cap the wait at ~10 minutes (the EC
+		 * watchdog will have reset a production board long before
+		 * that anyway). */
+		while (read_isr_el1() == 0U && beats < 600000U) {
+			udelay(1000U);
 			beats++;
 		}
 
-		NOTICE("PSCI: resuming after %u wfi wakes, ISR=%lx\n",
+		/* Restore the original CPU clock mux. */
+		mmio_write_32(SUNXI_CCU_BASE + 0x500U, axi_cfg);
+		udelay(10U);
+
+		NOTICE("PSCI: system resume after %u ms, ISR=%lx\n",
 		       beats, read_isr_el1());
-
-		/* Heartbeat PPI off again. */
-		mmio_write_32(SUNXI_GICD_BASE + 0x180, BIT_32(29));
-
-		/* Re-enable the CPUIDLE hardware (CPU_ON/OFF rely on it). */
-		mmio_write_32(SUNXI_CPUIDLE_EN_REG, 0x16aa0000U);
-		mmio_write_32(SUNXI_CPUIDLE_EN_REG, 0xaa160001U);
 
 		/*
 		 * DEBUG breadcrumb, readable from Linux after resume even
@@ -141,7 +127,7 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 		 *   [7:0]   ISR_EL1 low byte
 		 */
 		mmio_write_32(0x0700010cU,
-			      ((beats & 0xffU) << 24) |
+			      (((beats / 1000U) & 0xffU) << 24) |
 			      ((mmio_read_32(SUNXI_GICC_BASE + 0x018) & 0xffU) << 16) |
 			      (((mmio_read_32(SUNXI_GICD_BASE + 0x210) >> 8) & 0xffU) << 8) |
 			      (read_isr_el1() & 0xffU));
