@@ -124,7 +124,23 @@ static void sunxi_suspend_pmic_enter(void)
 		axp_wr(AXP_REG_DCDC2_V,
 		       (sus.dcdc2_v & 0x80U) | AXP_DCDC2_SUSPEND_V);
 	}
-	axp_wr(AXP_REG_OUT_CTRL1, sus.out_ctrl1 & ~(1U << 3)); /* DCDC4 */
+	/*
+	 * DCDC1 (the whole 3V3 domain: SoC IO banks, eMMC VCC, carrier
+	 * 3V3) is cut too. Electrically safe by design: the PL-bank
+	 * pads carrying the PMIC I2C and the bus pull-ups are in the
+	 * VCC-RTC domain, the PIO registers are in VDD-SYS (only pads
+	 * lose power), the carrier load-switch enables have pull-downs,
+	 * and the eMMC sleeps with VCCQ (ALDO1) retained — JEDEC allows
+	 * VCC removal in Sleep, the kernel re-initializes the card on
+	 * resume. It does, however, look exactly like a dead PMIC to
+	 * the EC's 3.3V monitor: the OS MUST announce the sleep window
+	 * to the EC (SUSPEND_CTRL regmap register, EC firmware with
+	 * suspend-mode support) before suspending, or the EC
+	 * hard-cycles the board mid-suspend ("PMIC is unexpectedly
+	 * off").
+	 */
+	axp_wr(AXP_REG_OUT_CTRL1,
+	       sus.out_ctrl1 & ~((1U << 3) | (1U << 0))); /* DCDC4, DCDC1 */
 	axp_wr(AXP_REG_OUT_CTRL2, sus.out_ctrl2 & ~(1U << 5)); /* BLDO1 */
 
 	sus.pmic_ok = 1;
@@ -136,8 +152,10 @@ static void sunxi_suspend_pmic_exit(void)
 		return;
 	}
 
-	axp_wr(AXP_REG_DCDC2_V, sus.dcdc2_v);
+	/* 3V3 domain back first; DCDC soft-start needs a moment. */
 	axp_wr(AXP_REG_OUT_CTRL1, sus.out_ctrl1);
+	udelay(2000);
+	axp_wr(AXP_REG_DCDC2_V, sus.dcdc2_v);
 	axp_wr(AXP_REG_OUT_CTRL2, sus.out_ctrl2);
 
 	/* DCDC2 slews at ~2.5 mV/us: give the CPU rail time to rise. */
