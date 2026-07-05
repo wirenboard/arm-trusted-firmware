@@ -30,8 +30,25 @@
 #include <asm_macros.S>
 
 #define SUNXI_CCU_BASE_L	0x03001000
+#define SUNXI_PIO_BASE_L	0x0300b000
 #define SUNXI_DRAM_CTL_BASE_L	0x047fb000
 #define SUNXI_RTC_DATA2_L	0x07000108
+
+#define PIO_PE_DAT		0x0a0
+#define PIO_PG_DAT		0x0e8
+
+/*
+ * Carrier load switches driven by T507 GPIOs (WB 8.5.3 schematic):
+ *   PE15 = WIFI_EN   (U8  -> WiFi+BT module 3V3)
+ *   PE9  = USB_PWR_EN (U13 -> external USB port VBUS)
+ *   PE4  = MODEM_ON  (U11 -> 5V_MODEM)
+ *   PG12 = ON_PERIPH (U10/U5 -> 5V_PERIPH: MOD slots, RS-485, 5V_IN/OUT)
+ *   PG13 = 5V-ON     (U12 -> 5VOUT terminal)
+ * All are cut for the duration of the suspend and restored on wakeup;
+ * the WiFi/BT module re-enumerates on resume.
+ */
+#define PE_CUT_MASK		((1 << 15) | (1 << 9) | (1 << 4))
+#define PG_CUT_MASK		((1 << 12) | (1 << 13))
 
 #define MCTL_PWRCTL		0x30
 #define MCTL_STATR		0x04
@@ -80,6 +97,20 @@ func sunxi_dram_suspend_blob
 	b.ne	1b
 
 	stage	0xa3
+
+	/*
+	 * 1b. Cut the carrier peripheral rails (GPIO-driven load
+	 * switches), saving the previous GPIO data values.
+	 */
+	mov_imm	x7, SUNXI_PIO_BASE_L
+	ldr	w6, [x7, #PIO_PE_DAT]
+	mov	w3, #PE_CUT_MASK
+	bic	w3, w6, w3
+	str	w3, [x7, #PIO_PE_DAT]
+	ldr	w16, [x7, #PIO_PG_DAT]
+	mov	w3, #PG_CUT_MASK
+	bic	w3, w16, w3
+	str	w3, [x7, #PIO_PG_DAT]
 
 	/*
 	 * 2. Buses to 24 MHz, then stop the big PLLs: PERIPH0/1 (buses
@@ -139,6 +170,10 @@ func sunxi_dram_suspend_blob
 	b.lo	2b
 3:
 	stage	0xa5
+
+	/* Restore the peripheral rails first — they need time to ramp. */
+	str	w6, [x7, #PIO_PE_DAT]
+	str	w16, [x7, #PIO_PG_DAT]
 
 	/*
 	 * 5a. PLL_CPUX back on. Force LOCK_EN (bit 29) for the lock poll:
