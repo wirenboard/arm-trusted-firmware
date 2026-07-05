@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <string.h>
+
 #include <arch_helpers.h>
 #include <common/debug.h>
 #include <drivers/arm/gicv2.h>
@@ -14,6 +16,16 @@
 #include <sunxi_cpucfg.h>
 #include <sunxi_mmap.h>
 #include <sunxi_private.h>
+
+/*
+ * Scratch area in SRAM A1 for the DRAM self-refresh retention blob.
+ * SRAM A1 is only used by the BROM/SPL during boot; at runtime it is
+ * free (with BL31 in DRAM, even the NOBITS sections live elsewhere).
+ * The first page is skipped to stay clear of BROM leftovers.
+ */
+#define SUNXI_SUSPEND_SRAM_BASE		(SUNXI_SRAM_A1_BASE + 0x1000U)
+
+extern char sunxi_dram_suspend_blob[], sunxi_dram_suspend_blob_end[];
 
 #define SUNXI_WDOG0_CTRL_REG		(SUNXI_R_WDOG_BASE + 0x0010)
 #define SUNXI_WDOG0_CFG_REG		(SUNXI_R_WDOG_BASE + 0x0014)
@@ -87,36 +99,48 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 		 * resume after ~3 minutes so a missed wakeup does not end
 		 * in an EC watchdog reset.
 		 */
-		unsigned int beats = 0;
-		uint32_t axi_cfg;
+		uint64_t beats;
+		size_t blob_size = (size_t)(sunxi_dram_suspend_blob_end -
+					    sunxi_dram_suspend_blob);
 
 		/*
 		 * With the other cores hardware-closed, WFI on this core
 		 * never wakes (the CPUIDLE hardware gates the core; GIC
 		 * interrupts go pending but are never observed — verified
-		 * on WB 8.5.1). Instead of WFI, poll ISR_EL1 with the CPU
-		 * switched down to the 24 MHz oscillator: ~1 ms wakeup
-		 * latency at a small fraction of the run-time power.
+		 * on WB 8.5.1), so the retention wait polls ISR_EL1.
+		 *
+		 * The wait runs from SRAM A1 with the MMU off: it puts the
+		 * DRAM into self-refresh, stops MBUS/DRAM clocks and
+		 * PLL_DDR0, and drops the CPU to the 24 MHz oscillator
+		 * with PLL_CPUX off. BL31 lives in DRAM on H616, so
+		 * nothing may touch DRAM until the blob returns.
 		 */
-		axi_cfg = mmio_read_32(SUNXI_CCU_BASE + 0x500U);
-		mmio_write_32(SUNXI_CCU_BASE + 0x500U,
-			      axi_cfg & ~(0x7U << 24));	/* CPUX <- HOSC */
-		udelay(10U);
+		mmio_write_32(0x07000108U, 0xb0U);
+		memcpy((void *)SUNXI_SUSPEND_SRAM_BASE,
+		       sunxi_dram_suspend_blob, blob_size);
+		__asm__ volatile("ic iallu" : : : "memory");
+		dsbsy();
+		isb();
 
-		/* One beat = 1 ms; cap the wait at ~10 minutes (the EC
-		 * watchdog will have reset a production board long before
-		 * that anyway). */
-		while (read_isr_el1() == 0U && beats < 600000U) {
-			udelay(1000U);
-			beats++;
+		/* Verify the copy actually landed in SRAM (paranoia:
+		 * catches a gated/read-as-zero SRAM before jumping into
+		 * it). */
+		if (mmio_read_32(SUNXI_SUSPEND_SRAM_BASE) !=
+		    *(uint32_t *)sunxi_dram_suspend_blob) {
+			ERROR("PSCI: SRAM copy mismatch: %x != %x\n",
+			      mmio_read_32(SUNXI_SUSPEND_SRAM_BASE),
+			      *(uint32_t *)sunxi_dram_suspend_blob);
+			mmio_write_32(0x07000108U, 0xbeU);
+			((void (*)(void))sunxi_sec_entrypoint)();
 		}
 
-		/* Restore the original CPU clock mux. */
-		mmio_write_32(SUNXI_CCU_BASE + 0x500U, axi_cfg);
-		udelay(10U);
+		mmio_write_32(0x07000108U, 0xb1U);
+		disable_mmu_el3();
+		mmio_write_32(0x07000108U, 0xb2U);
+		beats = ((uint64_t (*)(void))SUNXI_SUSPEND_SRAM_BASE)();
 
-		NOTICE("PSCI: system resume after %u ms, ISR=%lx\n",
-		       beats, read_isr_el1());
+		NOTICE("PSCI: system resume after %llu ms, ISR=%lx\n",
+		       (unsigned long long)beats, read_isr_el1());
 
 		/*
 		 * DEBUG breadcrumb, readable from Linux after resume even
@@ -127,12 +151,11 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 		 *   [7:0]   ISR_EL1 low byte
 		 */
 		mmio_write_32(0x0700010cU,
-			      (((beats / 1000U) & 0xffU) << 24) |
+			      ((uint32_t)((beats / 1000U) & 0xffU) << 24) |
 			      ((mmio_read_32(SUNXI_GICC_BASE + 0x018) & 0xffU) << 16) |
 			      (((mmio_read_32(SUNXI_GICD_BASE + 0x210) >> 8) & 0xffU) << 8) |
 			      (read_isr_el1() & 0xffU));
 
-		disable_mmu_el3();
 		((void (*)(void))sunxi_sec_entrypoint)();
 		/* Not reached. */
 	}
