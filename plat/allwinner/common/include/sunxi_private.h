@@ -42,6 +42,9 @@ static inline int sunxi_set_scpi_psci_ops(const plat_psci_ops_t **psci_ops)
 #endif
 int sunxi_validate_ns_entrypoint(uintptr_t ns_entrypoint);
 
+/* The PSCI entrypoint (bl31_warm_entrypoint), as programmed into RVBAR. */
+extern uintptr_t sunxi_sec_entrypoint;
+
 int sunxi_pmic_setup(uint16_t socid, const void *fdt);
 void sunxi_security_setup(void);
 

@@ -85,6 +85,10 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	console_16550_register(SUNXI_UART0_BASE, SUNXI_UART0_CLK_IN_HZ,
 			       SUNXI_UART0_BAUDRATE, &console);
 
+	/* Keep the console alive at runtime for suspend/resume messages. */
+	console_set_scope(&console, CONSOLE_FLAG_BOOT | CONSOLE_FLAG_RUNTIME |
+			  CONSOLE_FLAG_CRASH);
+
 #ifdef BL32_BASE
 	/* Populate entry point information for BL32 */
 	SET_PARAM_HEAD(&bl32_image_ep_info, PARAM_EP, VERSION_1, 0);
