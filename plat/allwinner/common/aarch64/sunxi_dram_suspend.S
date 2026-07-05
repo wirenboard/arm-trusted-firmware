@@ -106,11 +106,12 @@ func sunxi_dram_suspend_blob
 	 * with the DRAM clock parked via the DFI handshake — stopping
 	 * it makes all DRAM reads return garbage after self-refresh
 	 * exit (operating_mode reports "normal" regardless).
+	 *
+	 * PLL_PERIPH0 must stay running too: it clocks the USB
+	 * hosts/PHYs, and suspended USB devices drop off the bus when
+	 * it stops (the rtl8733bu WiFi module dies until power-cycled).
 	 */
-	ldr	w16, [x2, #CCU_PLL_PERIPH0]
 	ldr	w17, [x2, #CCU_PLL_PERIPH1]
-	and	w3, w16, #0x7fffffff
-	str	w3, [x2, #CCU_PLL_PERIPH0]
 	and	w3, w17, #0x7fffffff
 	str	w3, [x2, #CCU_PLL_PERIPH1]
 
@@ -157,14 +158,7 @@ func sunxi_dram_suspend_blob
 
 	stage	0xa6
 
-	/* 5b. PLL_PERIPH0/PERIPH1 back on (same LOCK_EN dance). */
-	orr	w3, w16, #(1 << 29)
-	orr	w3, w3, #(1 << 31)
-	str	w3, [x2, #CCU_PLL_PERIPH0]
-8:	ldr	w3, [x2, #CCU_PLL_PERIPH0]
-	tbz	w3, #28, 8b
-	str	w16, [x2, #CCU_PLL_PERIPH0]
-
+	/* 5b. PLL_PERIPH1 back on (same LOCK_EN dance). */
 	orr	w3, w17, #(1 << 29)
 	orr	w3, w3, #(1 << 31)
 	str	w3, [x2, #CCU_PLL_PERIPH1]
