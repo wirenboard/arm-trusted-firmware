@@ -38,7 +38,13 @@
 
 #define CCU_PLL_CPUX		0x000
 #define CCU_PLL_DDR0		0x010
+#define CCU_PLL_PERIPH0		0x020
+#define CCU_PLL_PERIPH1		0x028
 #define CCU_CPU_AXI_CFG		0x500
+#define CCU_PSI_AHB1_AHB2	0x510
+#define CCU_AHB3		0x51c
+#define CCU_APB1		0x520
+#define CCU_APB2		0x524
 #define CCU_MBUS_CFG		0x540
 #define CCU_DRAM_BGR		0x80c
 
@@ -74,6 +80,39 @@ func sunxi_dram_suspend_blob
 	b.ne	1b
 
 	stage	0xa3
+
+	/*
+	 * 2. Buses to 24 MHz, then stop the big PLLs: PERIPH0/1 (buses
+	 * are on HOSC now), DDR0 (DRAM clock is already parked by the
+	 * DFI handshake, the controller state just freezes). The RTC,
+	 * R_INTC and the GIC keep working — that is the wakeup path.
+	 */
+	ldr	w9,  [x2, #CCU_PSI_AHB1_AHB2]
+	ldr	w10, [x2, #CCU_AHB3]
+	ldr	w11, [x2, #CCU_APB1]
+	ldr	w14, [x2, #CCU_APB2]
+	and	w3, w9, #0xf8ffffff	/* PSI/AHB1/AHB2 to HOSC */
+	str	w3, [x2, #CCU_PSI_AHB1_AHB2]
+	and	w3, w10, #0xf8ffffff	/* AHB3 to HOSC */
+	str	w3, [x2, #CCU_AHB3]
+	and	w3, w11, #0xf8ffffff	/* APB1 to HOSC */
+	str	w3, [x2, #CCU_APB1]
+	and	w3, w14, #0xf8ffffff	/* APB2 to HOSC */
+	str	w3, [x2, #CCU_APB2]
+	dsb	sy
+	isb
+	/*
+	 * PLL_DDR0 must stay running: the DDR PHY depends on it even
+	 * with the DRAM clock parked via the DFI handshake — stopping
+	 * it makes all DRAM reads return garbage after self-refresh
+	 * exit (operating_mode reports "normal" regardless).
+	 */
+	ldr	w16, [x2, #CCU_PLL_PERIPH0]
+	ldr	w17, [x2, #CCU_PLL_PERIPH1]
+	and	w3, w16, #0x7fffffff
+	str	w3, [x2, #CCU_PLL_PERIPH0]
+	and	w3, w17, #0x7fffffff
+	str	w3, [x2, #CCU_PLL_PERIPH1]
 
 	/* 3. CPU cluster to 24 MHz, PLL_CPUX off. */
 	ldr	w12, [x2, #CCU_CPU_AXI_CFG]
@@ -115,6 +154,38 @@ func sunxi_dram_suspend_blob
 	str	w12, [x2, #CCU_CPU_AXI_CFG]
 	dsb	sy
 	isb
+
+	stage	0xa6
+
+	/* 5b. PLL_PERIPH0/PERIPH1 back on (same LOCK_EN dance). */
+	orr	w3, w16, #(1 << 29)
+	orr	w3, w3, #(1 << 31)
+	str	w3, [x2, #CCU_PLL_PERIPH0]
+8:	ldr	w3, [x2, #CCU_PLL_PERIPH0]
+	tbz	w3, #28, 8b
+	str	w16, [x2, #CCU_PLL_PERIPH0]
+
+	orr	w3, w17, #(1 << 29)
+	orr	w3, w3, #(1 << 31)
+	str	w3, [x2, #CCU_PLL_PERIPH1]
+9:	ldr	w3, [x2, #CCU_PLL_PERIPH1]
+	tbz	w3, #28, 9b
+	str	w17, [x2, #CCU_PLL_PERIPH1]
+
+	/* 5c. Bus muxes back. */
+	str	w9,  [x2, #CCU_PSI_AHB1_AHB2]
+	str	w10, [x2, #CCU_AHB3]
+	str	w11, [x2, #CCU_APB1]
+	str	w14, [x2, #CCU_APB2]
+	dsb	sy
+	isb
+
+	/* ~20 us settle time. */
+	mrs	x4, cntpct_el0
+	add	x4, x4, #480
+6:	mrs	x3, cntpct_el0
+	cmp	x3, x4
+	b.lo	6b
 
 	stage	0xa7
 
