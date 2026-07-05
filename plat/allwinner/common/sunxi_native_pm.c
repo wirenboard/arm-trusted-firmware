@@ -111,6 +111,7 @@ static void sunxi_suspend_pmic_enter(void)
 		return;
 	}
 	i2c_init((void *)SUNXI_R_I2C_BASE);
+	mmio_write_32(0x07000108U, 0xb6U);
 
 	if (axp_rd(AXP_REG_OUT_CTRL1, &sus.out_ctrl1) != 0 ||
 	    axp_rd(AXP_REG_OUT_CTRL2, &sus.out_ctrl2) != 0 ||
@@ -119,6 +120,7 @@ static void sunxi_suspend_pmic_enter(void)
 		return;
 	}
 
+	mmio_write_32(0x07000108U, 0xb7U);
 	/* Never raise the voltage: only step down to the suspend point. */
 	if ((sus.dcdc2_v & 0x7fU) > AXP_DCDC2_SUSPEND_V) {
 		axp_wr(AXP_REG_DCDC2_V,
@@ -304,16 +306,30 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 		 * 24 MHz afterwards, so the lowered VDD-CPU is never
 		 * exposed to full-speed execution.
 		 */
+		mmio_write_32(0x07000108U, 0xb3U);
 		sunxi_suspend_periph_cut();
-		sunxi_suspend_pmic_enter();
+		mmio_write_32(0x07000108U, 0xb4U);
+		/*
+		 * 24 MHz first, PMIC after: the VDD-CPU trim to 0.85 V is
+		 * only safe once the cluster runs at HOSC speed. Suspend
+		 * entry can catch the CPU at a high OPP (~1.1 V) — cutting
+		 * the voltage under full-speed execution browns the cores
+		 * out mid-I2C (found as a ~50% entry hang, stage 0xb7).
+		 * R_I2C lives in the R clock domain, so the CPUX mux
+		 * switch does not affect bus timing.
+		 */
 		sunxi_suspend_cpu_slow();
+		mmio_write_32(0x07000108U, 0xb5U);
+		sunxi_suspend_pmic_enter();
 
 		mmio_write_32(0x07000108U, 0xb1U);
 		disable_mmu_el3();
 		mmio_write_32(0x07000108U, 0xb2U);
 		beats = ((uint64_t (*)(void))SUNXI_SUSPEND_SRAM_BASE)();
 
-		/* Reverse order: rails/voltage back first, then CPU speed. */
+		/* Reverse order: rails/voltage back first, then CPU speed
+		 * (the CPU may only return to full speed after VDD-CPU is
+		 * restored and has settled). */
 		sunxi_suspend_pmic_exit();
 		sunxi_suspend_periph_restore();
 		sunxi_suspend_cpu_fast();
