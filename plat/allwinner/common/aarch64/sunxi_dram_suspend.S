@@ -99,6 +99,60 @@ func sunxi_dram_suspend_blob
 	stage	0xa3
 
 	/*
+	 * Measurement-only rail kill (x0 != 0): with self-refresh
+	 * established, hand-roll a single I2C write on the R_TWI
+	 * (already initialized by the PMIC trim path): AXP853T
+	 * OUT_CTRL1 (0x10) <- x0, i.e. every DCDC except the ones set
+	 * in x0 turns off — including VDD-SYS and VDD-CPU, killing
+	 * this core mid-STOP. No resume: the EC's suspend deadline
+	 * recovers the board with a reset. Sunxi TWI: data +0x08,
+	 * control +0x0c (IFLG bit3 is cleared by WRITING 1 — inverted).
+	 */
+	cbz	x0, 9f
+	stage	0xaa
+	mov	x12, #0x1400
+	movk	x12, #0x0708, lsl #16	/* R_TWI base */
+
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x20		/* START */
+	str	w13, [x12, #0x0c]
+1:	ldr	w13, [x12, #0x0c]
+	tbz	w13, #3, 1b		/* wait IFLG */
+
+	mov	w13, #0x6c		/* 0x36 << 1, write */
+	str	w13, [x12, #0x08]
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x08		/* clear IFLG -> shift byte */
+	str	w13, [x12, #0x0c]
+1:	ldr	w13, [x12, #0x0c]
+	tbz	w13, #3, 1b
+
+	mov	w13, #0x10		/* AXP_REG_OUT_CTRL1 */
+	str	w13, [x12, #0x08]
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x08
+	str	w13, [x12, #0x0c]
+1:	ldr	w13, [x12, #0x0c]
+	tbz	w13, #3, 1b
+
+	str	w0, [x12, #0x08]	/* rail mask byte */
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x08
+	str	w13, [x12, #0x0c]
+1:	ldr	w13, [x12, #0x0c]
+	tbz	w13, #3, 1b
+
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x10		/* STOP */
+	orr	w13, w13, #0x08
+	str	w13, [x12, #0x0c]
+
+	stage	0xab
+1:	wfi				/* rails die around here */
+	b	1b
+9:
+
+	/*
 	 * 2. Buses to 24 MHz, then stop the big PLLs: PERIPH0/1 (buses
 	 * are on HOSC now), DDR0 (DRAM clock is already parked by the
 	 * DFI handshake, the controller state just freezes). The RTC,

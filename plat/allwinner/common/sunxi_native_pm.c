@@ -322,10 +322,29 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 		mmio_write_32(0x07000108U, 0xb5U);
 		sunxi_suspend_pmic_enter();
 
-		mmio_write_32(0x07000108U, 0xb1U);
-		disable_mmu_el3();
-		mmio_write_32(0x07000108U, 0xb2U);
-		beats = ((uint64_t (*)(void))SUNXI_SUSPEND_SRAM_BASE)();
+		/*
+		 * Measurement hack: a magic in RTC data0 (written by the
+		 * wb-suspend-off helper) turns this suspend into a one-way
+		 * rail kill — after self-refresh entry the SRAM blob
+		 * switches off every DCDC except those in the mask
+		 * (DCDC5/VCC-DRAM), so only LPDDR4-in-self-refresh + LDOs
+		 * + EC remain for the meter. No resume; the EC suspend
+		 * deadline reset-recovers the board.
+		 */
+		{
+			uint64_t kill = 0U;
+
+			if (mmio_read_32(0x07000100U) == 0x0ff51ee9U) {
+				mmio_write_32(0x07000100U, 0U);
+				kill = 0x10U;	/* keep DCDC5 only */
+				NOTICE("PSCI: suspend: one-way rail kill armed\n");
+			}
+
+			mmio_write_32(0x07000108U, 0xb1U);
+			disable_mmu_el3();
+			mmio_write_32(0x07000108U, 0xb2U);
+			beats = ((uint64_t (*)(uint64_t))SUNXI_SUSPEND_SRAM_BASE)(kill);
+		}
 
 		/* Reverse order: rails/voltage back first, then CPU speed
 		 * (the CPU may only return to full speed after VDD-CPU is
