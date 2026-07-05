@@ -10,6 +10,7 @@
 #include <common/debug.h>
 #include <drivers/arm/gicv2.h>
 #include <drivers/delay_timer.h>
+#include <drivers/mentor/mi2cv.h>
 #include <lib/mmio.h>
 #include <lib/psci/psci.h>
 
@@ -26,6 +27,149 @@
 #define SUNXI_SUSPEND_SRAM_BASE		(SUNXI_SRAM_A1_BASE + 0x1000U)
 
 extern char sunxi_dram_suspend_blob[], sunxi_dram_suspend_blob_end[];
+
+/*
+ * Peripheral power for the suspend window.
+ *
+ * Carrier (WB 8.5.3): SY6280 load switches with T507 GPIO enables —
+ * PE15 WiFi/BT 3V3, PE9 USB VBUS, PE4 modem 5V, PG12 peripheral
+ * 5V/RS-485/MOD, PG13 5VOUT terminal. Module: the two DP83825 PHYs
+ * have their INTR/PWRDN pins on PE1/PE8 (unused as interrupts, the
+ * MDIO bus is polled) — driven low they enter hardware power-down.
+ *
+ * PMIC (AXP853T ≈ AXP858/AXP15060 at 0x36 on R_I2C): DCDC4 (VDD-GPU,
+ * confirmed powered and unused) and BLDO1 (LVDS/HDMI/MCSI, unused)
+ * off; DCDC2 (VDD-CPU) from its runtime point down to 0.85 V — only
+ * ever while the cluster runs at 24 MHz.
+ */
+#define SUNXI_PIO_PE_CFG0	(SUNXI_PIO_BASE + 0x90U)
+#define SUNXI_PIO_PE_CFG1	(SUNXI_PIO_BASE + 0x94U)
+#define SUNXI_PIO_PE_DAT	(SUNXI_PIO_BASE + 0xa0U)
+#define SUNXI_PIO_PG_DAT	(SUNXI_PIO_BASE + 0xe8U)
+
+#define PE_RAIL_MASK		((1U << 15) | (1U << 9) | (1U << 4))
+#define PE_PHY_MASK		((1U << 1) | (1U << 8))
+#define PG_RAIL_MASK		((1U << 12) | (1U << 13))
+
+#define AXP_I2C_ADDR		0x36
+#define AXP_REG_OUT_CTRL1	0x10	/* bit3 = DCDC4 */
+#define AXP_REG_OUT_CTRL2	0x11	/* bit5 = BLDO1 */
+#define AXP_REG_DCDC2_V		0x14	/* 0.5 V + 10 mV steps (<= 1.2 V) */
+
+#define AXP_DCDC2_SUSPEND_V	35U	/* 0.5 V + 35 * 10 mV = 0.85 V */
+
+static struct {
+	uint32_t pe_cfg0, pe_cfg1, pe_dat, pg_dat;
+	uint32_t cpu_axi, pll_cpux;
+	int	 pmic_ok;
+	uint8_t	 out_ctrl1, out_ctrl2, dcdc2_v;
+} sus;
+
+static int axp_rd(uint8_t reg, uint8_t *val)
+{
+	return i2c_read(AXP_I2C_ADDR, reg, 1, val, 1);
+}
+
+static int axp_wr(uint8_t reg, uint8_t val)
+{
+	return i2c_write(AXP_I2C_ADDR, reg, 1, &val, 1);
+}
+
+static void sunxi_suspend_periph_cut(void)
+{
+	sus.pe_cfg0 = mmio_read_32(SUNXI_PIO_PE_CFG0);
+	sus.pe_cfg1 = mmio_read_32(SUNXI_PIO_PE_CFG1);
+	sus.pe_dat  = mmio_read_32(SUNXI_PIO_PE_DAT);
+	sus.pg_dat  = mmio_read_32(SUNXI_PIO_PG_DAT);
+
+	/* Rail switches: outputs already, just drive low. */
+	mmio_write_32(SUNXI_PIO_PE_DAT,
+		      sus.pe_dat & ~(PE_RAIL_MASK | PE_PHY_MASK));
+	mmio_write_32(SUNXI_PIO_PG_DAT, sus.pg_dat & ~PG_RAIL_MASK);
+
+	/* PHY PWRDN pins are inputs at runtime: make them outputs (low). */
+	mmio_write_32(SUNXI_PIO_PE_CFG0,
+		      (sus.pe_cfg0 & ~(0xfU << 4)) | (0x1U << 4));  /* PE1 */
+	mmio_write_32(SUNXI_PIO_PE_CFG1,
+		      (sus.pe_cfg1 & ~0xfU) | 0x1U);		    /* PE8 */
+}
+
+static void sunxi_suspend_periph_restore(void)
+{
+	mmio_write_32(SUNXI_PIO_PE_CFG0, sus.pe_cfg0);
+	mmio_write_32(SUNXI_PIO_PE_CFG1, sus.pe_cfg1);
+	mmio_write_32(SUNXI_PIO_PE_DAT, sus.pe_dat);
+	mmio_write_32(SUNXI_PIO_PG_DAT, sus.pg_dat);
+}
+
+static void sunxi_suspend_pmic_enter(void)
+{
+	sus.pmic_ok = 0;
+
+	if (sunxi_init_platform_r_twi(sunxi_read_soc_id(), false) != 0) {
+		WARN("PSCI: suspend: R_TWI init failed, skipping PMIC\n");
+		return;
+	}
+	i2c_init((void *)SUNXI_R_I2C_BASE);
+
+	if (axp_rd(AXP_REG_OUT_CTRL1, &sus.out_ctrl1) != 0 ||
+	    axp_rd(AXP_REG_OUT_CTRL2, &sus.out_ctrl2) != 0 ||
+	    axp_rd(AXP_REG_DCDC2_V, &sus.dcdc2_v) != 0) {
+		WARN("PSCI: suspend: PMIC read failed, skipping PMIC\n");
+		return;
+	}
+
+	/* Never raise the voltage: only step down to the suspend point. */
+	if ((sus.dcdc2_v & 0x7fU) > AXP_DCDC2_SUSPEND_V) {
+		axp_wr(AXP_REG_DCDC2_V,
+		       (sus.dcdc2_v & 0x80U) | AXP_DCDC2_SUSPEND_V);
+	}
+	axp_wr(AXP_REG_OUT_CTRL1, sus.out_ctrl1 & ~(1U << 3)); /* DCDC4 */
+	axp_wr(AXP_REG_OUT_CTRL2, sus.out_ctrl2 & ~(1U << 5)); /* BLDO1 */
+
+	sus.pmic_ok = 1;
+}
+
+static void sunxi_suspend_pmic_exit(void)
+{
+	if (sus.pmic_ok == 0) {
+		return;
+	}
+
+	axp_wr(AXP_REG_DCDC2_V, sus.dcdc2_v);
+	axp_wr(AXP_REG_OUT_CTRL1, sus.out_ctrl1);
+	axp_wr(AXP_REG_OUT_CTRL2, sus.out_ctrl2);
+
+	/* DCDC2 slews at ~2.5 mV/us: give the CPU rail time to rise. */
+	udelay(100);
+}
+
+static void sunxi_suspend_cpu_slow(void)
+{
+	sus.cpu_axi  = mmio_read_32(SUNXI_CCU_BASE + 0x500U);
+	sus.pll_cpux = mmio_read_32(SUNXI_CCU_BASE + 0x000U);
+
+	mmio_write_32(SUNXI_CCU_BASE + 0x500U,
+		      sus.cpu_axi & ~(0x7U << 24));	/* CPUX <- HOSC */
+	dsbsy();
+	isb();
+	udelay(2);
+	mmio_write_32(SUNXI_CCU_BASE + 0x000U,
+		      sus.pll_cpux & ~BIT_32(31));	/* PLL_CPUX off */
+}
+
+static void sunxi_suspend_cpu_fast(void)
+{
+	/* Re-enable PLL_CPUX with lock detect forced for the poll. */
+	mmio_write_32(SUNXI_CCU_BASE + 0x000U,
+		      sus.pll_cpux | BIT_32(31) | BIT_32(29));
+	while ((mmio_read_32(SUNXI_CCU_BASE + 0x000U) & BIT_32(28)) == 0U) {
+	}
+	mmio_write_32(SUNXI_CCU_BASE + 0x000U, sus.pll_cpux | BIT_32(31));
+	mmio_write_32(SUNXI_CCU_BASE + 0x500U, sus.cpu_axi);
+	dsbsy();
+	isb();
+}
 
 #define SUNXI_WDOG0_CTRL_REG		(SUNXI_R_WDOG_BASE + 0x0010)
 #define SUNXI_WDOG0_CFG_REG		(SUNXI_R_WDOG_BASE + 0x0014)
@@ -134,10 +278,27 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 			((void (*)(void))sunxi_sec_entrypoint)();
 		}
 
+		/*
+		 * Cut peripheral power (carrier load switches, PHY
+		 * power-down pins) and trim the PMIC (GPU rail and display
+		 * LDO off, VDD-CPU lowered) — all while DRAM and the full
+		 * CPU clock are still up. The CPU is switched down to
+		 * 24 MHz afterwards, so the lowered VDD-CPU is never
+		 * exposed to full-speed execution.
+		 */
+		sunxi_suspend_periph_cut();
+		sunxi_suspend_pmic_enter();
+		sunxi_suspend_cpu_slow();
+
 		mmio_write_32(0x07000108U, 0xb1U);
 		disable_mmu_el3();
 		mmio_write_32(0x07000108U, 0xb2U);
 		beats = ((uint64_t (*)(void))SUNXI_SUSPEND_SRAM_BASE)();
+
+		/* Reverse order: rails/voltage back first, then CPU speed. */
+		sunxi_suspend_pmic_exit();
+		sunxi_suspend_periph_restore();
+		sunxi_suspend_cpu_fast();
 
 		NOTICE("PSCI: system resume after %llu ms, ISR=%lx\n",
 		       (unsigned long long)beats, read_isr_el1());

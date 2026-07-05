@@ -99,20 +99,6 @@ func sunxi_dram_suspend_blob
 	stage	0xa3
 
 	/*
-	 * 1b. Cut the carrier peripheral rails (GPIO-driven load
-	 * switches), saving the previous GPIO data values.
-	 */
-	mov_imm	x7, SUNXI_PIO_BASE_L
-	ldr	w6, [x7, #PIO_PE_DAT]
-	mov	w3, #PE_CUT_MASK
-	bic	w3, w6, w3
-	str	w3, [x7, #PIO_PE_DAT]
-	ldr	w16, [x7, #PIO_PG_DAT]
-	mov	w3, #PG_CUT_MASK
-	bic	w3, w16, w3
-	str	w3, [x7, #PIO_PG_DAT]
-
-	/*
 	 * 2. Buses to 24 MHz, then stop the big PLLs: PERIPH0/1 (buses
 	 * are on HOSC now), DDR0 (DRAM clock is already parked by the
 	 * DFI handshake, the controller state just freezes). The RTC,
@@ -146,17 +132,6 @@ func sunxi_dram_suspend_blob
 	and	w3, w17, #0x7fffffff
 	str	w3, [x2, #CCU_PLL_PERIPH1]
 
-	/* 3. CPU cluster to 24 MHz, PLL_CPUX off. */
-	ldr	w12, [x2, #CCU_CPU_AXI_CFG]
-	and	w3, w12, #0xf8ffffff	/* mux to HOSC */
-	str	w3, [x2, #CCU_CPU_AXI_CFG]
-	dsb	sy
-	isb
-	ldr	w13, [x2, #CCU_PLL_CPUX]
-	and	w3, w13, #0x7fffffff
-	str	w3, [x2, #CCU_PLL_CPUX]
-	dsb	sy
-
 	stage	0xa4
 
 	/* 4. Wait for a pending interrupt; cap at 600 s (backstop). */
@@ -171,25 +146,6 @@ func sunxi_dram_suspend_blob
 3:
 	stage	0xa5
 
-	/* Restore the peripheral rails first — they need time to ramp. */
-	str	w6, [x7, #PIO_PE_DAT]
-	str	w16, [x7, #PIO_PG_DAT]
-
-	/*
-	 * 5a. PLL_CPUX back on. Force LOCK_EN (bit 29) for the lock poll:
-	 * the OS may run with lock detection disabled, in which case the
-	 * LOCK flag would never assert and the poll would hang. The clean
-	 * saved value is written back once the PLL has locked.
-	 */
-	orr	w3, w13, #(1 << 29)
-	orr	w3, w3, #(1 << 31)
-	str	w3, [x2, #CCU_PLL_CPUX]
-4:	ldr	w3, [x2, #CCU_PLL_CPUX]
-	tbz	w3, #28, 4b
-	str	w13, [x2, #CCU_PLL_CPUX]
-	str	w12, [x2, #CCU_CPU_AXI_CFG]
-	dsb	sy
-	isb
 
 	stage	0xa6
 

@@ -52,7 +52,8 @@ $(error "At least one of SCPI or native PSCI ops must be enabled")
 endif
 
 ifeq (${SUNXI_PSCI_USE_NATIVE},1)
-BL31_SOURCES		+=	${AW_PLAT}/common/sunxi_cpu_ops.c	\
+BL31_SOURCES		+=	drivers/mentor/i2c/mi2cv.c		\
+				${AW_PLAT}/common/sunxi_cpu_ops.c	\
 				${AW_PLAT}/common/sunxi_native_pm.c	\
 				${AW_PLAT}/common/aarch64/sunxi_dram_suspend.S
 endif
