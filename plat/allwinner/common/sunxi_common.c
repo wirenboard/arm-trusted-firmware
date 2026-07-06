@@ -16,13 +16,28 @@
 #include <sunxi_mmap.h>
 #include <sunxi_private.h>
 
-static const mmap_region_t sunxi_mmap[MAX_STATIC_MMAP_REGIONS + 1] = {
+static const mmap_region_t sunxi_mmap[MAX_STATIC_MMAP_REGIONS + 3] = {
 	MAP_REGION_FLAT(SUNXI_SRAM_BASE, SUNXI_SRAM_SIZE,
 			MT_DEVICE | MT_RW | MT_SECURE | MT_EXECUTE_NEVER),
 	MAP_REGION_FLAT(SUNXI_DEV_BASE, SUNXI_DEV_SIZE,
 			MT_DEVICE | MT_RW | MT_SECURE | MT_EXECUTE_NEVER),
 	MAP_REGION(PRELOADED_BL33_BASE, SUNXI_BL33_VIRT_BASE,
 		   SUNXI_DRAM_MAP_SIZE, MT_RW_DATA | MT_NS),
+#ifdef SUNXI_BL31_IN_DRAM
+	/*
+	 * The rest of the first 3 GiB of DRAM, read-only: lets the
+	 * suspend-to-off path checksum the retained memory image
+	 * around the BL33 window (the VA space is 32-bit, so DRAM
+	 * above 0x100000000 stays unmapped and unchecked).
+	 */
+	MAP_REGION_FLAT(SUNXI_DRAM_BASE + 0x00200000,
+			PRELOADED_BL33_BASE - SUNXI_DRAM_BASE - 0x00200000,
+			MT_MEMORY | MT_RO | MT_NS | MT_EXECUTE_NEVER),
+	MAP_REGION_FLAT(PRELOADED_BL33_BASE + SUNXI_DRAM_MAP_SIZE,
+			0x100000000ULL - PRELOADED_BL33_BASE -
+			SUNXI_DRAM_MAP_SIZE,
+			MT_MEMORY | MT_RO | MT_NS | MT_EXECUTE_NEVER),
+#endif
 	{},
 };
 

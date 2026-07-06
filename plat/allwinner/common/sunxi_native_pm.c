@@ -73,6 +73,53 @@ static struct {
  * framework both treat hardware state as retained). The buffers live
  * in BL31 .bss — DRAM, preserved by self-refresh.
  */
+/*
+ * DRAM retention checksum bracket for suspend-to-off: one sum per
+ * 256 MiB chunk, computed after the kernel is quiesced (full CPU
+ * speed, before the 24 MHz switch) and recomputed at warm re-entry
+ * before the kernel resumes. Chunk 0 skips the first 2 MiB (BL31
+ * itself lives and works there); coverage ends at 3 GiB (32-bit VA).
+ */
+#define DRAM_SUM_CHUNK		0x10000000ULL
+#define DRAM_SUM_CHUNKS		12U
+static uint64_t dram_sums[DRAM_SUM_CHUNKS];
+
+static uint64_t sunxi_dram_sum_range(uintptr_t base, size_t len)
+{
+	const uint64_t *p = (const uint64_t *)base;
+	const uint64_t *end = (const uint64_t *)(base + len);
+	uint64_t acc = 0;
+
+	while (p < end) {
+		acc ^= *p++;
+		acc = (acc << 13) | (acc >> 51);
+	}
+	return acc;
+}
+
+static void sunxi_dram_sums_compute(uint64_t *out)
+{
+	uint64_t t0 = read_cntpct_el0();
+	uint32_t i;
+
+	for (i = 0U; i < DRAM_SUM_CHUNKS; i++) {
+		uintptr_t base = SUNXI_DRAM_BASE + i * DRAM_SUM_CHUNK;
+		size_t len = DRAM_SUM_CHUNK;
+
+		if (i == 0U) {
+			base += 0x200000U;
+			len -= 0x200000U;
+		}
+		out[i] = sunxi_dram_sum_range(base, len);
+	}
+	NOTICE("PSCI: DRAM sums in %llu ms:\n",
+	       (read_cntpct_el0() - t0) / 24000ULL);
+	for (i = 0U; i < DRAM_SUM_CHUNKS; i += 4U) {
+		NOTICE("  %u: %lx %lx %lx %lx\n", i,
+		       out[i], out[i + 1U], out[i + 2U], out[i + 3U]);
+	}
+}
+
 static uint32_t soc_ccu[0x1000 / 4];
 /* SPI1 (the EC link, watchdog-critical): the controller resets to
  * SLAVE mode with VDD-SYS and the sun6i driver only re-programs it in
@@ -395,6 +442,15 @@ static void sunxi_pwr_domain_suspend(const psci_power_state_t *target_state)
 	 * every interrupt it kept enabled remains able to terminate the WFI
 	 * in sunxi_pwr_domain_pwr_down_wfi() below.
 	 */
+	/*
+	 * Suspend-to-off: checksum the retained image here — the
+	 * caches are still on (pwr_down_wfi runs after the generic
+	 * code disables them: 3 GiB takes 2 s cached vs 74 s not).
+	 */
+	if (mmio_read_32(0x07000100U) == 0x0ff51eeaU) {
+		sunxi_dram_sums_compute(dram_sums);
+	}
+
 	NOTICE("PSCI: System suspend: entering WFI retention\n");
 }
 
@@ -417,6 +473,27 @@ static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_sta
 		sunxi_soc_state_restore();
 		gicv2_distif_init();
 		sunxi_gicd_state_restore();
+
+		/* Kernel-configured CPU clock back (also speeds up the
+		 * checksum verify below ~3x over the SPL clock). */
+		sunxi_suspend_cpu_fast();
+
+		{
+			static uint64_t verify[DRAM_SUM_CHUNKS];
+			uint32_t i, bad = 0U;
+
+			sunxi_dram_sums_compute(verify);
+			for (i = 0U; i < DRAM_SUM_CHUNKS; i++) {
+				if (verify[i] != dram_sums[i]) {
+					bad++;
+					NOTICE("PSCI: DRAM sum MISMATCH chunk %u: %lx != %lx\n",
+					       i, verify[i], dram_sums[i]);
+				}
+			}
+			NOTICE("PSCI: DRAM retention verdict: %s (%u/%u chunks bad)\n",
+			       (bad == 0U) ? "CLEAN" : "CORRUPTED", bad,
+			       DRAM_SUM_CHUNKS);
+		}
 		NOTICE("off-resume post: ctlr=%x en1=%x en2=%x spi1clk=%x spi1bgr=%x saved_en1=%x\n",
 		       mmio_read_32(SUNXI_GICD_BASE + 0x000U),
 		       mmio_read_32(SUNXI_GICD_BASE + 0x104U),
