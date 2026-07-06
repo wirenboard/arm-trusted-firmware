@@ -63,6 +63,7 @@ static struct {
 	uint32_t cpu_axi, pll_cpux;
 	int	 pmic_ok;
 	int	 off_resume;
+	int	 crc;		/* verify variant: run the DRAM CRC bracket */
 	uint8_t	 out_ctrl1, out_ctrl2, dcdc2_v;
 } sus;
 
@@ -446,8 +447,12 @@ static void sunxi_pwr_domain_suspend(const psci_power_state_t *target_state)
 	 * Suspend-to-off: checksum the retained image here — the
 	 * caches are still on (pwr_down_wfi runs after the generic
 	 * code disables them: 3 GiB takes 2 s cached vs 74 s not).
+	 * Only the verify variant (magic 0x0ff51eeb) computes it; the
+	 * fast default (0x0ff51eea) skips the ~74 s bracket. This runs
+	 * before the magic is cleared in pwr_down_wfi, so reading it
+	 * here is fine.
 	 */
-	if (mmio_read_32(0x07000100U) == 0x0ff51eeaU) {
+	if (mmio_read_32(0x07000100U) == 0x0ff51eebU) {
 		sunxi_dram_sums_compute(dram_sums);
 	}
 
@@ -478,10 +483,17 @@ static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_sta
 		 * checksum verify below ~3x over the SPL clock). */
 		sunxi_suspend_cpu_fast();
 
-		{
+		/*
+		 * Verify variant only (sus.crc, armed from magic
+		 * 0x0ff51eeb). The magic at 0x07000100 is already 0 by
+		 * resume time — it is cleared in pwr_down_wfi — so the
+		 * gate MUST be the persisted flag, never a re-read.
+		 */
+		if (sus.crc != 0) {
 			static uint64_t verify[DRAM_SUM_CHUNKS];
 			uint32_t i, bad = 0U;
 
+			sus.crc = 0;
 			sunxi_dram_sums_compute(verify);
 			for (i = 0U; i < DRAM_SUM_CHUNKS; i++) {
 				if (verify[i] != dram_sums[i]) {
@@ -612,7 +624,14 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 				mmio_write_32(0x07000100U, 0U);
 				kill = 0x10U;	/* keep DCDC5 only */
 				NOTICE("PSCI: suspend: one-way rail kill armed\n");
-			} else if (magic == 0x0ff51eeaU) {
+			} else if (magic == 0x0ff51eeaU ||
+				   magic == 0x0ff51eebU) {
+				/*
+				 * 0x0ff51eea = suspend-to-off, fast (no CRC).
+				 * 0x0ff51eeb = suspend-to-off, with the DRAM
+				 * CRC bracket (sus.crc set below). Both take
+				 * the identical suspend-to-off path.
+				 */
 				/*
 				 * Suspend-to-off: the PMIC sleeps with only the
 				 * DRAM rails alive, the EC wakes it by PWRON at
@@ -667,6 +686,7 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 				    axp_wr(0x31U, v | 0x08U) == 0) {	/* record + sleep */
 					kill = 0x10U;	/* keep DCDC5 only */
 					sus.off_resume = 1;
+					sus.crc = (magic == 0x0ff51eebU) ? 1 : 0;
 					mmio_write_32(0x07000104U,
 						      (uint32_t)sunxi_sec_entrypoint);
 					dsbsy();
