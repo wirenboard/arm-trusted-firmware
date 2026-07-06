@@ -260,11 +260,21 @@ static void sunxi_soc_state_restore(void)
 	}
 	udelay(10);
 
-	/* 3. Pin controllers, now that their clocks are back. */
+	/* 3. Pin controllers, now that their clocks are back.
+	 *
+	 * DISABLED for kernel-PM validation: the sunxi pinctrl
+	 * suspend_noirq/resume_noirq context save/restore now reprograms
+	 * PIO and R_PIO on the kernel side. Kept #if 0 (not deleted) so it
+	 * can be restored instantly — note the kernel restore runs at
+	 * resume_noirq, later than this firmware restore, so output pins
+	 * (relays/DO) sit at reset defaults for a longer early-resume
+	 * window; bench validates whether that glitch is acceptable. */
+#if 0
 	for (i = 0U; i < ARRAY_SIZE(soc_pio); i++)
 		mmio_write_32(SUNXI_PIO_BASE + i * 4U, soc_pio[i]);
 	for (i = 0U; i < ARRAY_SIZE(soc_rpio); i++)
 		mmio_write_32(SUNXI_R_PIO_BASE + i * 4U, soc_rpio[i]);
+#endif
 
 	/* SPI1 controller: GCR (master mode!), clock, format, wait
 	 * cycles, IRQ enables. Status/FIFO registers are skipped.
