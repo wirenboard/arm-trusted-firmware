@@ -267,13 +267,21 @@ static void sunxi_soc_state_restore(void)
 		mmio_write_32(SUNXI_R_PIO_BASE + i * 4U, soc_rpio[i]);
 
 	/* SPI1 controller: GCR (master mode!), clock, format, wait
-	 * cycles, IRQ enables. Status/FIFO registers are skipped. */
+	 * cycles, IRQ enables. Status/FIFO registers are skipped.
+	 *
+	 * DISABLED for kernel-PM validation: the spi-sun6i system-sleep
+	 * PM ops (pm_runtime_force_suspend/resume) now reprogram the
+	 * controller (GCR master mode etc.) on the kernel side, so this
+	 * firmware restore is redundant. Kept #if 0 (not deleted) so it
+	 * can be restored instantly if the kernel path proves insufficient. */
+#if 0
 	mmio_write_32(0x05011004U, soc_spi1[0x04U / 4U]);
 	mmio_write_32(0x05011024U, soc_spi1[0x24U / 4U]);
 	mmio_write_32(0x05011008U, soc_spi1[0x08U / 4U]);
 	mmio_write_32(0x05011020U, soc_spi1[0x20U / 4U]);
 	mmio_write_32(0x05011018U, soc_spi1[0x18U / 4U]);
 	mmio_write_32(0x05011010U, soc_spi1[0x10U / 4U]);
+#endif
 	dsbsy();
 }
 
