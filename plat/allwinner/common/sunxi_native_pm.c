@@ -454,7 +454,17 @@ static void sunxi_pwr_domain_off(const psci_power_state_t *target_state)
 {
 	gicv2_cpuif_disable();
 
-	sunxi_cpu_power_off_self();
+	/*
+	 * Do NOT hardware-close the core through the CPUIDLE block
+	 * (sunxi_cpu_power_off_self): a CPUIDLE-closed secondary cannot be
+	 * reopened by the manual-clamp CPU_ON once suspend-to-off has wiped
+	 * the CPUCFG cluster state, which is what left cores 1-3 wedged for
+	 * every suspend cycle after the first. Follow the vendor model
+	 * instead -- the core just falls into the WFI loop in
+	 * sunxi_pwr_domain_pwr_down_wfi() with its GIC interface off, stays in
+	 * the (retained) power domain, and is cleanly re-powered by CPU_ON on
+	 * resume.
+	 */
 }
 
 static void sunxi_pwr_domain_on_finish(const psci_power_state_t *target_state)
@@ -555,6 +565,37 @@ static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_sta
 		 * and PHY pins back to their pre-suspend configuration.
 		 */
 		sunxi_suspend_periph_restore();
+
+		/*
+		 * Put every secondary into a clean, manually clamped-off
+		 * state before returning to the kernel. With the CPUIDLE
+		 * close gone (see sunxi_pwr_domain_off) the cores were only
+		 * GIC-off + WFI, and VDD-SYS death can leave their retained
+		 * POWER_CLAMP registers reading "on" -- which would make the
+		 * kernel's next CPU_ON short-circuit sunxi_cpu_enable_power()
+		 * and skip the power-up ramp. Forcing the clamped-off state
+		 * makes CPU_ON run the full ramp and release the core to the
+		 * re-armed RVBAR, so thaw_secondary_cpus() brings 1-3 back and
+		 * the following SYSTEM_SUSPEND is not DENIED.
+		 */
+		sunxi_cpu_power_off_others();
+
+		/*
+		 * wb8 instrumentation (RTC GP @ 0x0700011{0,4,8}): CPUIDLE /
+		 * cluster power state at off-resume, readable from Linux via
+		 * devmem so a failure is diagnostic, not a wasted flash:
+		 *  0x07000110 = CORE_CLOSE (0x07000504) raw (expect 0 now)
+		 *  0x07000114 = CPUCFG 0x09010010 raw (AArch64/cluster bits)
+		 *  0x07000118 = [31:24] CONFIG_DELAY(0x544) [23:16] PWR_SW_DELAY(0x540)
+		 *               [15:8]  0x0700050c          [7:0]  CPUIDLE_EN(0x500)
+		 */
+		mmio_write_32(0x07000110U, mmio_read_32(0x07000504U));
+		mmio_write_32(0x07000114U, mmio_read_32(0x09010010U));
+		mmio_write_32(0x07000118U,
+			((mmio_read_32(0x07000544U) & 0xffU) << 24) |
+			((mmio_read_32(0x07000540U) & 0xffU) << 16) |
+			((mmio_read_32(0x0700050cU) & 0xffU) << 8) |
+			 (mmio_read_32(0x07000500U) & 0xffU));
 	}
 
 	gicv2_pcpu_distif_init();
@@ -768,8 +809,11 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 	}
 
 	/*
-	 * CPU_OFF: power-off was armed in sunxi_cpu_power_off_self(),
-	 * the CPUIDLE hardware removes power once this core hits WFI.
+	 * CPU_OFF: the core is no longer hardware-closed (see
+	 * sunxi_pwr_domain_off) -- it simply idles here in WFI with its GIC
+	 * interface off, staying in the power domain until a CPU_ON re-powers
+	 * and re-releases it. This keeps the core cleanly recoverable after
+	 * suspend-to-off (the vendor model).
 	 */
 	while (true) {
 		dsb();

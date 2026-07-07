@@ -104,6 +104,42 @@ void sunxi_cpu_on(u_register_t mpidr)
 		sunxi_cpu_enable_power(cluster, core);
 		/* Release the core output clamps */
 		mmio_clrbits_32(SUNXI_POWEROFF_GATING_REG(cluster), BIT(core));
+		/*
+		 * Re-arm the warm-boot vector before releasing the core.
+		 * RVBAR lives in the CPUCFG block (VDD-SYS), is wiped by
+		 * suspend-to-off, and is otherwise only programmed once at
+		 * cold boot in plat_setup_psci_ops(); a secondary released
+		 * after resume would otherwise fetch from address 0. Same
+		 * value plat_setup uses; idempotent at cold boot / hotplug.
+		 */
+		mmio_write_32(SUNXI_CPUCFG_RVBAR_LO_REG(core),
+			      sunxi_sec_entrypoint & 0xffffffff);
+		mmio_write_32(SUNXI_CPUCFG_RVBAR_HI_REG(core),
+			      sunxi_sec_entrypoint >> 32);
+#ifdef SUNXI_CORE_CLOSE_REG
+		/*
+		 * Defensive: the suspend path no longer CPUIDLE-closes
+		 * secondaries, but clear any residual close request so the
+		 * hardware cannot re-gate this core after we release it.
+		 */
+		mmio_clrbits_32(SUNXI_CORE_CLOSE_REG, BIT(core));
+		/*
+		 * wb8 instrumentation (RTC GP7 @ 0x0700011c): for each
+		 * secondary CPU_ON after a warm resume, record the live
+		 * power state so a failure is diagnosable via devmem:
+		 *  [31:28] core   [27:24] 0xC sig
+		 *  [23:16] POWER_CLAMP readback after ramp (00=on, ff=off)
+		 *  [15:8]  CPUCFG 0x09010010 bits [31:24] (AArch64/cluster)
+		 *  [7:0]   CORE_CLOSE (0x07000504) low byte
+		 */
+		if (core != 0U) {
+			mmio_write_32(0x0700011cU,
+				(((uint32_t)core & 0xfU) << 28) | (0xCU << 24) |
+				((mmio_read_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core)) & 0xffU) << 16) |
+				(((mmio_read_32(0x09010010U) >> 24) & 0xffU) << 8) |
+				(mmio_read_32(SUNXI_CORE_CLOSE_REG) & 0xffU));
+		}
+#endif
 		/* Deassert CPU power-on reset */
 		mmio_setbits_32(SUNXI_POWERON_RST_REG(cluster), BIT(core));
 		/* Deassert CPU core reset */
