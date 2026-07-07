@@ -27,9 +27,94 @@
  * attributes after the data cache is disabled.
  * -----------------------------------------------------------------------
  */
+/* -----------------------------------------------------------------------
+ * wb8 DIAGNOSTIC: callee-saved register canary. The deterministic
+ * 3rd-cycle CPU_OFF crash shows x21 reading x18's stale LR value with no
+ * architectural writer in the whole image (see
+ * notes/el3-cycle3-crash-dossier-2026-07-08.md). Plant per-register
+ * patterns in x21-x28 across prepare_cpu_pwr_dwn (dcache-off + L1
+ * set/way flush + SMPEN clear -- the suspected corruption window) and
+ * record a corruption bitmap in RTC data reg 3 (0x0700010c), which is
+ * readable from Linux after the wedge and survives the EC warm reset.
+ * Tags: 0xCAFE__cc = entered (core cc); 0xCA_bb_cc = post-pwr-dwn check,
+ * bitmap bb (bit n = x(21+n) corrupted); 0xCB_bb_cc = post-stack-flush
+ * check. The epilogue ldp restores incidentally SELF-HEAL any in-window
+ * corruption (restores read the explicitly-flushed stack), so if the
+ * crash disappears with this build while a bitmap goes non-zero, the
+ * corruption window is proven.
+ * -----------------------------------------------------------------------
+ */
+	.macro	wb8_canary_check tag_byte
+	mov	w10, wzr
+	mov_imm	x9, 0xC021C021C021C021
+	cmp	x21, x9
+	cset	w11, ne
+	orr	w10, w10, w11
+	mov_imm	x9, 0xC022C022C022C022
+	cmp	x22, x9
+	cset	w11, ne
+	orr	w10, w10, w11, lsl #1
+	mov_imm	x9, 0xC023C023C023C023
+	cmp	x23, x9
+	cset	w11, ne
+	orr	w10, w10, w11, lsl #2
+	mov_imm	x9, 0xC024C024C024C024
+	cmp	x24, x9
+	cset	w11, ne
+	orr	w10, w10, w11, lsl #3
+	mov_imm	x9, 0xC025C025C025C025
+	cmp	x25, x9
+	cset	w11, ne
+	orr	w10, w10, w11, lsl #4
+	mov_imm	x9, 0xC026C026C026C026
+	cmp	x26, x9
+	cset	w11, ne
+	orr	w10, w10, w11, lsl #5
+	mov_imm	x9, 0xC027C027C027C027
+	cmp	x27, x9
+	cset	w11, ne
+	orr	w10, w10, w11, lsl #6
+	mov_imm	x9, 0xC028C028C028C028
+	cmp	x28, x9
+	cset	w11, ne
+	orr	w10, w10, w11, lsl #7
+	mrs	x12, mpidr_el1
+	and	x12, x12, #0xff
+	orr	w10, w12, w10, lsl #8
+	mov	w12, #\tag_byte
+	orr	w10, w10, w12, lsl #24
+	mov_imm	x11, 0x0700010c
+	str	w10, [x11]
+	dsb	sy
+	.endm
+
 func psci_do_pwrdown_cache_maintenance
 	stp     x29, x30, [sp,#-16]!
 	stp     x19, x20, [sp,#-16]!
+
+	/* wb8 canary: spill x21-x28 (slots sit above SP, so the existing
+	 * stack flush below covers them exactly like the x19/x20 spills),
+	 * mark entry in RTC3, plant the patterns. x0 (power level) is
+	 * untouched. */
+	stp	x21, x22, [sp,#-16]!
+	stp	x23, x24, [sp,#-16]!
+	stp	x25, x26, [sp,#-16]!
+	stp	x27, x28, [sp,#-16]!
+	mrs	x12, mpidr_el1
+	and	x12, x12, #0xff
+	mov	w10, #0xCAFE0000
+	orr	w10, w10, w12
+	mov_imm	x11, 0x0700010c
+	str	w10, [x11]
+	dsb	sy
+	mov_imm	x21, 0xC021C021C021C021
+	mov_imm	x22, 0xC022C022C022C022
+	mov_imm	x23, 0xC023C023C023C023
+	mov_imm	x24, 0xC024C024C024C024
+	mov_imm	x25, 0xC025C025C025C025
+	mov_imm	x26, 0xC026C026C026C026
+	mov_imm	x27, 0xC027C027C027C027
+	mov_imm	x28, 0xC028C028C028C028
 
 	/* ---------------------------------------------
 	 * Invoke CPU-specific power down operations for
@@ -37,6 +122,9 @@ func psci_do_pwrdown_cache_maintenance
 	 * ---------------------------------------------
 	 */
 	bl	prepare_cpu_pwr_dwn
+
+	/* wb8 canary stage A: right after the CPU-specific powerdown ops */
+	wb8_canary_check 0xCA
 
 	/* ---------------------------------------------
 	 * Do stack maintenance by flushing the used
@@ -67,6 +155,16 @@ func psci_do_pwrdown_cache_maintenance
 	sub	x1, sp, x0
 	bl	inv_dcache_range
 
+	/* wb8 canary stage B: after the stack maintenance */
+	wb8_canary_check 0xCB
+
+	/* wb8 canary: restore the real callee-saved values. These NC reads
+	 * hit the explicitly-flushed stack, so they also repair any
+	 * in-window register corruption for the caller. */
+	ldp	x27, x28, [sp], #16
+	ldp	x25, x26, [sp], #16
+	ldp	x23, x24, [sp], #16
+	ldp	x21, x22, [sp], #16
 	ldp	x19, x20, [sp], #16
 	ldp	x29, x30, [sp], #16
 	ret
