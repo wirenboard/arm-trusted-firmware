@@ -450,9 +450,25 @@ static int sunxi_pwr_domain_on(u_register_t mpidr)
 	return PSCI_E_SUCCESS;
 }
 
+/* PSCI-internal global; corrupted-by-cycle-3 canary target. */
+extern const void *psci_plat_pm_ops;
+
 static void sunxi_pwr_domain_off(const psci_power_state_t *target_state)
 {
 	gicv2_cpuif_disable();
+
+	/*
+	 * wb8 canary: psci_do_cpu_off() faults on the 3rd cycle because the
+	 * boot-constant psci_plat_pm_ops pointer reads back as garbage. Print
+	 * it (and the core index, to catch any out-of-range index) on every
+	 * CPU_OFF so the next capture shows when/what it becomes. A safe
+	 * cached read: by this point the line is typically already evicted
+	 * (that is why the later post-flush read faults), so this often sees
+	 * the corrupt value too, without the risk of invalidating a line
+	 * shared with live PSCI state.
+	 */
+	NOTICE("wb8: cpu_off_dom core=%u pm_ops=%p\n",
+	       plat_my_core_pos(), psci_plat_pm_ops);
 
 	/*
 	 * Do NOT hardware-close the core through the CPUIDLE block
@@ -567,28 +583,20 @@ static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_sta
 		sunxi_suspend_periph_restore();
 
 		/*
-		 * Put every secondary into a clean, manually clamped-off
-		 * state before returning to the kernel. With the CPUIDLE
-		 * close gone (see sunxi_pwr_domain_off) the cores were only
-		 * GIC-off + WFI, and VDD-SYS death can leave their retained
-		 * POWER_CLAMP registers reading "on" -- which would make the
-		 * kernel's next CPU_ON short-circuit sunxi_cpu_enable_power()
-		 * and skip the power-up ramp. Forcing the clamped-off state
-		 * makes CPU_ON run the full ramp and release the core to the
-		 * re-armed RVBAR, so thaw_secondary_cpus() brings 1-3 back and
-		 * the following SYSTEM_SUSPEND is not DENIED.
+		 * Re-powering the secondaries is now done by cpu_on itself
+		 * (it writes POWER_CLAMP=0xff before the ramp), so the earlier
+		 * out-of-framework sunxi_cpu_power_off_others() here was
+		 * redundant and is removed: driving the PSCI CPU-off primitive
+		 * directly from the resume path is the suspected source of the
+		 * per-CPU/PSCI state corruption that faulted on the 3rd cycle.
+		 *
+		 * wb8 console: show the state the kernel's CPU_ON will see.
+		 * ALTrvbar[1] is the non-per-cluster reset vector at 0x08100048
+		 * (0 => wiped by suspend-to-off; cpu_on re-arms it).
 		 */
-		sunxi_cpu_power_off_others();
-		/*
-		 * wb8 console: confirm D ran and show the state the kernel's
-		 * CPU_ON will see. ALTrvbar[1] here is the RESET VECTOR for the
-		 * non-per-cluster path at 0x08100048 (CPUSUBSYS/VDD-SYS) -- if
-		 * it reads 0 it was wiped by suspend-to-off and cpu_on re-arms
-		 * it. clamp[1]=0xff confirms the ramp will run.
-		 */
-		NOTICE("wb8: resume D clamped others; clamp[1]=0x%x ALTrvbar[1]=0x%x cpucfg1010=0x%x\n",
-		       mmio_read_32(0x07000454U),
+		NOTICE("wb8: resume ALTrvbar[1]=0x%x clamp[1]=0x%x cpucfg1010=0x%x\n",
 		       mmio_read_32(0x08100048U),
+		       mmio_read_32(0x07000454U),
 		       mmio_read_32(0x09010010U));
 
 		/*
