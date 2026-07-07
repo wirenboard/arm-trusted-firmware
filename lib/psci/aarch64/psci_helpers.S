@@ -81,6 +81,11 @@
 	mrs	x12, mpidr_el1
 	and	x12, x12, #0xff
 	orr	w10, w12, w10, lsl #8
+	/* bit 16: does the (possibly corrupt) x21 hold x18's value? The
+	 * original crash showed exactly x21 := x18 aliasing. */
+	cmp	x21, x18
+	cset	w11, eq
+	orr	w10, w10, w11, lsl #16
 	mov	w12, #\tag_byte
 	orr	w10, w10, w12, lsl #24
 	mov_imm	x11, 0x0700010c
