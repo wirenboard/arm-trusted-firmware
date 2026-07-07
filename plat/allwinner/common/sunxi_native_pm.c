@@ -579,18 +579,28 @@ static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_sta
 		 * the following SYSTEM_SUSPEND is not DENIED.
 		 */
 		sunxi_cpu_power_off_others();
+		/*
+		 * wb8 console: confirm D ran and show the state the kernel's
+		 * CPU_ON will see. ALTrvbar[1] here is the RESET VECTOR for the
+		 * non-per-cluster path at 0x08100048 (CPUSUBSYS/VDD-SYS) -- if
+		 * it reads 0 it was wiped by suspend-to-off and cpu_on re-arms
+		 * it. clamp[1]=0xff confirms the ramp will run.
+		 */
+		NOTICE("wb8: resume D clamped others; clamp[1]=0x%x ALTrvbar[1]=0x%x cpucfg1010=0x%x\n",
+		       mmio_read_32(0x07000454U),
+		       mmio_read_32(0x08100048U),
+		       mmio_read_32(0x09010010U));
 
 		/*
-		 * wb8 instrumentation (RTC GP @ 0x0700011{0,4,8}): CPUIDLE /
-		 * cluster power state at off-resume, readable from Linux via
-		 * devmem so a failure is diagnostic, not a wasted flash:
+		 * wb8 instrumentation (RTC GP @ 0x0700011{0,4,8}): power state
+		 * at off-resume, readable from Linux via devmem as backup:
 		 *  0x07000110 = CORE_CLOSE (0x07000504) raw (expect 0 now)
-		 *  0x07000114 = CPUCFG 0x09010010 raw (AArch64/cluster bits)
+		 *  0x07000114 = ALT_RVBAR_LO(1) @ 0x08100048 (0 => vector wiped)
 		 *  0x07000118 = [31:24] CONFIG_DELAY(0x544) [23:16] PWR_SW_DELAY(0x540)
 		 *               [15:8]  0x0700050c          [7:0]  CPUIDLE_EN(0x500)
 		 */
 		mmio_write_32(0x07000110U, mmio_read_32(0x07000504U));
-		mmio_write_32(0x07000114U, mmio_read_32(0x09010010U));
+		mmio_write_32(0x07000114U, mmio_read_32(0x08100048U));
 		mmio_write_32(0x07000118U,
 			((mmio_read_32(0x07000544U) & 0xffU) << 24) |
 			((mmio_read_32(0x07000540U) & 0xffU) << 16) |
