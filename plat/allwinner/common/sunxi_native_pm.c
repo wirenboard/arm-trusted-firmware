@@ -600,20 +600,18 @@ static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_sta
 		       mmio_read_32(0x09010010U));
 
 		/*
-		 * wb8 instrumentation (RTC GP @ 0x0700011{0,4,8}): power state
-		 * at off-resume, readable from Linux via devmem as backup:
-		 *  0x07000110 = CORE_CLOSE (0x07000504) raw (expect 0 now)
-		 *  0x07000114 = ALT_RVBAR_LO(1) @ 0x08100048 (0 => vector wiped)
-		 *  0x07000118 = [31:24] CONFIG_DELAY(0x544) [23:16] PWR_SW_DELAY(0x540)
-		 *               [15:8]  0x0700050c          [7:0]  CPUIDLE_EN(0x500)
+		 * REMOVED: the wb8 off-resume instrumentation writes to RTC
+		 * GP regs 0x07000110/114/118. RTC data4 (0x07000110) is the
+		 * SPL's DRAM geometry stash (magic 0x6d, dram_sun50i_h616.c):
+		 * zeroing it here made every wake after the first fall back
+		 * to the DESTRUCTIVE geometry auto-detect (probing writes +
+		 * trial inits with wrong geometry) over the self-refresh-
+		 * preserved image — the root cause of the deterministic
+		 * cycle-3 EL3 crash, the post-resume kernel oops/hangs, and
+		 * every other off-window corruption face. Do not write any
+		 * RTC GP register from BL31 except data1 (resume vector,
+		 * shared with SPL by design) and the debug regs data2/data3.
 		 */
-		mmio_write_32(0x07000110U, mmio_read_32(0x07000504U));
-		mmio_write_32(0x07000114U, mmio_read_32(0x08100048U));
-		mmio_write_32(0x07000118U,
-			((mmio_read_32(0x07000544U) & 0xffU) << 24) |
-			((mmio_read_32(0x07000540U) & 0xffU) << 16) |
-			((mmio_read_32(0x0700050cU) & 0xffU) << 8) |
-			 (mmio_read_32(0x07000500U) & 0xffU));
 	}
 
 	gicv2_pcpu_distif_init();
