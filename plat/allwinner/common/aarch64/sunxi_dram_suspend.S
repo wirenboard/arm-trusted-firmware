@@ -109,6 +109,11 @@ func sunxi_dram_suspend_blob
 	 * control +0x0c (IFLG bit3 is cleared by WRITING 1 — inverted).
 	 */
 	cbz	x0, 9f
+	/* 0xff sentinel: kill ALL rails (empty keep-mask). Plain 0 must
+	 * keep meaning "no kill" (retention path), so kill-all needs a
+	 * distinct encoding. */
+	cmp	x0, #0xff
+	csel	x0, xzr, x0, eq
 	stage	0xaa
 	mov	x12, #0x1400
 	movk	x12, #0x0708, lsl #16	/* R_TWI base */

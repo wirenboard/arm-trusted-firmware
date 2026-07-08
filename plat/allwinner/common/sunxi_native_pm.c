@@ -803,7 +803,7 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 			if (mmio_read_32(0x07000114U) == 0xD5A90FF5U) {
 				mmio_write_32(0x07000114U, 0U);
 				mmio_write_32(0x07000104U, 0U);
-				kill = 0U;
+				kill = 0xffU;	/* blob sentinel: empty keep-mask */
 				NOTICE("PSCI: FULL rail kill armed (DRAM dies too, no resume)\n");
 			}
 
