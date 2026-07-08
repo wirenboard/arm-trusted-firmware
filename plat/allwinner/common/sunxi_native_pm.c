@@ -790,6 +790,23 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 				}
 			}
 
+			/*
+			 * Bench measurement hack #2 (floor decomposition):
+			 * a magic in RTC data5 makes the blob kill the DRAM
+			 * rail too (empty keep-mask), isolating DRAM
+			 * self-refresh + DCDC5 overhead from the rest of the
+			 * suspend floor. No resume is possible afterwards —
+			 * clear the resume vector so the EC-deadline
+			 * recovery COLD-boots instead of jumping into dead
+			 * DRAM. Magic is consumed on use.
+			 */
+			if (mmio_read_32(0x07000114U) == 0xD5A90FF5U) {
+				mmio_write_32(0x07000114U, 0U);
+				mmio_write_32(0x07000104U, 0U);
+				kill = 0U;
+				NOTICE("PSCI: FULL rail kill armed (DRAM dies too, no resume)\n");
+			}
+
 			mmio_write_32(0x07000108U, 0xb1U);
 			disable_mmu_el3();
 			mmio_write_32(0x07000108U, 0xb2U);
