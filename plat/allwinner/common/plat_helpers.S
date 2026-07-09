@@ -47,3 +47,27 @@ endfunc platform_mem_init
 func plat_report_exception
 	ret
 endfunc plat_report_exception
+
+	.globl	sunxi_offresume_entrypoint
+
+	/*
+	 * Suspend-to-off resume entry for CPU0, branched into by the SPL
+	 * with a raw jump (no cache maintenance on the SPL side) after the
+	 * whole cluster lost power. WARMBOOT_ENABLE_DCACHE_EARLY turns the
+	 * D-cache on early in bl31_warm_entrypoint, so any stale/garbage
+	 * lines inherited from POR/BROM/SPL become live data — the suspect
+	 * behind rare post-resume garbage-pointer faults. Invalidate the
+	 * whole hierarchy first (INVALIDATE ONLY — the suspend entry path
+	 * already flushed everything real to DRAM; a clean here would write
+	 * garbage back). Safe as CPU0-exclusive: every secondary is still
+	 * powered off at this point.
+	 */
+func sunxi_offresume_entrypoint
+	mov	x0, #DCISW
+	bl	dcsw_op_all
+	ic	iallu
+	tlbi	alle3
+	dsb	sy
+	isb
+	b	bl31_warm_entrypoint
+endfunc sunxi_offresume_entrypoint

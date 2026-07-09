@@ -796,11 +796,21 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 					kill = (1U << 16) | (0x08U << 8) | 0x10U;
 					sus.off_resume = 1;
 					sus.crc = (magic == 0x0ff51eebU) ? 1 : 0;
+					/*
+					 * Route the SPL's raw resume jump
+					 * through the CPU0 invalidate-only
+					 * stub: the SPL does no cache
+					 * maintenance before branching, and
+					 * the warm entry enables the D-cache
+					 * early — stale hierarchy state must
+					 * die first (rare post-resume
+					 * garbage-pointer fault suspect).
+					 */
 					mmio_write_32(0x07000104U,
-						      (uint32_t)sunxi_sec_entrypoint);
+						      (uint32_t)(uintptr_t)sunxi_offresume_entrypoint);
 					dsbsy();
 					NOTICE("PSCI: suspend-to-off armed, resume via 0x%x\n",
-					       (uint32_t)sunxi_sec_entrypoint);
+					       (uint32_t)(uintptr_t)sunxi_offresume_entrypoint);
 				} else {
 					WARN("PSCI: suspend-to-off: PMIC prep failed, normal suspend\n");
 				}
