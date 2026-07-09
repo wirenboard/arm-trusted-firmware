@@ -110,14 +110,14 @@ func sunxi_dram_suspend_blob
 	 */
 	cbz	x0, 9f
 	/* 0xff sentinel: kill ALL rails (empty keep-mask). Plain 0 must
-	 * keep meaning "no kill" (retention path), so kill-all needs a
-	 * distinct encoding. Extended arg: bit 16 = also write OUT_CTRL2
-	 * (REG11H, the ALDO/BLDO bank) with the keep-mask in bits [15:8]
-	 * — the suspend floor decomposition instrument. */
+	 * keep meaning "no kill" (retention path). Extended arg: bit 16 =
+	 * also write OUT_CTRL2 (REG11H, ALDO/BLDO bank) with the keep-mask
+	 * in bits [15:8]. ORDER MATTERS: the LDO write must go FIRST --
+	 * the REG10H write kills VDD-SYS/VDD-CPU, i.e. the core running
+	 * this code (found as stage-0xaa deaths mid-second-transaction). */
 	cmp	x0, #0xff
 	csel	x0, xzr, x0, eq
 	mov	x15, x0			/* keep the full extended arg */
-	and	x0, x0, #0xff		/* REG10H keep-mask byte */
 	stage	0xaa
 	mov	x12, #0x1400
 	movk	x12, #0x0708, lsl #16	/* R_TWI base */
@@ -136,7 +136,9 @@ func sunxi_dram_suspend_blob
 1:	ldr	w13, [x12, #0x0c]
 	tbz	w13, #3, 1b
 
-	mov	w13, #0x10		/* AXP_REG_OUT_CTRL1 */
+	tbz	x15, #16, 5f		/* no LDO write: straight to the kill */
+
+	mov	w13, #0x11		/* AXP_REG_OUT_CTRL2 (ALDO/BLDO) FIRST */
 	str	w13, [x12, #0x08]
 	ldr	w13, [x12, #0x0c]
 	orr	w13, w13, #0x08
@@ -144,31 +146,22 @@ func sunxi_dram_suspend_blob
 1:	ldr	w13, [x12, #0x0c]
 	tbz	w13, #3, 1b
 
-	str	w0, [x12, #0x08]	/* rail mask byte */
+	ubfx	x0, x15, #8, #8		/* LDO keep-mask byte */
+	str	w0, [x12, #0x08]
 	ldr	w13, [x12, #0x0c]
 	orr	w13, w13, #0x08
 	str	w13, [x12, #0x0c]
 1:	ldr	w13, [x12, #0x0c]
 	tbz	w13, #3, 1b
-
-	/*
-	 * Optional second transaction: OUT_CTRL2 (REG11H) <- arg[15:8],
-	 * chained with a REPEATED START (no intermediate STOP — the
-	 * sunxi TWI gives no IFLG for STOP completion, so back-to-back
-	 * STOP;START is racy: found as stage 0xaa hangs). Single STOP
-	 * at the end covers both shapes.
-	 */
-	tbz	x15, #16, 7f
-	ubfx	x0, x15, #8, #8		/* REG11H keep-mask byte */
 
 	ldr	w13, [x12, #0x0c]
 	orr	w13, w13, #0x20		/* repeated START */
-	orr	w13, w13, #0x08		/* + clear IFLG to release the bus */
+	orr	w13, w13, #0x08
 	str	w13, [x12, #0x0c]
 1:	ldr	w13, [x12, #0x0c]
-	tbz	w13, #3, 1b		/* IFLG: repeated start sent */
+	tbz	w13, #3, 1b
 
-	mov	w13, #0x6c		/* 0x36 << 1, write */
+	mov	w13, #0x6c		/* re-address the PMIC */
 	str	w13, [x12, #0x08]
 	ldr	w13, [x12, #0x0c]
 	orr	w13, w13, #0x08
@@ -176,7 +169,7 @@ func sunxi_dram_suspend_blob
 1:	ldr	w13, [x12, #0x0c]
 	tbz	w13, #3, 1b
 
-	mov	w13, #0x11		/* AXP_REG_OUT_CTRL2 (ALDO/BLDO) */
+5:	mov	w13, #0x10		/* AXP_REG_OUT_CTRL1 (DCDCs) LAST */
 	str	w13, [x12, #0x08]
 	ldr	w13, [x12, #0x0c]
 	orr	w13, w13, #0x08
@@ -184,14 +177,15 @@ func sunxi_dram_suspend_blob
 1:	ldr	w13, [x12, #0x0c]
 	tbz	w13, #3, 1b
 
-	str	w0, [x12, #0x08]	/* LDO keep-mask byte */
+	and	x0, x15, #0xff		/* REG10H keep-mask byte */
+	str	w0, [x12, #0x08]
 	ldr	w13, [x12, #0x0c]
 	orr	w13, w13, #0x08
 	str	w13, [x12, #0x0c]
 1:	ldr	w13, [x12, #0x0c]
 	tbz	w13, #3, 1b
 
-7:	ldr	w13, [x12, #0x0c]
+	ldr	w13, [x12, #0x0c]
 	orr	w13, w13, #0x10		/* STOP */
 	orr	w13, w13, #0x08
 	str	w13, [x12, #0x0c]

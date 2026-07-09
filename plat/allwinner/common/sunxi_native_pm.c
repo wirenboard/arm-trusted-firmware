@@ -811,7 +811,23 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 				 * ALDO/BLDO bank (REG11H) with keep-mask xx —
 				 * the LDO decomposition instrument.
 				 */
-				if ((ldo >> 8) == 0xA1D0U) {
+				if (ldo == 0x00A1DFFFU) {
+					uint8_t v32;
+
+					mmio_write_32(0x07000118U, 0U);
+					/*
+					 * AXP software power-off (REG32H[7]):
+					 * the PMIC's true off-at-ACIN state
+					 * (30 uA spec) instead of sleep-armed.
+					 * Rails die under our feet; the EC
+					 * deadline PWRON powers it back on.
+					 */
+					NOTICE("PSCI: PMIC SOFTWARE POWER-OFF\n");
+					if (axp_rd(0x32U, &v32) == 0) {
+						axp_wr(0x32U, v32 | 0x80U);
+					}
+					kill = 0U;	/* blob: nothing left to do */
+				} else if ((ldo >> 8) == 0xA1D0U) {
 					mmio_write_32(0x07000118U, 0U);
 					kill = (1U << 16) | ((ldo & 0xffU) << 8);
 					NOTICE("PSCI: FULL rail kill + REG11H=0x%x armed\n",
