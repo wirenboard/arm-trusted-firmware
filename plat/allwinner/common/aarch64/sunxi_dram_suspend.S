@@ -151,23 +151,22 @@ func sunxi_dram_suspend_blob
 1:	ldr	w13, [x12, #0x0c]
 	tbz	w13, #3, 1b
 
-	ldr	w13, [x12, #0x0c]
-	orr	w13, w13, #0x10		/* STOP */
-	orr	w13, w13, #0x08
-	str	w13, [x12, #0x0c]
-
-	/* Optional second transaction: OUT_CTRL2 (REG11H) <- arg[15:8].
-	 * Same START/addr/reg/data/STOP dance; the DCDCs commanded off
-	 * above are still ramping down, the R_TWI stays alive on VCC-RTC
-	 * long enough (measurement path only, no resume follows). */
-	tbz	x15, #16, 8f
+	/*
+	 * Optional second transaction: OUT_CTRL2 (REG11H) <- arg[15:8],
+	 * chained with a REPEATED START (no intermediate STOP — the
+	 * sunxi TWI gives no IFLG for STOP completion, so back-to-back
+	 * STOP;START is racy: found as stage 0xaa hangs). Single STOP
+	 * at the end covers both shapes.
+	 */
+	tbz	x15, #16, 7f
 	ubfx	x0, x15, #8, #8		/* REG11H keep-mask byte */
 
 	ldr	w13, [x12, #0x0c]
-	orr	w13, w13, #0x20		/* START (repeated) */
+	orr	w13, w13, #0x20		/* repeated START */
+	orr	w13, w13, #0x08		/* + clear IFLG to release the bus */
 	str	w13, [x12, #0x0c]
 1:	ldr	w13, [x12, #0x0c]
-	tbz	w13, #3, 1b
+	tbz	w13, #3, 1b		/* IFLG: repeated start sent */
 
 	mov	w13, #0x6c		/* 0x36 << 1, write */
 	str	w13, [x12, #0x08]
@@ -192,12 +191,12 @@ func sunxi_dram_suspend_blob
 1:	ldr	w13, [x12, #0x0c]
 	tbz	w13, #3, 1b
 
-	ldr	w13, [x12, #0x0c]
+7:	ldr	w13, [x12, #0x0c]
 	orr	w13, w13, #0x10		/* STOP */
 	orr	w13, w13, #0x08
 	str	w13, [x12, #0x0c]
 
-8:	stage	0xab
+	stage	0xab
 1:	wfi				/* rails die around here */
 	b	1b
 9:
