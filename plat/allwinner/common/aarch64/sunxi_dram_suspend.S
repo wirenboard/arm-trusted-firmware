@@ -111,9 +111,13 @@ func sunxi_dram_suspend_blob
 	cbz	x0, 9f
 	/* 0xff sentinel: kill ALL rails (empty keep-mask). Plain 0 must
 	 * keep meaning "no kill" (retention path), so kill-all needs a
-	 * distinct encoding. */
+	 * distinct encoding. Extended arg: bit 16 = also write OUT_CTRL2
+	 * (REG11H, the ALDO/BLDO bank) with the keep-mask in bits [15:8]
+	 * — the suspend floor decomposition instrument. */
 	cmp	x0, #0xff
 	csel	x0, xzr, x0, eq
+	mov	x15, x0			/* keep the full extended arg */
+	and	x0, x0, #0xff		/* REG10H keep-mask byte */
 	stage	0xaa
 	mov	x12, #0x1400
 	movk	x12, #0x0708, lsl #16	/* R_TWI base */
@@ -152,7 +156,48 @@ func sunxi_dram_suspend_blob
 	orr	w13, w13, #0x08
 	str	w13, [x12, #0x0c]
 
-	stage	0xab
+	/* Optional second transaction: OUT_CTRL2 (REG11H) <- arg[15:8].
+	 * Same START/addr/reg/data/STOP dance; the DCDCs commanded off
+	 * above are still ramping down, the R_TWI stays alive on VCC-RTC
+	 * long enough (measurement path only, no resume follows). */
+	tbz	x15, #16, 8f
+	ubfx	x0, x15, #8, #8		/* REG11H keep-mask byte */
+
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x20		/* START (repeated) */
+	str	w13, [x12, #0x0c]
+1:	ldr	w13, [x12, #0x0c]
+	tbz	w13, #3, 1b
+
+	mov	w13, #0x6c		/* 0x36 << 1, write */
+	str	w13, [x12, #0x08]
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x08
+	str	w13, [x12, #0x0c]
+1:	ldr	w13, [x12, #0x0c]
+	tbz	w13, #3, 1b
+
+	mov	w13, #0x11		/* AXP_REG_OUT_CTRL2 (ALDO/BLDO) */
+	str	w13, [x12, #0x08]
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x08
+	str	w13, [x12, #0x0c]
+1:	ldr	w13, [x12, #0x0c]
+	tbz	w13, #3, 1b
+
+	str	w0, [x12, #0x08]	/* LDO keep-mask byte */
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x08
+	str	w13, [x12, #0x0c]
+1:	ldr	w13, [x12, #0x0c]
+	tbz	w13, #3, 1b
+
+	ldr	w13, [x12, #0x0c]
+	orr	w13, w13, #0x10		/* STOP */
+	orr	w13, w13, #0x08
+	str	w13, [x12, #0x0c]
+
+8:	stage	0xab
 1:	wfi				/* rails die around here */
 	b	1b
 9:

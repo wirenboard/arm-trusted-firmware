@@ -801,10 +801,24 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 			 * DRAM. Magic is consumed on use.
 			 */
 			if (mmio_read_32(0x07000114U) == 0xD5A90FF5U) {
+				uint32_t ldo = mmio_read_32(0x07000118U);
+
 				mmio_write_32(0x07000114U, 0U);
 				mmio_write_32(0x07000104U, 0U);
 				kill = 0xffU;	/* blob sentinel: empty keep-mask */
-				NOTICE("PSCI: FULL rail kill armed (DRAM dies too, no resume)\n");
+				/*
+				 * RTC data6 = 0x00A1D0xx: also rewrite the
+				 * ALDO/BLDO bank (REG11H) with keep-mask xx —
+				 * the LDO decomposition instrument.
+				 */
+				if ((ldo >> 8) == 0xA1D0U) {
+					mmio_write_32(0x07000118U, 0U);
+					kill = (1U << 16) | ((ldo & 0xffU) << 8);
+					NOTICE("PSCI: FULL rail kill + REG11H=0x%x armed\n",
+					       ldo & 0xffU);
+				} else {
+					NOTICE("PSCI: FULL rail kill armed (DRAM dies too, no resume)\n");
+				}
 			}
 
 			mmio_write_32(0x07000108U, 0xb1U);
