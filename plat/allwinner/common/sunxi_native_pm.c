@@ -63,6 +63,7 @@ static struct {
 	uint32_t cpu_axi, pll_cpux;
 	int	 pmic_ok;
 	int	 off_resume;
+	int	 crc;		/* verify variant: run the DRAM CRC bracket */
 	uint8_t	 out_ctrl1, out_ctrl2, dcdc2_v;
 } sus;
 
@@ -73,6 +74,53 @@ static struct {
  * framework both treat hardware state as retained). The buffers live
  * in BL31 .bss — DRAM, preserved by self-refresh.
  */
+/*
+ * DRAM retention checksum bracket for suspend-to-off: one sum per
+ * 256 MiB chunk, computed after the kernel is quiesced (full CPU
+ * speed, before the 24 MHz switch) and recomputed at warm re-entry
+ * before the kernel resumes. Chunk 0 skips the first 2 MiB (BL31
+ * itself lives and works there); coverage ends at 3 GiB (32-bit VA).
+ */
+#define DRAM_SUM_CHUNK		0x10000000ULL
+#define DRAM_SUM_CHUNKS		12U
+static uint64_t dram_sums[DRAM_SUM_CHUNKS];
+
+static uint64_t sunxi_dram_sum_range(uintptr_t base, size_t len)
+{
+	const uint64_t *p = (const uint64_t *)base;
+	const uint64_t *end = (const uint64_t *)(base + len);
+	uint64_t acc = 0;
+
+	while (p < end) {
+		acc ^= *p++;
+		acc = (acc << 13) | (acc >> 51);
+	}
+	return acc;
+}
+
+static void sunxi_dram_sums_compute(uint64_t *out)
+{
+	uint64_t t0 = read_cntpct_el0();
+	uint32_t i;
+
+	for (i = 0U; i < DRAM_SUM_CHUNKS; i++) {
+		uintptr_t base = SUNXI_DRAM_BASE + i * DRAM_SUM_CHUNK;
+		size_t len = DRAM_SUM_CHUNK;
+
+		if (i == 0U) {
+			base += 0x200000U;
+			len -= 0x200000U;
+		}
+		out[i] = sunxi_dram_sum_range(base, len);
+	}
+	NOTICE("PSCI: DRAM sums in %llu ms:\n",
+	       (read_cntpct_el0() - t0) / 24000ULL);
+	for (i = 0U; i < DRAM_SUM_CHUNKS; i += 4U) {
+		NOTICE("  %u: %lx %lx %lx %lx\n", i,
+		       out[i], out[i + 1U], out[i + 2U], out[i + 3U]);
+	}
+}
+
 static uint32_t soc_ccu[0x1000 / 4];
 /* SPI1 (the EC link, watchdog-critical): the controller resets to
  * SLAVE mode with VDD-SYS and the sun6i driver only re-programs it in
@@ -457,6 +505,18 @@ static void sunxi_pwr_domain_suspend(const psci_power_state_t *target_state)
 	 * GIC is left exactly as the rich OS configured it: every
 	 * interrupt it kept enabled remains able to terminate the wait.
 	 */
+	/*
+	 * Suspend-to-off: checksum the retained image here — the
+	 * caches are still on (pwr_down_wfi runs after the generic
+	 * code disables them: 3 GiB takes 2 s cached vs 74 s not).
+	 * Only the verify variant (magic 0x0ff51eeb) computes it; the
+	 * fast default (0x0ff51eea) skips the ~74 s bracket. This runs
+	 * before the magic is cleared in pwr_down_wfi, so reading it
+	 * here is fine.
+	 */
+	if (mmio_read_32(0x07000100U) == 0x0ff51eebU) {
+		sunxi_dram_sums_compute(dram_sums);
+	}
 }
 
 static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_state)
@@ -497,6 +557,34 @@ static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_sta
 		sunxi_soc_state_restore();
 		gicv2_distif_init();
 		sunxi_gicd_state_restore();
+
+		/* Kernel-configured CPU clock back (also speeds up the
+		 * checksum verify below ~3x over the SPL clock). */
+		sunxi_suspend_cpu_fast();
+
+		/*
+		 * Verify variant only (sus.crc, armed from magic
+		 * 0x0ff51eeb). The magic at 0x07000100 is already 0 by
+		 * resume time — it is cleared in pwr_down_wfi — so the
+		 * gate MUST be the persisted flag, never a re-read.
+		 */
+		if (sus.crc != 0) {
+			static uint64_t verify[DRAM_SUM_CHUNKS];
+			uint32_t i, bad = 0U;
+
+			sus.crc = 0;
+			sunxi_dram_sums_compute(verify);
+			for (i = 0U; i < DRAM_SUM_CHUNKS; i++) {
+				if (verify[i] != dram_sums[i]) {
+					bad++;
+					NOTICE("PSCI: DRAM sum MISMATCH chunk %u: %lx != %lx\n",
+					       i, verify[i], dram_sums[i]);
+				}
+			}
+			NOTICE("PSCI: DRAM retention verdict: %s (%u/%u chunks bad)\n",
+			       (bad == 0U) ? "CLEAN" : "CORRUPTED", bad,
+			       DRAM_SUM_CHUNKS);
+		}
 		/*
 		 * The PIO block lost its state with VDD-SYS; the sus
 		 * snapshot survived in DRAM — bring the carrier rails
@@ -610,7 +698,14 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 			uint64_t kill = 0U;
 			uint32_t magic = mmio_read_32(0x07000100U);
 
-			if (magic == 0x0ff51eeaU) {
+			if (magic == 0x0ff51eeaU ||
+			    magic == 0x0ff51eebU) {
+				/*
+				 * 0x0ff51eea = suspend-to-off, fast (no CRC).
+				 * 0x0ff51eeb = suspend-to-off, with the DRAM
+				 * CRC bracket (sus.crc set below). Both take
+				 * the identical suspend-to-off path.
+				 */
 				/*
 				 * Suspend-to-off: the PMIC sleeps with only the
 				 * DRAM rails alive, the EC wakes it by PWRON at
@@ -681,6 +776,7 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 					 */
 					kill = (1U << 16) | (0x08U << 8) | 0x10U;
 					sus.off_resume = 1;
+					sus.crc = (magic == 0x0ff51eebU) ? 1 : 0;
 					/*
 					 * Route the SPL's raw resume jump
 					 * through the CPU0 invalidate-only
