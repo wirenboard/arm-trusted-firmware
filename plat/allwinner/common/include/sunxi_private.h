@@ -44,6 +44,7 @@ int sunxi_validate_ns_entrypoint(uintptr_t ns_entrypoint);
 
 /* The PSCI entrypoint (bl31_warm_entrypoint), as programmed into RVBAR. */
 extern uintptr_t sunxi_sec_entrypoint;
+void sunxi_offresume_entrypoint(void);
 
 int sunxi_pmic_setup(uint16_t socid, const void *fdt);
 void sunxi_security_setup(void);
