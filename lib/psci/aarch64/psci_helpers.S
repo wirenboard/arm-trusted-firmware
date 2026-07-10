@@ -27,9 +27,31 @@
  * attributes after the data cache is disabled.
  * -----------------------------------------------------------------------
  */
+/* -----------------------------------------------------------------------
+ * WB8 (H616) defensive mitigation, WB-fork-local. A rare corruption of a
+ * callee-saved register inside this cache-maintenance window (measured live
+ * as x21 taking x18's value) later faulted as an alignment data abort
+ * dereferencing psci_plat_pm_ops in psci_do_cpu_off. Spill x21-x28 alongside
+ * the existing x19/x20 save (the slots sit above SP and are covered by the
+ * same stack flush below) and reload them after the window: the reloads hit
+ * the explicitly-flushed stack, repairing any in-window corruption before the
+ * caller uses those registers. The resume-window under-volt that produced it
+ * is fixed in the allwinner off-resume path; this stays as cheap
+ * defense-in-depth while that fix accumulates soak history.
+ * TODO: remove once the resume-window residual soak-confirms gone (post-P3).
+ * -----------------------------------------------------------------------
+ */
 func psci_do_pwrdown_cache_maintenance
 	stp     x29, x30, [sp,#-16]!
 	stp     x19, x20, [sp,#-16]!
+
+	/* WB8: spill the rest of the callee-saved set (see the note above);
+	 * the slots sit above SP, so the stack flush below covers them
+	 * exactly like the x19/x20 spills. x0 (power level) is untouched. */
+	stp	x21, x22, [sp,#-16]!
+	stp	x23, x24, [sp,#-16]!
+	stp	x25, x26, [sp,#-16]!
+	stp	x27, x28, [sp,#-16]!
 
 	/* ---------------------------------------------
 	 * Invoke CPU-specific power down operations for
@@ -67,6 +89,13 @@ func psci_do_pwrdown_cache_maintenance
 	sub	x1, sp, x0
 	bl	inv_dcache_range
 
+	/* WB8: reload the callee-saved set from the just-flushed stack
+	 * slots, repairing any in-window corruption before the caller
+	 * dereferences them (e.g. psci_plat_pm_ops in psci_do_cpu_off). */
+	ldp	x27, x28, [sp], #16
+	ldp	x25, x26, [sp], #16
+	ldp	x23, x24, [sp], #16
+	ldp	x21, x22, [sp], #16
 	ldp	x19, x20, [sp], #16
 	ldp	x29, x30, [sp], #16
 	ret
