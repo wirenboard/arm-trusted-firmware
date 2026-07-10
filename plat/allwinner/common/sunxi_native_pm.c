@@ -402,11 +402,39 @@ static int sunxi_pwr_domain_on(u_register_t mpidr)
 	return PSCI_E_SUCCESS;
 }
 
+/* PSCI-internal global dereferenced by psci_do_cpu_off(). */
+extern const void *psci_plat_pm_ops;
+
 static void sunxi_pwr_domain_off(const psci_power_state_t *target_state)
 {
+	unsigned int core = plat_my_core_pos();
+
 	gicv2_cpuif_disable();
 
-	sunxi_cpu_power_off_self();
+	/*
+	 * Cheap corruption tripwire: psci_do_cpu_off() dereferences the
+	 * boot-constant global psci_plat_pm_ops right after this hook. The
+	 * off-window corruption family manifested as that pointer reading
+	 * back as garbage; assert it still points inside BL31 so any
+	 * regression is caught loudly instead of faulting on a wild deref.
+	 */
+	if (psci_plat_pm_ops == NULL ||
+	    (uintptr_t)psci_plat_pm_ops < BL31_BASE ||
+	    (uintptr_t)psci_plat_pm_ops >= BL31_LIMIT)
+		ERROR("PSCI: pm_ops corrupt: %p core=%u\n",
+		      psci_plat_pm_ops, core);
+
+	/*
+	 * Do NOT hardware-close the core through the CPUIDLE block
+	 * (sunxi_cpu_power_off_self): a CPUIDLE-closed secondary cannot be
+	 * reopened by the manual-clamp CPU_ON once suspend-to-off has wiped
+	 * the CPUCFG cluster state, which is what left cores 1-3 wedged for
+	 * every suspend cycle after the first. Follow the vendor model
+	 * instead -- the core just falls into the WFI loop in
+	 * sunxi_pwr_domain_pwr_down_wfi() with its GIC interface off, stays in
+	 * the (retained) power domain, and is cleanly re-powered by CPU_ON on
+	 * resume.
+	 */
 }
 
 static void sunxi_pwr_domain_on_finish(const psci_power_state_t *target_state)
@@ -477,6 +505,27 @@ static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_sta
 		 * and PHY pins back to their pre-suspend configuration.
 		 */
 		sunxi_suspend_periph_restore();
+
+		/*
+		 * Re-powering the secondaries is now done by cpu_on itself
+		 * (it writes POWER_CLAMP=0xff before the ramp), so the earlier
+		 * out-of-framework sunxi_cpu_power_off_others() here was
+		 * redundant and is removed: driving the PSCI CPU-off primitive
+		 * directly from the resume path is the suspected source of the
+		 * per-CPU/PSCI state corruption that faulted on the 3rd cycle.
+		 */
+
+		/*
+		 * The wb8 off-resume instrumentation used to write RTC GP regs
+		 * 0x07000110/114/118. RTC data4 (0x07000110) is the SPL's DRAM
+		 * geometry stash (magic 0x6d, dram_sun50i_h616.c): zeroing it
+		 * made every wake after the first fall back to the DESTRUCTIVE
+		 * geometry auto-detect (probing writes + trial inits with wrong
+		 * geometry) over the self-refresh-preserved image — the root of
+		 * the whole off-window corruption family. Do not write any RTC
+		 * GP register from BL31 except data1 (resume vector, shared with
+		 * SPL by design) and the debug regs data2/data3.
+		 */
 	}
 
 	gicv2_pcpu_distif_init();
@@ -646,8 +695,11 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 	}
 
 	/*
-	 * CPU_OFF: power-off was armed in sunxi_cpu_power_off_self(),
-	 * the CPUIDLE hardware removes power once this core hits WFI.
+	 * CPU_OFF: the core is no longer hardware-closed (see
+	 * sunxi_pwr_domain_off) -- it simply idles here in WFI with its GIC
+	 * interface off, staying in the power domain until a CPU_ON re-powers
+	 * and re-releases it. This keeps the core cleanly recoverable after
+	 * suspend-to-off (the vendor model).
 	 */
 	while (true) {
 		dsb();

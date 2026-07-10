@@ -100,10 +100,38 @@ void sunxi_cpu_on(u_register_t mpidr)
 		/* Set CPU to start in AArch64 mode */
 		mmio_setbits_32(SUNXI_AA64nAA32_REG(cluster),
 				BIT(SUNXI_AA64nAA32_OFFSET + core));
+		/*
+		 * Force the power-on ramp to run: on warm resume the retained
+		 * POWER_CLAMP can still read "powered" (0x00) from before the
+		 * suspend, which would make sunxi_cpu_enable_power() early-return
+		 * and skip re-powering a core the SoC actually reset. Clamp it
+		 * first so the ramp always executes.
+		 */
+		mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xffU);
 		/* Apply power to the CPU */
 		sunxi_cpu_enable_power(cluster, core);
 		/* Release the core output clamps */
 		mmio_clrbits_32(SUNXI_POWEROFF_GATING_REG(cluster), BIT(core));
+		/*
+		 * Re-arm the warm-boot vector before releasing the core.
+		 * RVBAR lives in the CPUCFG block (VDD-SYS), is wiped by
+		 * suspend-to-off, and is otherwise only programmed once at
+		 * cold boot in plat_setup_psci_ops(); a secondary released
+		 * after resume would otherwise fetch from address 0. Same
+		 * value plat_setup uses; idempotent at cold boot / hotplug.
+		 */
+		mmio_write_32(SUNXI_CPUCFG_RVBAR_LO_REG(core),
+			      sunxi_sec_entrypoint & 0xffffffff);
+		mmio_write_32(SUNXI_CPUCFG_RVBAR_HI_REG(core),
+			      sunxi_sec_entrypoint >> 32);
+#ifdef SUNXI_CORE_CLOSE_REG
+		/*
+		 * Defensive: the suspend path no longer CPUIDLE-closes
+		 * secondaries, but clear any residual close request so the
+		 * hardware cannot re-gate this core after we release it.
+		 */
+		mmio_clrbits_32(SUNXI_CORE_CLOSE_REG, BIT(core));
+#endif
 		/* Deassert CPU power-on reset */
 		mmio_setbits_32(SUNXI_POWERON_RST_REG(cluster), BIT(core));
 		/* Deassert CPU core reset */
@@ -119,11 +147,32 @@ void sunxi_cpu_on(u_register_t mpidr)
 		/* Set CPU to start in AArch64 mode */
 		mmio_setbits_32(SUNXI_CPU_CTRL_REG(core), BIT(0));
 
+		/*
+		 * Force the power-on ramp (see the per-cluster branch): defeat
+		 * enable_power's POWER_CLAMP==0 early-return so a warm-resumed
+		 * core is actually re-powered.
+		 */
+		mmio_write_32(SUNXI_CPU_POWER_CLAMP_REG(cluster, core), 0xffU);
 		/* Apply power to the CPU */
 		sunxi_cpu_enable_power(cluster, core);
 
 		/* ??? Release the core output clamps ??? */
 		mmio_clrbits_32(SUNXI_CPU_UNK_REG(core), BIT(1));
+#ifdef SUNXI_ALT_RVBAR_LO_REG
+		/*
+		 * Re-arm the warm-boot vector. This SoC stepping uses the
+		 * non-per-cluster path, whose reset vector is the alternate
+		 * RVBAR in the CPUSUBSYS block (0x08100040, VDD-SYS domain).
+		 * Suspend-to-off wipes it and it is only programmed once at
+		 * cold boot in plat_setup_psci_ops(), so without this a
+		 * secondary released after resume fetches from address 0
+		 * ("failed in unknown state : 0x0"). Idempotent otherwise.
+		 */
+		mmio_write_32(SUNXI_ALT_RVBAR_LO_REG(core),
+			      sunxi_sec_entrypoint & 0xffffffff);
+		mmio_write_32(SUNXI_ALT_RVBAR_HI_REG(core),
+			      sunxi_sec_entrypoint >> 32);
+#endif
 		/* ??? Deassert CPU power-on reset ??? */
 		mmio_setbits_32(SUNXI_CPU_UNK_REG(core), BIT(0));
 		/* Deassert CPU core reset */
