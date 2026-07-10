@@ -665,7 +665,23 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 				    axp_wr(0x1fU, v | 0x80U) == 0 &&	/* global IRQ wakeup en */
 				    axp_rd(0x31U, &v) == 0 &&
 				    axp_wr(0x31U, v | 0x08U) == 0) {	/* record + sleep */
-					kill = 0x10U;	/* keep DCDC5 only */
+					/*
+					 * Rail set for the dark window, bench-
+					 * decomposed 2026-07-09: keep DCDC5
+					 * (VCC-DRAM) and ALDO4 (LPDDR4 VDD1 +
+					 * T507 VDD18-DRAM) — everything self-
+					 * refresh needs. Kill the other three
+					 * 1.8 V LDOs via the blob's REG11H
+					 * write: ALDO2 (VCC-DCXO/PLL/AVCC)
+					 * alone burns ~95 mW because the DCXO
+					 * keeps oscillating for a dead SoC;
+					 * ALDO1 (eMMC VCCQ) ~5 mW, BLDO1
+					 * (HDMI/LVDS) ~9 mW. Wake restore is
+					 * the PMIC's REG31-recorded set (all
+					 * four back on before PWROK). Floor:
+					 * 0.17 -> ~0.11 W.
+					 */
+					kill = (1U << 16) | (0x08U << 8) | 0x10U;
 					sus.off_resume = 1;
 					/*
 					 * Route the SPL's raw resume jump
