@@ -407,6 +407,31 @@ static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_sta
 	 */
 	if (sus.off_resume != 0) {
 		sus.off_resume = 0;
+
+		/*
+		 * SPL's boot-time PMIC setup rewrote VDD-CPU down to its
+		 * 0.90 V cold-boot value (CONFIG_AXP_DCDC2_VOLT) on the way
+		 * to the resume jump, but soc_state_restore() below re-locks
+		 * PLL_CPUX to the kernel's parked frequency — up to 1.416 GHz
+		 * wanting 1.00-1.10 V. Until the kernel's cpufreq resume
+		 * rewrites the regulator (~2 s), the cores run that fast on
+		 * the starved rail; the secondary-bringup load transients in
+		 * that window are where every post-resume corruption sample
+		 * fired (fetch faults on valid code, single-bit pointer
+		 * flips, bringup lockups — while the retained-DRAM CRC stayed
+		 * clean). Put the RECORDED runtime voltage back before the
+		 * recorded frequency. sus.dcdc2_v was read at suspend entry
+		 * and preserved in self-refresh DRAM; SPL already set up the
+		 * R_I2C pins and clock for its own PMIC writes.
+		 */
+		if (sus.pmic_ok != 0) {
+			i2c_init((void *)SUNXI_R_I2C_BASE);
+			axp_wr(AXP_REG_DCDC2_V, sus.dcdc2_v);
+			/* DCDC2 slews ~2.5 mV/us: 0.90->1.10 V takes 80 us. */
+			udelay(200);
+			NOTICE("wb8: off-resume VDD-CPU restored to 0x%x\n",
+			       sus.dcdc2_v);
+		}
 		sunxi_soc_state_restore();
 		gicv2_distif_init();
 		sunxi_gicd_state_restore();
