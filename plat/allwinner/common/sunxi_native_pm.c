@@ -62,8 +62,172 @@ static struct {
 	uint32_t pe_cfg0, pe_cfg1, pe_dat, pg_dat;
 	uint32_t cpu_axi, pll_cpux;
 	int	 pmic_ok;
+	int	 off_resume;
 	uint8_t	 out_ctrl1, out_ctrl2, dcdc2_v;
 } sus;
+
+/*
+ * SoC register-file snapshot for suspend-to-off: VDD-SYS dies, so the
+ * CCU and the pin controllers lose everything the kernel configured
+ * and will not re-program on resume (pinctrl-sunxi and the clk
+ * framework both treat hardware state as retained). The buffers live
+ * in BL31 .bss — DRAM, preserved by self-refresh.
+ */
+static uint32_t soc_ccu[0x1000 / 4];
+/* SPI1 (the EC link, watchdog-critical): the controller resets to
+ * SLAVE mode with VDD-SYS and the sun6i driver only re-programs it in
+ * runtime-PM resume, which system resume does not re-run. */
+static uint32_t soc_spi1[0x40 / 4];
+static uint32_t soc_pio[0x300 / 4];
+static uint32_t soc_rpio[0x60 / 4];
+
+/*
+ * GIC-400 distributor state: the kernel's GIC driver assumes the
+ * distributor is retained across "deep" suspend; after suspend-to-off
+ * it comes back with every SPI disabled and unrouted, so all
+ * IRQ-driven peripherals silently die. 10 words cover 320 interrupt
+ * lines — more than the H616 has.
+ */
+#define GICD_WORDS	10U
+static uint32_t gicd_ctlr;
+static uint32_t gicd_igroup[GICD_WORDS];
+static uint32_t gicd_isenable[GICD_WORDS];
+static uint32_t gicd_ipriority[GICD_WORDS * 8];
+static uint32_t gicd_itarget[GICD_WORDS * 8];
+static uint32_t gicd_icfg[GICD_WORDS * 2];
+
+static void sunxi_gicd_state_save(void)
+{
+	uint32_t i;
+
+	gicd_ctlr = mmio_read_32(SUNXI_GICD_BASE + 0x000U);
+	for (i = 0U; i < GICD_WORDS; i++) {
+		gicd_igroup[i]   = mmio_read_32(SUNXI_GICD_BASE + 0x080U + i * 4U);
+		gicd_isenable[i] = mmio_read_32(SUNXI_GICD_BASE + 0x100U + i * 4U);
+	}
+	for (i = 0U; i < GICD_WORDS * 8U; i++) {
+		gicd_ipriority[i] = mmio_read_32(SUNXI_GICD_BASE + 0x400U + i * 4U);
+		gicd_itarget[i]   = mmio_read_32(SUNXI_GICD_BASE + 0x800U + i * 4U);
+	}
+	for (i = 0U; i < GICD_WORDS * 2U; i++)
+		gicd_icfg[i] = mmio_read_32(SUNXI_GICD_BASE + 0xc00U + i * 4U);
+}
+
+static void sunxi_gicd_state_restore(void)
+{
+	uint32_t i;
+
+	for (i = 0U; i < GICD_WORDS; i++)
+		mmio_write_32(SUNXI_GICD_BASE + 0x080U + i * 4U, gicd_igroup[i]);
+	for (i = 0U; i < GICD_WORDS * 8U; i++) {
+		mmio_write_32(SUNXI_GICD_BASE + 0x400U + i * 4U, gicd_ipriority[i]);
+		mmio_write_32(SUNXI_GICD_BASE + 0x800U + i * 4U, gicd_itarget[i]);
+	}
+	for (i = 0U; i < GICD_WORDS * 2U; i++)
+		mmio_write_32(SUNXI_GICD_BASE + 0xc00U + i * 4U, gicd_icfg[i]);
+	for (i = 0U; i < GICD_WORDS; i++)
+		mmio_write_32(SUNXI_GICD_BASE + 0x100U + i * 4U, gicd_isenable[i]);
+	mmio_write_32(SUNXI_GICD_BASE + 0x000U, gicd_ctlr);
+	dsbsy();
+}
+
+static void sunxi_soc_state_save(void)
+{
+	uint32_t i;
+
+	for (i = 0U; i < ARRAY_SIZE(soc_ccu); i++)
+		soc_ccu[i] = mmio_read_32(SUNXI_CCU_BASE + i * 4U);
+	for (i = 0U; i < ARRAY_SIZE(soc_pio); i++)
+		soc_pio[i] = mmio_read_32(SUNXI_PIO_BASE + i * 4U);
+	for (i = 0U; i < ARRAY_SIZE(soc_rpio); i++)
+		soc_rpio[i] = mmio_read_32(SUNXI_R_PIO_BASE + i * 4U);
+	for (i = 0U; i < ARRAY_SIZE(soc_spi1); i++)
+		soc_spi1[i] = mmio_read_32(0x05011000U + i * 4U);
+}
+
+static void sunxi_soc_state_restore(void)
+{
+	/*
+	 * PLL restore list. PLL_CPUX (0x000) is handled separately with
+	 * the CPU parked on HOSC; PLL_DDR0 (0x010) and PLL_PERIPH0
+	 * (0x020) are LIVE (DRAM and buses run on them, SPL programmed
+	 * them to the same values) — rewriting a live PLL glitches its
+	 * consumers fatally, so they are skipped.
+	 */
+	static const uint16_t plls[] = {
+		0x028U, 0x030U,
+		0x040U, 0x048U, 0x060U, 0x078U, 0x088U,
+	};
+	uint32_t i, v;
+
+	/* 0. PLL_CPUX via the proven park-on-HOSC dance. */
+	mmio_write_32(SUNXI_CCU_BASE + 0x500U,
+		      mmio_read_32(SUNXI_CCU_BASE + 0x500U) & ~(0x7U << 24));
+	dsbsy();
+	isb();
+	udelay(2);
+	v = soc_ccu[0];
+	if ((v & BIT_32(31)) != 0U) {
+		mmio_write_32(SUNXI_CCU_BASE + 0x000U, v | BIT_32(29));
+		for (uint32_t t = 0U; t < 10000U; t++) {
+			if ((mmio_read_32(SUNXI_CCU_BASE + 0x000U) &
+			     BIT_32(28)) != 0U)
+				break;
+		}
+	}
+	mmio_write_32(SUNXI_CCU_BASE + 0x000U, v);
+	udelay(2);
+	mmio_write_32(SUNXI_CCU_BASE + 0x500U, soc_ccu[0x500U / 4U]);
+	dsbsy();
+	isb();
+
+	/* 1. Remaining PLLs: enable with forced lock detect, wait,
+	 * then drop back to the saved value. */
+	for (i = 0U; i < ARRAY_SIZE(plls); i++) {
+		v = soc_ccu[plls[i] / 4U];
+		if ((v & BIT_32(31)) == 0U) {
+			mmio_write_32(SUNXI_CCU_BASE + plls[i], v);
+			continue;
+		}
+		mmio_write_32(SUNXI_CCU_BASE + plls[i], v | BIT_32(29));
+		for (uint32_t t = 0U; t < 10000U; t++) {
+			if ((mmio_read_32(SUNXI_CCU_BASE + plls[i]) &
+			     BIT_32(28)) != 0U)
+				break;
+		}
+		mmio_write_32(SUNXI_CCU_BASE + plls[i], v);
+	}
+	udelay(20);
+
+	/* 2. Everything else in the CCU: dividers, muxes, gates and
+	 * resets, in address order (gates/resets come after their
+	 * mux/divider registers within each peripheral's group). */
+	for (i = 0x504U / 4U; i < ARRAY_SIZE(soc_ccu); i++) {
+		/* DRAM/MBUS clock registers: SPL has already configured
+		 * the live controller — rewriting them (SDRCLK update
+		 * bits) would glitch the running DRAM. */
+		if (i >= 0x800U / 4U && i < 0x810U / 4U)
+			continue;
+		mmio_write_32(SUNXI_CCU_BASE + i * 4U, soc_ccu[i]);
+	}
+	udelay(10);
+
+	/* 3. Pin controllers, now that their clocks are back. */
+	for (i = 0U; i < ARRAY_SIZE(soc_pio); i++)
+		mmio_write_32(SUNXI_PIO_BASE + i * 4U, soc_pio[i]);
+	for (i = 0U; i < ARRAY_SIZE(soc_rpio); i++)
+		mmio_write_32(SUNXI_R_PIO_BASE + i * 4U, soc_rpio[i]);
+
+	/* SPI1 controller: GCR (master mode!), clock, format, wait
+	 * cycles, IRQ enables. Status/FIFO registers are skipped. */
+	mmio_write_32(0x05011004U, soc_spi1[0x04U / 4U]);
+	mmio_write_32(0x05011024U, soc_spi1[0x24U / 4U]);
+	mmio_write_32(0x05011008U, soc_spi1[0x08U / 4U]);
+	mmio_write_32(0x05011020U, soc_spi1[0x20U / 4U]);
+	mmio_write_32(0x05011018U, soc_spi1[0x18U / 4U]);
+	mmio_write_32(0x05011010U, soc_spi1[0x10U / 4U]);
+	dsbsy();
+}
 
 static int axp_rd(uint8_t reg, uint8_t *val)
 {
@@ -235,6 +399,25 @@ static void sunxi_pwr_domain_suspend(const psci_power_state_t *target_state)
 
 static void sunxi_pwr_domain_suspend_finish(const psci_power_state_t *target_state)
 {
+	/*
+	 * After suspend-to-off the GIC lost power with VDD-SYS: bring
+	 * the distributor back up before the per-cpu parts. The kernel
+	 * re-applies its own interrupt configuration in its GIC
+	 * syscore resume.
+	 */
+	if (sus.off_resume != 0) {
+		sus.off_resume = 0;
+		sunxi_soc_state_restore();
+		gicv2_distif_init();
+		sunxi_gicd_state_restore();
+		/*
+		 * The PIO block lost its state with VDD-SYS; the sus
+		 * snapshot survived in DRAM — bring the carrier rails
+		 * and PHY pins back to their pre-suspend configuration.
+		 */
+		sunxi_suspend_periph_restore();
+	}
+
 	gicv2_pcpu_distif_init();
 	gicv2_cpuif_enable();
 }
@@ -315,10 +498,80 @@ sunxi_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_state)
 		mmio_write_32(0x07000108U, 0xb5U);
 		sunxi_suspend_pmic_enter();
 
-		mmio_write_32(0x07000108U, 0xb1U);
-		disable_mmu_el3();
-		mmio_write_32(0x07000108U, 0xb2U);
-		((uint64_t (*)(uint64_t))SUNXI_SUSPEND_SRAM_BASE)(0U);
+		{
+			uint64_t kill = 0U;
+			uint32_t magic = mmio_read_32(0x07000100U);
+
+			if (magic == 0x0ff51eeaU) {
+				/*
+				 * Suspend-to-off: the PMIC sleeps with only the
+				 * DRAM rails alive, the EC wakes it by PWRON at
+				 * the RTC alarm, and the SoC boots through SPL,
+				 * which finds the resume vector in RTC data1
+				 * and jumps back into this (DRAM-resident,
+				 * self-refresh-preserved) BL31 instead of
+				 * loading U-Boot.
+				 *
+				 * PMIC preparation: enable POK-negedge as a
+				 * sleep wake source (REG41 bit3), then REG31
+				 * bit3 = "start sleep, record REG10/11/12" —
+				 * the rail cut the blob performs next is what
+				 * wake undoes.
+				 */
+				uint8_t v;
+
+				mmio_write_32(0x07000100U, 0U);
+				/*
+				 * The sleep-wake restores the rail enables
+				 * RECORDED at the REG31 write. The trim path
+				 * above already cut DCDC1/DCDC4 and lowered
+				 * VDD-CPU — recording that would leave 3V3
+				 * dead forever after wake. Put the runtime
+				 * configuration back first (a millisecond
+				 * rail bounce, harmless), record THAT, then
+				 * let the blob kill everything.
+				 */
+				if (sus.pmic_ok != 0) {
+					axp_wr(AXP_REG_OUT_CTRL1, sus.out_ctrl1);
+					axp_wr(AXP_REG_OUT_CTRL2, sus.out_ctrl2);
+					axp_wr(AXP_REG_DCDC2_V, sus.dcdc2_v);
+					sunxi_soc_state_save();
+					sunxi_gicd_state_save();
+				}
+				/*
+				 * Only the POK (PWRON) negative edge may wake
+				 * the sleeping PMIC: mask every other IRQ
+				 * enable and ack all pending statuses, or the
+				 * PMIC's own IRQ line (rail-off events, stale
+				 * POK edges) wakes it right back up through
+				 * the global REG1F[7] gate.
+				 */
+				if (sus.pmic_ok != 0 &&
+				    axp_wr(0x40U, 0x00U) == 0 &&	/* INTEN1 off */
+				    axp_wr(0x41U, 0x08U) == 0 &&	/* only POK negedge */
+				    axp_wr(0x48U, 0xffU) == 0 &&	/* ack INTSTS1 */
+				    axp_wr(0x49U, 0xffU) == 0 &&	/* ack INTSTS2 */
+				    axp_rd(0x1fU, &v) == 0 &&
+				    axp_wr(0x1fU, v | 0x80U) == 0 &&	/* global IRQ wakeup en */
+				    axp_rd(0x31U, &v) == 0 &&
+				    axp_wr(0x31U, v | 0x08U) == 0) {	/* record + sleep */
+					kill = 0x10U;	/* keep DCDC5 only */
+					sus.off_resume = 1;
+					mmio_write_32(0x07000104U,
+						      (uint32_t)sunxi_sec_entrypoint);
+					dsbsy();
+					NOTICE("PSCI: suspend-to-off armed, resume via 0x%x\n",
+					       (uint32_t)sunxi_sec_entrypoint);
+				} else {
+					WARN("PSCI: suspend-to-off: PMIC prep failed, normal suspend\n");
+				}
+			}
+
+			mmio_write_32(0x07000108U, 0xb1U);
+			disable_mmu_el3();
+			mmio_write_32(0x07000108U, 0xb2U);
+			((uint64_t (*)(uint64_t))SUNXI_SUSPEND_SRAM_BASE)(kill);
+		}
 
 		/* Reverse order: rails/voltage back first, then CPU speed
 		 * (the CPU may only return to full speed after VDD-CPU is
