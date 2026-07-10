@@ -154,11 +154,7 @@ static void sunxi_soc_state_restore(void)
 	 * them to the same values) — rewriting a live PLL glitches its
 	 * consumers fatally, so they are skipped.
 	 */
-	static const uint16_t plls[] = {
-		0x028U, 0x030U,
-		0x040U, 0x048U, 0x060U, 0x078U, 0x088U,
-	};
-	uint32_t i, v;
+	uint32_t v;
 
 	/* 0. PLL_CPUX via the proven park-on-HOSC dance. */
 	mmio_write_32(SUNXI_CCU_BASE + 0x500U,
@@ -181,9 +177,24 @@ static void sunxi_soc_state_restore(void)
 	dsbsy();
 	isb();
 
+	/*
+	 * DISABLED for kernel-PM validation: the peripheral PLLs (step 1)
+	 * and all peripheral module clocks/muxes/gates/resets (step 2) are
+	 * now restored by the sunxi-ng CCU syscore_resume on the kernel
+	 * side. BL31 keeps only the firmware-owned offsets the kernel's
+	 * skip-list excludes: PLL_CPUX (0x000) + 0x500 above, and the
+	 * CPU/bus dividers 0x510/0x51c/0x520/0x524/0x540 below. PLL_DDR0/
+	 * DDR1/PERIPH0 (0x010/0x018/0x020) and the DRAM window (0x800-0x810)
+	 * stay live/skipped as before. Kept #if 0 so it can be restored. */
+#if 0
+	static const uint16_t plls[] = {
+		0x028U, 0x030U,
+		0x040U, 0x048U, 0x060U, 0x078U, 0x088U,
+	};
+
 	/* 1. Remaining PLLs: enable with forced lock detect, wait,
 	 * then drop back to the saved value. */
-	for (i = 0U; i < ARRAY_SIZE(plls); i++) {
+	for (uint32_t i = 0U; i < ARRAY_SIZE(plls); i++) {
 		v = soc_ccu[plls[i] / 4U];
 		if ((v & BIT_32(31)) == 0U) {
 			mmio_write_32(SUNXI_CCU_BASE + plls[i], v);
@@ -202,30 +213,55 @@ static void sunxi_soc_state_restore(void)
 	/* 2. Everything else in the CCU: dividers, muxes, gates and
 	 * resets, in address order (gates/resets come after their
 	 * mux/divider registers within each peripheral's group). */
-	for (i = 0x504U / 4U; i < ARRAY_SIZE(soc_ccu); i++) {
-		/* DRAM/MBUS clock registers: SPL has already configured
-		 * the live controller — rewriting them (SDRCLK update
-		 * bits) would glitch the running DRAM. */
+	for (uint32_t i = 0x504U / 4U; i < ARRAY_SIZE(soc_ccu); i++) {
 		if (i >= 0x800U / 4U && i < 0x810U / 4U)
 			continue;
 		mmio_write_32(SUNXI_CCU_BASE + i * 4U, soc_ccu[i]);
 	}
 	udelay(10);
+#endif
 
-	/* 3. Pin controllers, now that their clocks are back. */
+	/* Firmware-owned CPU/bus dividers only (the kernel CCU syscore
+	 * excludes these). PLL_CPUX + 0x500 already restored above. */
+	mmio_write_32(SUNXI_CCU_BASE + 0x510U, soc_ccu[0x510U / 4U]);
+	mmio_write_32(SUNXI_CCU_BASE + 0x51cU, soc_ccu[0x51cU / 4U]);
+	mmio_write_32(SUNXI_CCU_BASE + 0x520U, soc_ccu[0x520U / 4U]);
+	mmio_write_32(SUNXI_CCU_BASE + 0x524U, soc_ccu[0x524U / 4U]);
+	mmio_write_32(SUNXI_CCU_BASE + 0x540U, soc_ccu[0x540U / 4U]);
+	udelay(10);
+
+	/* 3. Pin controllers, now that their clocks are back.
+	 *
+	 * DISABLED for kernel-PM validation: the sunxi pinctrl
+	 * suspend_noirq/resume_noirq context save/restore now reprograms
+	 * PIO and R_PIO on the kernel side. Kept #if 0 (not deleted) so it
+	 * can be restored instantly — note the kernel restore runs at
+	 * resume_noirq, later than this firmware restore, so output pins
+	 * (relays/DO) sit at reset defaults for a longer early-resume
+	 * window; bench validates whether that glitch is acceptable. */
+#if 0
 	for (i = 0U; i < ARRAY_SIZE(soc_pio); i++)
 		mmio_write_32(SUNXI_PIO_BASE + i * 4U, soc_pio[i]);
 	for (i = 0U; i < ARRAY_SIZE(soc_rpio); i++)
 		mmio_write_32(SUNXI_R_PIO_BASE + i * 4U, soc_rpio[i]);
+#endif
 
 	/* SPI1 controller: GCR (master mode!), clock, format, wait
-	 * cycles, IRQ enables. Status/FIFO registers are skipped. */
+	 * cycles, IRQ enables. Status/FIFO registers are skipped.
+	 *
+	 * DISABLED for kernel-PM validation: the spi-sun6i system-sleep
+	 * PM ops (pm_runtime_force_suspend/resume) now reprogram the
+	 * controller (GCR master mode etc.) on the kernel side, so this
+	 * firmware restore is redundant. Kept #if 0 (not deleted) so it
+	 * can be restored instantly if the kernel path proves insufficient. */
+#if 0
 	mmio_write_32(0x05011004U, soc_spi1[0x04U / 4U]);
 	mmio_write_32(0x05011024U, soc_spi1[0x24U / 4U]);
 	mmio_write_32(0x05011008U, soc_spi1[0x08U / 4U]);
 	mmio_write_32(0x05011020U, soc_spi1[0x20U / 4U]);
 	mmio_write_32(0x05011018U, soc_spi1[0x18U / 4U]);
 	mmio_write_32(0x05011010U, soc_spi1[0x10U / 4U]);
+#endif
 	dsbsy();
 }
 
