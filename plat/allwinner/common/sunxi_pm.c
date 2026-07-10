@@ -40,10 +40,14 @@ int sunxi_validate_ns_entrypoint(uintptr_t ns_entrypoint)
 	return PSCI_E_SUCCESS;
 }
 
+uintptr_t sunxi_sec_entrypoint;
+
 int plat_setup_psci_ops(uintptr_t sec_entrypoint,
 			const plat_psci_ops_t **psci_ops)
 {
 	assert(psci_ops);
+
+	sunxi_sec_entrypoint = sec_entrypoint;
 
 	/* Program all CPU entry points. */
 	for (unsigned int cpu = 0; cpu < PLATFORM_CORE_COUNT; ++cpu) {
