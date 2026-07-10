@@ -397,9 +397,7 @@ static void sunxi_suspend_cpu_fast(void)
 
 static int sunxi_pwr_domain_on(u_register_t mpidr)
 {
-	sunxi_cpu_on(mpidr);
-
-	return PSCI_E_SUCCESS;
+	return sunxi_cpu_on(mpidr);
 }
 
 /* PSCI-internal global dereferenced by psci_do_cpu_off(). */

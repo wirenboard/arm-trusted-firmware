@@ -57,6 +57,17 @@ static void sunxi_cpu_off(u_register_t mpidr)
 	unsigned int cluster = MPIDR_AFFLVL1_VAL(mpidr);
 	unsigned int core    = MPIDR_AFFLVL0_VAL(mpidr);
 
+	/*
+	 * cluster/core feed unchecked into MMIO offset math below
+	 * (POWER_CLAMP, gating regs); reject a malformed MPIDR so it
+	 * cannot compute a wild register address in the CPUSUBSYS block.
+	 */
+	if (plat_core_pos_by_mpidr(mpidr) < 0) {
+		ERROR("PSCI: bad MPIDR 0x%lx in cpu_off\n",
+		      (unsigned long)mpidr);
+		return;
+	}
+
 	VERBOSE("PSCI: Powering off cluster %d core %d\n", cluster, core);
 
 	if (sunxi_cpucfg_has_per_cluster_regs()) {
@@ -85,10 +96,22 @@ static void sunxi_cpu_off(u_register_t mpidr)
 	}
 }
 
-void sunxi_cpu_on(u_register_t mpidr)
+int sunxi_cpu_on(u_register_t mpidr)
 {
 	unsigned int cluster = MPIDR_AFFLVL1_VAL(mpidr);
 	unsigned int core    = MPIDR_AFFLVL0_VAL(mpidr);
+
+	/*
+	 * cluster/core feed unchecked into MMIO offset math below
+	 * (POWER_CLAMP, RVBAR, gating regs); reject a malformed MPIDR so
+	 * it cannot compute a wild register address in the CPUSUBSYS
+	 * block. plat_core_pos_by_mpidr() rejects out-of-range affinities.
+	 */
+	if (plat_core_pos_by_mpidr(mpidr) < 0) {
+		ERROR("PSCI: bad MPIDR 0x%lx in cpu_on\n",
+		      (unsigned long)mpidr);
+		return PSCI_E_INVALID_PARAMS;
+	}
 
 	VERBOSE("PSCI: Powering on cluster %d core %d\n", cluster, core);
 
@@ -180,6 +203,8 @@ void sunxi_cpu_on(u_register_t mpidr)
 		/* power up(?) debug core */
 		mmio_setbits_32(SUNXI_C0_CPU_CTRL_REG(core), BIT(8));
 	}
+
+	return PSCI_E_SUCCESS;
 }
 
 void sunxi_cpu_power_off_others(void)

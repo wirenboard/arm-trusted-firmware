@@ -15,7 +15,7 @@ extern const struct psci_cpu_idle_state sunxi_idle_states[];
 
 void sunxi_configure_mmu_el3(int flags);
 
-void sunxi_cpu_on(u_register_t mpidr);
+int sunxi_cpu_on(u_register_t mpidr);
 void sunxi_cpu_power_off_others(void);
 void sunxi_cpu_power_off_self(void);
 void sunxi_power_down(void);
