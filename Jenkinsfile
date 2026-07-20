@@ -1,3 +1,3 @@
-buildDebSbuild defaultTargets: 'bullseye-arm64',
+buildDebSbuild defaultTargets: 'current-arm64',
                defaultRunLintian: true,
                customReleaseBranchPattern: '^wb$'
