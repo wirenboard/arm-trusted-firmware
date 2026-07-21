@@ -15,7 +15,7 @@ extern const struct psci_cpu_idle_state sunxi_idle_states[];
 
 void sunxi_configure_mmu_el3(int flags);
 
-void sunxi_cpu_on(u_register_t mpidr);
+int sunxi_cpu_on(u_register_t mpidr);
 void sunxi_cpu_power_off_others(void);
 void sunxi_cpu_power_off_self(void);
 void sunxi_power_down(void);
@@ -41,6 +41,10 @@ static inline int sunxi_set_scpi_psci_ops(const plat_psci_ops_t **psci_ops)
 }
 #endif
 int sunxi_validate_ns_entrypoint(uintptr_t ns_entrypoint);
+
+/* The PSCI entrypoint (bl31_warm_entrypoint), as programmed into RVBAR. */
+extern uintptr_t sunxi_sec_entrypoint;
+void sunxi_offresume_entrypoint(void);
 
 int sunxi_pmic_setup(uint16_t socid, const void *fdt);
 void sunxi_security_setup(void);
